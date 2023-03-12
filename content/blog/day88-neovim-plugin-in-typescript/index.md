@@ -63,7 +63,7 @@ node.js. It is also important that the package depend on the `neovim` package to
   "version": "0.0.1",
   "description": "Super powered acetic file exploration in vim",
   "main": "dist/index.js",
-  "author": "Keith Simmons",
+  "author": "Kaylee Simmons",
   "devDependencies": {
     "@types/node": "^12.7.7",
     "neovim": "^4.5.0"
@@ -179,4 +179,4 @@ I have been working on a file explorer plugin for Neovim using the above techniq
 on writing about it soon. Its changed the way I interact with files :)
 
 Till tomorrow,  
-Keith
+Kaylee

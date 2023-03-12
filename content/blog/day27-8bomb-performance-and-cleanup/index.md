@@ -247,4 +247,4 @@ make a pull request to SCRIPT-8 with the performance improvements which should
 let me do the finishing touches on 8Bomb and finish version 1.0.
 
 Till Tomorrow,  
-Keith
+Kaylee

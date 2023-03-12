@@ -260,4 +260,4 @@ Typescript more effectively and have faster turn around time while debugging the
 game.
 
 Till tomorrow,  
-Keith
+Kaylee

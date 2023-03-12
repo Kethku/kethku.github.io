@@ -80,4 +80,4 @@ This game will be an experiment in longer term progress over time. I'm
 interested to see how it turns out.
 
 Wish us luck!  
-Keith
+Kaylee

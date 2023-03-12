@@ -23,7 +23,7 @@ intermediate and final formats.
 {% code(lang="yaml") %}
 name: Pando
 version: "0.1"
-author: Keith Simmons
+author: Kaylee Simmons
 about: Todo Graph Renderer
 args:
   - FILE:
@@ -215,4 +215,4 @@ introducing, as well as some progress planned for the [Script-8 Bomb Surival
 Demake](../day7-bomb-survival-demake/). Fun things ahead!
 
 Till tomorrow,  
-Keith
+Kaylee

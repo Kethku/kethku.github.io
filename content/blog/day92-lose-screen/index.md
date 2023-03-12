@@ -63,4 +63,4 @@ In any case the game is shaping up. The biggest feature next is to add multiplay
 interesting ideas kicking around, so I'm eager to get going.
 
 Till tomorrow,  
-Keith
+Kaylee

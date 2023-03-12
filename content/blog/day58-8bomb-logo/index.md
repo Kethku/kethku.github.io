@@ -35,4 +35,4 @@ Since each tile is only a small portion of the full text, I will to render these
 as a set later, but this is sufficient work for today.
 
 Till tomorrow,  
-Keith
+Kaylee

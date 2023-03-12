@@ -172,4 +172,4 @@ manipulation which depends strongly on the old canvas API. I will leave this for
 next time.
 
 Till tomorrow,  
-Keith
+Kaylee

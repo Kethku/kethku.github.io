@@ -63,7 +63,7 @@ Eventually I landed on this structure:
 {% code(lang="yaml") %}
 name: Okeydokey
 version: "0.1"
-author: Keith Simmons
+author: Kaylee Simmons
 about: .ok file manager
 args:
   - COMMAND:
@@ -262,4 +262,4 @@ it even better. Among them is argument support, profile references, and a better
 UI. For now though, I will probably do some site styling and call it a day.
 
 Till tomorrow,  
-Keith
+Kaylee

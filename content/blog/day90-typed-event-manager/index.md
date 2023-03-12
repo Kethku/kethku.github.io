@@ -144,4 +144,4 @@ enough in typescript to enable a class like this while still keeping the code sa
 the more I appreciate the awesome work they are doing over on the Typescript team.
 
 Till tomorrow,  
-Keith
+Kaylee

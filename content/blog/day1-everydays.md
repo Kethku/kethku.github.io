@@ -33,4 +33,4 @@ Some of the above are projects I have already spent significant time on. However
 I'm hopeful that by forcing myself to write about my side projects, it will help me to be more organized and ideally motivate me to push projects to a more completed state. At the very least it will give me posts to point to to show off the random crap I build. Wish me luck!
 
 Till tomorrow,  
-Keith
+Kaylee

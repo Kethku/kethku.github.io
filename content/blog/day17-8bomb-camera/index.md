@@ -147,4 +147,4 @@ The current version of the game can be played
 [here](https://script-8.github.io/?id=2a24d4038406b2ea5f648c9ebb8d3a6b).
 
 Till tomorrow,  
-Keith
+Kaylee

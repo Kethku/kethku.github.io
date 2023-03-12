@@ -187,4 +187,4 @@ tasks are to add some sound effects, and a better character animation. Then I
 will port the game back to SCRIPT-8 with my changes and call it a day!
 
 Till tomorrow,  
-Keith
+Kaylee

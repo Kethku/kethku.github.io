@@ -97,7 +97,7 @@ more than one argument parameter.
 {% code(lang="yaml") %}
 name: Okeydokey
 version: "0.2"
-author: Keith Simmons
+author: Kaylee Simmons
 about: .ok file manager
 args:
   - COMMAND:
@@ -166,4 +166,4 @@ sense from a time perspective, my blog posts will be more consistent now, and I
 got a new Okeydokey feature out of it.
 
 Till tomorrow,  
-Keith
+Kaylee

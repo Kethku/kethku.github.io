@@ -195,4 +195,4 @@ These are very simple effects, but go a long way towards improving the feel of
 the game. Next up I will look into implementing a game over screen.
 
 Till tomorrow,
-Keith
+Kaylee

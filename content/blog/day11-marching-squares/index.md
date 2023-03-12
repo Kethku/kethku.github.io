@@ -124,4 +124,4 @@ An editable live version can be found
 for this project is to build some collision detection using Verlet Integration!
 
 Till tomorrow,  
-Keith
+Kaylee

@@ -98,7 +98,7 @@ pub fn main() {
     let state = &mut State { pos_x: 0.0 };
     let c = conf::Conf::new();
 
-    let(ref mut ctx, ref mut event_loop) = ContextBuilder::new("ggez_imgui_test", "Keith Simmons")
+    let(ref mut ctx, ref mut event_loop) = ContextBuilder::new("ggez_imgui_test", "Kaylee Simmons")
         .conf(c)
         .build()
         .unwrap();
@@ -185,5 +185,5 @@ if I miss a day for whatever reason so long as I get one every other day at
 minimum.
 
 Till tomorrow (or the day after),  
-Keith
+Kaylee
 
