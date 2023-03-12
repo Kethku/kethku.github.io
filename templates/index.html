@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block header %}
+02Credits
+{% endblock header %}
+
+{% block content %}
+  {% for subsectionPath in section.subsections %}
+    {% set subsection = get_section(path=subsectionPath) %}
+    <a href="{{ subsection.permalink }}"><h1>{{ subsection.title }}</h1></a>
+  {% endfor %}
+{% endblock content %}

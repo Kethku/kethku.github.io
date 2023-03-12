@@ -1,0 +1,13 @@
+digraph {
+  node [shape=record, splines="curve"];
+  a[label=<<font color='gray'>Brainstorm <br/> <i>Complete</i></font>>, color="gray"];
+  b[label=<<font color='gray'>Specify Format <br/> <i>Complete</i></font>>, color="gray"];
+  c[label=<DOT Generator>];
+  d[label=<Parser <br/> <i>In Progress</i>>, color="gray"];
+  e[label=<Command Line Interface>];
+
+  a -> { b c };
+  b -> { d };
+  d -> { e };
+  c -> { e };
+}

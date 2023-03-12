@@ -1,0 +1,19 @@
+{% extends "page.html" %}
+
+{% block page_nav %}
+<div id="page-nav-links">
+  <h3>
+    {% if page.earlier %}
+    <a href="{{ page.earlier.permalink }}" id="yesterday">Yesterday</a>
+    {% else %}
+    <a id="first">First Post!</a>
+    {% endif %}
+
+    {% if page.later %}
+    <a href="{{ page.later.permalink }}" id="tomorrow">Tomorrow</a>
+    {% else %}
+    <a id="latest">Latest Post!</a>
+    {% endif %}
+  </h3>
+</div>
+{% endblock page_nav %}

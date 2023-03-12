@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}
+  {{ section.title }}
+{% endblock title %}
+
+{% block header %}
+  {{ super() }}
+  {% for ancestorPath in section.ancestors %}
+  {% set ancestor = get_section(path=ancestorPath) %}
+  <a href="{{ ancestor.permalink }}">{{ ancestor.title }}</a>
+  {% endfor %}
+  {{ section.title }}
+{% endblock header %}
+
+{% block content %}
+  {% for page in section.pages %}
+    {% if page.draft != true %}
+      <a href="{{ page.permalink }}"><h1>{{ page.title }}</h1></a>
+      <summary>
+        <h3>{{ page.description }}</h3>
+        <p>{{ page.date }}</p>
+      </summary>
+    {% endif %}
+  {% endfor %}
+{% endblock content %}

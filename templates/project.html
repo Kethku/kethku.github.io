@@ -1,0 +1,22 @@
+{% extends "page.html" %}
+
+{% block content_footer %}
+  {% if page.extra.project_name != "blog" %}
+    <h2>Dev Log</h2>
+    <p>
+      {{ page.title }} is a part of <a href="http://02credits.com/projects/blog/">my push</a> to make
+      tangible and documented progress on a project every day.
+    </p>
+  {% endif %}
+  <p>
+    {% set posts = get_section(path="blog/_index.md") %}
+    {% for post in posts.pages | sort(attribute="date") %}
+      {% if post.extra.project and
+            page.extra.project_name and
+            post.extra.project == page.extra.project_name %}
+        <a href="{{ post.permalink }}">{{ post.title }}</a>
+        <br>
+      {% endif %}
+    {% endfor %}
+  </p>
+{% endblock content_footer %}

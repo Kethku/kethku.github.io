@@ -1,0 +1,30 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="{{ get_url(path="/style.css") }}">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    <link rel="stylesheet" href="{{ get_url(path="/prism.css") }}">
+    {% block head %}{% endblock head %}
+    <title>02Credits {% block title %}{% endblock title %}</title>
+  </head>
+  <body>
+    <header>
+      <h3>{% block header %}{% endblock header %}</h3>
+    </header>
+    <main>
+      {% block content -%}{% endblock content %}
+    </main>
+    <script src="{{ get_url(path="/prism.js") }}"></script>
+  </body>
+</html>
