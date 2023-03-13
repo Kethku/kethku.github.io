@@ -22,7 +22,7 @@ time of writing this though, I can already say I am finding the project
 extremely satisfying and I hope I will continue.
 
 The archive containing all of the daily posts can be found
-[here](http://02credits.com/blog/).
+[here](https://kaylees.dev/blog/).
 
 ## Dev Log
 

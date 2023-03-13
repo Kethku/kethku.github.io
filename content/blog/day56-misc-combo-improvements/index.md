@@ -12,9 +12,9 @@ project = "ta"
 Today I spent some time cleaning up and extracting code out from the
 `garbage.js` file into separate files. In particular I pulled all of the
 function I wrote for [garbage
-rendering](http://02credits.com/blog/day48-garbage-grid-rendering/) into the
+rendering](https://kaylees.dev/blog/day48-garbage-grid-rendering/) into the
 `garbageRenderUtils.js` and all of the functions I wrote for [the clear
-animation](http://02credits.com/blog/day52-garbage-clearing/) into
+animation](https://kaylees.dev/blog/day52-garbage-clearing/) into
 `clearAnimation.js` with it's own class. This made it easier to organize things
 in my head and allowed me to make a number of improvements to the match and
 combo system I have had on the todo list.

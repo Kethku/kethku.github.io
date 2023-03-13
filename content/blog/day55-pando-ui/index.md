@@ -13,7 +13,7 @@ Today I implemented a functional but barebones UI for Pando which supports
 adding and removing nodes, toggling node dependencies, updating task status,
 saving Pando and svg to file, and persisting todo tree in browser storage based
 on url hash. In short I finished the tasks that were laid out
-[here](http://02credits.com/blog/day53-pando-in-the-browser/) and did some extra
+[here](https://kaylees.dev/blog/day53-pando-in-the-browser/) and did some extra
 quality of life things on top.
 
 ## Operation Implementations

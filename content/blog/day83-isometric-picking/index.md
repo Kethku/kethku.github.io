@@ -53,7 +53,7 @@ public Vector2 ScreenToWorld(Vector2 screenPosition) {
 This works great if there is just one layer of terrain, and no vertical
 movement. Unfortunately my engine allows slopes and entities on top of tiles.
 
-![Old Tile Engine](http://02credits.com/blog/day79-nyx8-colors-and-wall-sprite/TextureGaps.PNG)
+![Old Tile Engine](https://kaylees.dev/blog/day79-nyx8-colors-and-wall-sprite/TextureGaps.PNG)
 
 This vertical layered nature makes the math more difficult since a number of
 entities could exist at the same location and a number of vertical positions may

@@ -106,7 +106,7 @@ the block position into `gridPosition` and `gridSlot` variables where the
 `gridSlot` would contain the current integer grid location in block coordinates.
 Animating back into the correct `gridSlot` was as simple as applying difference
 fraction trick I outlined
-[here](http://02credits.com/blog/day25-game-over-screen/). The basic idea is to
+[here](https://kaylees.dev/blog/day25-game-over-screen/). The basic idea is to
 modify the current position by the difference between the desired position and
 the current position times some fraction. This results in a smooth jump to the
 correct location which slows down as it gets close.

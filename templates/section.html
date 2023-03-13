@@ -1,9 +1,5 @@
 {% extends "base.html" %}
 
-{% block title %}
-  {{ section.title }}
-{% endblock title %}
-
 {% block header %}
   {{ super() }}
   {% for ancestorPath in section.ancestors %}

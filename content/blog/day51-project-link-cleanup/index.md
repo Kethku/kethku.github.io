@@ -87,7 +87,7 @@ project like so:
 {% if page.extra.project_name != "blog" %}
   <h2>Dev Log</h2>
   <p>
-    {{ page.title }} is a part of <a href="http://02credits.com/projects/blog/">my push</a> to make
+    {{ page.title }} is a part of <a href="https://kaylees.dev/projects/blog/">my push</a> to make
     tangible and documented progress on a project every day.
   </p>
 {% endif %}

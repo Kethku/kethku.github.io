@@ -17,7 +17,7 @@ modified until they are complex." With this principle in mind I have decided
 against rewriting much of Pando.
 
 I have decided to abandon my plan I described
-[here](http://02credits.com/blog/day22-pando-vnext/) to write my own graph
+[here](https://kaylees.dev/blog/day22-pando-vnext/) to write my own graph
 renderer and manipulation UI. I've decided that GraphViz produces better graphs
 than I can reasonably expect to draw with any algorithm I can come up with in a
 short period of time. So instead of rebuilding everything from scratch I will

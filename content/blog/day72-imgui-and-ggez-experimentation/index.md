@@ -18,7 +18,7 @@ org-capture feature to record code snippets and various data without breaking my
 programming flow.
 
 As I have mentioned in a
-[previous](http://02credits.com/blog/day64-spacemacs-chrome-debugging/) post, I
+[previous](https://kaylees.dev/blog/day64-spacemacs-chrome-debugging/) post, I
 *currently* use emacs as my primary editor. One huge benefit to this is that I
 can take advantage of the wonderful org-mode plain text organization system.
 Giving an overview of all of the crazy things org-mode can do would take an
