@@ -8,9 +8,12 @@
       tangible and documented progress on a project every day.
     </p>
   {% endif %}
+
+  {% set season1_posts = get_section(path="season1/_index.md") %}
+  {% set season2_posts = get_section(path="season2/_index.md") %}
+  {% set posts = season1_posts.pages | concat(with=season2_posts.pages) %}
   <p>
-    {% set posts = get_section(path="blog/_index.md") %}
-    {% for post in posts.pages | sort(attribute="date") %}
+    {% for post in posts | sort(attribute="date") %}
       {% if post.extra.project and
             page.extra.project_name and
             post.extra.project == page.extra.project_name %}
