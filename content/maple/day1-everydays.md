@@ -75,7 +75,7 @@ The previous setup used two repositories, one for the source
 code which contained all of the markdown content and scripts
 for building things, and the other which was the github.io
 repo containing the built html pages. I previously used
-[okeydokey](@/hemlock/projects/okeydokey) to automate
+[okeydokey](@/hemlock/projects/okeydokey/index.md) to automate
 building of the content, copying it to the publish repo, and
 pushing it up in individual commits. This worked ok but
 meant abusing git for something it wasn't made for.
@@ -86,7 +86,7 @@ have to touch it. Its continuously deployed whenever I push
 anything to main. I write markdown, push it up, and a few
 minutes later the change is live ezpz.
 
-``` yml
+```yml
 # On every push this script is executed
 on: push
 name: Build and deploy GH Pages
@@ -131,7 +131,7 @@ going with this approach.
 
 Next up for the blog I am hoping to update my current
 iteration of pando to produce todo trees like I had with the
-old blog. This may take some doing 
+old blog.
 
 Till tomorrow,  
 Kaylee

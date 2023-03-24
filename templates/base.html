@@ -16,7 +16,6 @@
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
     <link rel="stylesheet" href="{{ get_url(path="/style.css") }}">
     <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
-    <link rel="stylesheet" href="{{ get_url(path="/prism.css") }}">
     {% block head %}{% endblock head %}
     <title>Kaylee's Dev {% block title %}{% endblock title %}</title>
   </head>
@@ -27,6 +26,5 @@
     <main>
       {% block content -%}{% endblock content %}
     </main>
-    <script src="{{ get_url(path="/prism.js") }}"></script>
   </body>
 </html>
