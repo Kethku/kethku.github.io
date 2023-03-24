@@ -61,9 +61,77 @@ in [The Oak](@/oak/_index.md) so you can scrub through and
 read those if you like. New posts will show up in [The
 Maple](@/maple/_index.md).
 
-This will be a shorter post as I've spent enough time
-writing the initial area descriptions. Here's hoping I stick
-with it and feel the same motivation I did last time.
+## Build and Publish Github Action
+
+This time around I've also done some work to automate the
+publishing process. When I first wrote my post, I didn't
+understand the ci build system in github that well. I also
+think it was pretty new. These days though its the way to go
+for publishing github sites. There are even off the shelf
+actions you can use to build and deploy zola sites without
+compiling them locally.
+
+The previous setup used two repositories, one for the source
+code which contained all of the markdown content and scripts
+for building things, and the other which was the github.io
+repo containing the built html pages. I previously used
+[okeydokey](@/hemlock/projects/okeydokey) to automate
+building of the content, copying it to the publish repo, and
+pushing it up in individual commits. This worked ok but
+meant abusing git for something it wasn't made for.
+
+Now I have a simple `publish.yml` script which builds and
+pushes the new content to a gh-pages branch so I don't ever
+have to touch it. Its continuously deployed whenever I push
+anything to main. I write markdown, push it up, and a few
+minutes later the change is live ezpz.
+
+``` yml
+# On every push this script is executed
+on: push
+name: Build and deploy GH Pages
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: checkout
+        uses: actions/checkout@v3.0.0
+      - name: build_and_deploy
+        uses: shalzz/zola-deploy-action@v0.16.1-1
+        env:
+          # Target branch
+          PAGES_BRANCH: gh-pages
+          # Provide personal access token
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+```
+
+I will likely automate the creation of new post templates
+similar to what I had with the old site but for now this is
+easy enough. I'm pretty pleased with the setup and that the
+decision to use zola 4 years ago has held up.
+
+## Relative Links
+
+The other big change aside from moving content around and
+updating names #trans-things was to change the links to be
+relative. I've update the url to from the old site to a new
+domain `kaylees.dev`. Doing so broke a ton of links which
+were hard coded to the old url. A quick look at the zola
+docs showed that you can get build time checked relative
+links by using `[Link Text](@/relative/path/from/site/root)`
+which is great as it looks up the published root url and
+swaps the relative path out for the final built url.
+
+I believe I had avoided this approach in the past because it
+was a zola specific hack, but at this point I don't think
+zola is going anywhere and even if it did it wasn't that
+hard to fix the urls this time. So for now at least I'm
+going with this approach.
+
+Next up for the blog I am hoping to update my current
+iteration of pando to produce todo trees like I had with the
+old blog. This may take some doing 
 
 Till tomorrow,  
 Kaylee
