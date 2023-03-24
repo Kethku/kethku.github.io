@@ -16,22 +16,23 @@
 
 {% block content %}
 <article>
-  <h1>{{ page.title }}</h1>
   <summary>
-    <h2>
     {% if page.description %}
+    <h2>
       {{ page.description }}
-    {% endif %}
     </h2>
+    {% endif %}
+    {% if page.date or page.extra.project %}
     <p>
     {% if page.date %}
       {{ page.date }}
     {% endif %}
-    <br>
     {% if page.extra.project %}
+      <br>
       <a href="../../hemlock/projects/{{ page.extra.project }}/">Project Page</a>
     {% endif %}
     </p>
+    {% endif %}
   </summary>
   {{ page.content | safe }}
   {% block content_footer %}{% endblock content_footer %}

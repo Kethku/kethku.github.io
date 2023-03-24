@@ -65,5 +65,5 @@ This will be a shorter post as I've spent enough time
 writing the initial area descriptions. Here's hoping I stick
 with it and feel the same motivation I did last time.
 
-Till tomorrow,
+Till tomorrow,  
 Kaylee

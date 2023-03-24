@@ -1,7 +1,5 @@
 +++
 title = "The Fork"
-
-[extra]
 +++
 
 You are at the fork of the 3 intertwined trees. 
