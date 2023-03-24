@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 
 {% block header %}
-Kaylee's Dev
+The Trees
 {% endblock header %}
 
 {% block content %}
-  {% for subsectionPath in section.subsections %}
-    {% set subsection = get_section(path=subsectionPath) %}
-    <a href="{{ subsection.permalink }}"><h1>{{ subsection.title }}</h1></a>
-  {% endfor %}
+  {{ section.content | safe }}
 {% endblock content %}

@@ -47,7 +47,7 @@ To do the parsing I lean heavily on the fantastic [Acorn.js](https://github.com/
 parser written in Javascript. It supports modern JS flawlessly and provides a concise and convenient API for selecting a
 given type of abstract syntax tree node.
 
-{% code(lang="javascript") %}
+``` JavaScript
 let smallestNode = null
 let smallestSize = Infinity
 try {
@@ -72,7 +72,7 @@ try {
     }
   })
 } catch { }
-{% end %}
+```
 
 I pass the current code tab text into the parse command to get back a root node, and then I use Acorn's walk
 functionality to loop over all of the CallExpressions. I then check the current mouse text position to see if it is
@@ -85,7 +85,7 @@ Then before sending the code to the game engine to run, I rewrite the CallExpres
 closure, and passing the closure to a helper function which manages the highlight flag. The code here is pretty well
 commented, so I will let it do the talking.
 
-{% code(lang="javascript") %}
+``` js
 // This takes a tab and returns the code from that tab. It also looks at the call expression under the mouse (if one
 // exists) and wraps it in the `_script8.injectHighlight` function to setup higlighting. Decorate is taken as an
 // argument so that places which do not need decorated code can preserve the code as written by the user.
@@ -119,7 +119,7 @@ const decorateTabCode = (tab, decorate) => {
   }
   return tab.text
 };
-{% end %}
+```
 
 The injectHighlight function exists in a special global function which is available to the engine, but banned for user
 consumption. This makes it the perfect place to place the internal engine specifics. The function itself, sets the
@@ -127,7 +127,7 @@ global highlight flag, runs the passed function storing the result in a variable
 returns the stored result. This means that the wrapped expression can be used in the same places as the original
 expression as it returns the same values and exists on the same line (which is important to preseve error line numbers).
 
-{% code(lang="javascript") %}
+``` js
 // This function is used in the hover highlight functionality. It is stored on the user inaccessible _script8 global
 // variable and takes as argument a lambda wrapping some user expression. The flag `shouldHighlight` is then set to true
 // while the passed in code is running and returned to false when it finishes. `shouldHighlight` is used to modify
@@ -139,7 +139,7 @@ export const injectHighlight = (code) => {
   shouldHighlight = false
   return result
 }
-{% end %}
+```
 
 ## Highlighting
 
@@ -147,7 +147,7 @@ From here I just modified the color lookup code to take the `shouldHighlight` fl
 colors accordingly. Since every draw call depends on the color lookup functions to draw the correct color, I only needed
 to hook in in this one place, and everything worked properly.
 
-{% code(lang="javascript") %}
+``` js
 int(i) {
   let index = i % intLookup.length;
   // `shouldHighlight` is injected in the use code when the current call is under the mouse. If it is true, all colors
@@ -158,7 +158,7 @@ int(i) {
   }
   return intLookup[index]
 }
-{% end %}
+```
 
 Thats it! For a relatively complicated feature, I think the overall solution is pretty elegant! Acorn does all the hard
 work, and hints at some ways I could add more interesting features in the future. Some I am concidering are:

@@ -3,16 +3,16 @@
 {% block page_nav %}
 <div id="page-nav-links">
   <h3>
-    {% if page.earlier %}
-    <a href="{{ page.earlier.permalink }}" id="previous">Previous</a>
+    {% if page.higher %}
+    <a href="{{ page.higher.permalink }}" id="previous-nav">Previous</a>
     {% else %}
-    <a id="first">First Post!</a>
+    <a id="first-nav">First Post!</a>
     {% endif %}
 
-    {% if page.later %}
-    <a href="{{ page.later.permalink }}" id="next">Next</a>
+    {% if page.lower %}
+    <a href="{{ page.lower.permalink }}" id="next-nav">Next</a>
     {% else %}
-    <a id="latest">Latest Post!</a>
+    <a id="latest-nav">Latest Post!</a>
     {% endif %}
   </h3>
 </div>

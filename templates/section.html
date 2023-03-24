@@ -10,12 +10,12 @@
 {% endblock header %}
 
 {% block content %}
+  {{ section.content | safe }}
   {% for page in section.pages %}
     {% if page.draft != true %}
-      <a href="{{ page.permalink }}"><h1>{{ page.title }}</h1></a>
+      <h2><a href="{{ page.permalink }}">{{ page.title }}</a></h2>
       <summary>
-        <h3>{{ page.description }}</h3>
-        <p>{{ page.date }}</p>
+        <p>{{ page.description }}<br>{{ page.date }}</p>
       </summary>
     {% endif %}
   {% endfor %}

@@ -11,6 +11,7 @@
 {% set ancestor = get_section(path=ancestorPath) %}
 <a href="{{ ancestor.permalink }}">{{ ancestor.title }}</a>
 {% endfor %}
+{{page.title }}
 {% endblock header %}
 
 {% block content %}
