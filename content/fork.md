@@ -8,7 +8,7 @@ You are at the fork of the 3 intertwined trees.
 
 ## [Climb the Hemlock](@/hemlock/_index.md)
 
-The center tree is a western hemlock; strong and rigid. It
+The center tree is a western hemlock, strong and rigid. It
 doesn't wrap around the other two but acts as a scaffold
 from which they gain their strength. It's branches sprout
 parallel to the trunk sliding through the gaps from the
