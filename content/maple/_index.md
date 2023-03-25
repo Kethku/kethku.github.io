@@ -3,6 +3,9 @@ title = "Maple"
 sort_by = "date"
 page_template = "blog_post.html"
 weight = 1
+
+[extra]
+page_list = true
 +++
 
 The green Maple is lush and vibrant. Where the Oak barely

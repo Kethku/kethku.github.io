@@ -24,15 +24,15 @@ must be registered before you can use them which adds another layer of complexit
 I found it useful to use a plugin manager, and add my local plugin to it to ensure that vim knows that my plugin exists.
 I use [Dein](https://github.com/Shougo/dein.vim), but any vim plugin manager should work.
 
-{% code(lang="vimscript") %}
+```vim
 call dein#add('c:/dev/Projects/vim-balsamic')
-{% end %}
+```
 
 With my custom plugin folder added, I created a folder structure matching this pattern: 
 
-{% code() %}
+```
 Project Root > rplugin > node > Plugin Name > Javascript Project
-{% end %}
+```
 
 - Project Root represents the name of the plugin we added to the plugin manager.
 - rplugin indicates that this plugin has a remote script to run in the background.
@@ -42,7 +42,7 @@ Project Root > rplugin > node > Plugin Name > Javascript Project
 In the inner Javascript Project folder (in my case vim-balsamic), I made a simple nodejs project. In particular I use
 typescript to make life easier
 
-{% code() %}
+```
 qcK7y:dist\
 0Oubx:lib\
 Tyhqo:node_modules\
@@ -50,14 +50,14 @@ aSW1g:.gitignore
 5IzLv:package.json
 T7EH2:tsconfig.json
 itiAC:yarn.lock
-{% end %}
+```
 
 (Note: the weird characters before file/folder names are related to my plugin. I will discuss them soon.)
 
 The package.json file must contain the path to the entry point script so that Neovim knows which file to run with
 node.js. It is also important that the package depend on the `neovim` package to enable the MessagePack communication.
 
-{% code(lang="json") %}
+``` json
 {
   "name": "vim-balsamic",
   "version": "0.0.1",
@@ -73,14 +73,14 @@ node.js. It is also important that the package depend on the `neovim` package to
     "fs-extra": "^8.1.0"
   }
 }
-{% end %}
+```
 
 ## Plugin Writing
 
 The documentation for the Neovim node client can be found [here](https://github.com/neovim/node-client). However I found
 it somewhat confusing. The cleanest method I found was to define a class and use attributes to hook everything up.
 
-{% code(lang="typescript") %}
+``` ts
 @Plugin({ dev: false })
 export default class BalsamicPlugin {
   constructor(public nvim: Neovim) {  }
@@ -128,7 +128,7 @@ export default class BalsamicPlugin {
     executeOperations(this.nvim)
   }
 }
-{% end %}
+```
 
 The plugin attribute indicates that this class should be used as a Neovim plugin and the `dev: false` flag is passed to
 prevent Neovim from reloading the script on every command.
@@ -138,7 +138,7 @@ This exposes that function in Neovim for use. Lastly the constructor for the plu
 I store as a public property. This object contains all of the API methods and properties needed for interacting with the
 Neovim app.
 
-{% code(lang="typescript") %}
+``` ts
 async function tempBuffer(nvim: Neovim, name: string, lines: string[] = [], fileType = "balsamic") {
   nvim.callAtomic([
     await nvim.command("enew"),
@@ -152,7 +152,7 @@ async function tempBuffer(nvim: Neovim, name: string, lines: string[] = [], file
   ]);
   return nvim.buffer;
 }
-{% end %}
+```
 
 This object can be passed to methods like the one above, and called using async await to do operations one after another
 efficiently.

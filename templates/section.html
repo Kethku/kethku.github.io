@@ -11,12 +11,14 @@
 
 {% block content %}
   {{ section.content | safe }}
-  {% for page in section.pages %}
-    {% if page.draft != true %}
-      <h2><a href="{{ page.permalink }}">{{ page.title }}</a></h2>
-      <summary>
-        <p>{{ page.description }}<br>{{ page.date }}</p>
-      </summary>
-    {% endif %}
-  {% endfor %}
+  {% if section.extra.page_list %}
+    {% for page in section.pages %}
+      {% if page.draft != true %}
+        <h2><a href="{{ page.permalink }}">{{ page.title }}</a></h2>
+        <summary>
+          <p>{{ page.description }}<br>{{ page.date }}</p>
+        </summary>
+      {% endif %}
+    {% endfor %}
+  {% endif %}
 {% endblock content %}

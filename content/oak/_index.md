@@ -3,6 +3,9 @@ title = "Oak"
 sort_by = "date"
 page_template = "blog_post.html"
 weight = 2
+
+[extra]
+page_list = true
 +++
 
 The aging Oak has few leaves on his branches. At this point
