@@ -9,8 +9,8 @@
     </p>
   {% endif %}
 
-  {% set oak_posts = get_section(path="oak/_index.md") %}
-  {% set maple_posts = get_section(path="maple/_index.md") %}
+  {% set oak_posts = get_section(path="trio/oak/_index.md") %}
+  {% set maple_posts = get_section(path="trio/maple/_index.md") %}
   {% set posts = oak_posts.pages | concat(with=maple_posts.pages) %}
   <p>
     {% for post in posts | sort(attribute="date") %}

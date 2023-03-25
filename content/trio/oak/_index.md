@@ -17,7 +17,7 @@ behind it. Also in contrast to his siblings, the wood creaks
 and groans much more here as the branches try desperately to
 hold on.
 
-A few feet out from [The Fork](@/fork.md) there is a branch
+A few feet out from [The Fork](@/trio/_index.md) there is a branch
 adjacent to the main trunk containing a map similar to the
 one found on the Hemlock, but rather than depicting all 3 of
 the trees, it only depicts the entries found on the Oak

@@ -15,7 +15,7 @@ trees that you realize are in the center of the woods. Its
 obvious that they are much larger than any of the other
 trees growing in the woods.
 
-## [Continue deeper into the woods](@/deeper.md)
+## [Continue deeper into the woods](@/woods/deeper.md)
 In the other direction you notice the woods getting thicker
 and quieter. What was bright, airy and green becomes darker
 and stifling. Though not oppressive, you find yourself

@@ -18,7 +18,7 @@ org-capture feature to record code snippets and various data without breaking my
 programming flow.
 
 As I have mentioned in a
-[previous](@/oak/day64-spacemacs-chrome-debugging/index.md) post, I
+[previous](@/trio/oak/day64-spacemacs-chrome-debugging/index.md) post, I
 *currently* use emacs as my primary editor. One huge benefit to this is that I
 can take advantage of the wonderful org-mode plain text organization system.
 Giving an overview of all of the crazy things org-mode can do would take an
@@ -67,7 +67,7 @@ a building version of GGEZ with a simple graphics demo. The particular demo
 recommended in the blog post was to have a simple circle slide across the
 screen, so I just went with that.
 
-{% code(lang="rust") %}
+```rs
 use ggez::*;
 
 struct State {
@@ -105,7 +105,7 @@ pub fn main() {
 
     event::run(ctx, event_loop, state).unwrap();
 }
-{% end %}
+```
 
 The only real difficulty was getting SDL to install properly. Some minor
 fiddling and updating to the newest version of GGEZ and that was working too.

@@ -19,7 +19,7 @@ written on it:
 > express myself and document my projects. Please explore
 > and enjoy!
 
-## [Climb the Spiral](@/fork.md)
+## [Climb the Spiral](@/trio/_index.md)
 With some effort you could follow the spiral path up to the
 fork of the 3 trees and get a closer look at each of the
 individually. Along the trunks of the spiralling Oak and
@@ -27,7 +27,7 @@ Maple are a couple branches that arc up like a hand rail and
 the bark of bunches up periodically like steps leading
 upward.
 
-## [Push Out Into the Woods](@/woods.md)
+## [Push Out Into the Woods](@/woods/_index.md)
 Moving your attention away from The Trees, you notice that
 they are growing in a short clearing at the top of a slight
 hill that acts to isolate them from the other trees of the

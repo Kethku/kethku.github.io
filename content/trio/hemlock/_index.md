@@ -6,7 +6,7 @@ You are climbing the mighty hemlock. It is much taller than
 its siblings and appears clearer of purpose as it grows
 straight into the sky without bending.
 
-## [Head to the Lookout](@/hemlock/lookout.md)
+## [Head to the Lookout](@/trio/hemlock/lookout.md)
 
 Being the tallest of the trees, you easily have the best
 vantage point. However here it is still blocked by the bows
@@ -14,7 +14,7 @@ of hemlock greenery. Farther up you see a platform woven
 from the branches which you might be able to see better
 from.
 
-## [Examine the Map](@/hemlock/projects/_index.md)
+## [Examine the Map](@/trio/hemlock/projects/_index.md)
 
 Nestled into its branches are pots made from terracotta clay
 presumably collected from the banks of nearby streams you

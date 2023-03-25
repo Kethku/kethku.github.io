@@ -12,9 +12,9 @@ project = "ta"
 Today I spent some time cleaning up and extracting code out from the
 `garbage.js` file into separate files. In particular I pulled all of the
 function I wrote for [garbage
-rendering](@/oak/day48-garbage-grid-rendering/index.md) into the
+rendering](@/trio/oak/day48-garbage-grid-rendering/index.md) into the
 `garbageRenderUtils.js` and all of the functions I wrote for [the clear
-animation](@/oak/day52-garbage-clearing/index.md) into
+animation](@/trio/oak/day52-garbage-clearing/index.md) into
 `clearAnimation.js` with it's own class. This made it easier to organize things
 in my head and allowed me to make a number of improvements to the match and
 combo system I have had on the todo list.
@@ -28,7 +28,7 @@ Luckily implementing this feature was pretty easy. I just modified the garbage
 break logic I had already to add the garbage block slots to the triggering slots
 and loop until no more garbage blocks are broken.
 
-{% code(lang="javascript") %}
+```js
 MatchStarted.Subscribe(matchedBlocks => {
   let triggeringSlots = [];
   for (let matchedBlock of matchedBlocks) {
@@ -58,13 +58,13 @@ MatchStarted.Subscribe(matchedBlocks => {
     breakBlocks(garbageToBreak, matchedBlocks);
   }
 });
-{% end %}
+```
 
 This has the added benefit of clearing all of the blocks at once instead of one
 by one. To enable this I also modified the clear animation code to keep track of
 multiple garbage blocks instead of just one.
 
-{% code(lang="javascript") %}
+```js
 constructor(triggeringBlocks, garbageBlocks) {
   this.timer = 0;
   this.triggeringBlocks = triggeringBlocks;
@@ -80,7 +80,7 @@ constructor(triggeringBlocks, garbageBlocks) {
     }
   }
 }
-{% end %}
+```
 
 ![GarbageLinking](GarbageLinking.gif)
 
@@ -97,7 +97,7 @@ register to listen to it.
 I fixed the first issue by adding a concept of matched blocks to combos and
 moving combo creation to the start of a match instead of the end. 
 
-{% code(lang="javascript") %}
+```js
 MatchStarted.Subscribe(matchedBlocks => {
   let foundExistingCombo = false;
 
@@ -113,26 +113,26 @@ MatchStarted.Subscribe(matchedBlocks => {
     combos.add(new Combo(matchedBlocks));
   }
 });
-{% end %}
+```
 
 I also added a check that all of the matched blocks were cleared before dropping
 a combo.
 
-{% code(lang="javascript") %}
+```js
 constructor(matchedBlocks) {
   this.cascades = 0;
   this.trackedBlocks = new Set();
   this.matchedBlocks = new Set();
   matchedBlocks.forEach(matchedBlock => this.matchedBlocks.add(matchedBlock));
 }
-{% end %}
+```
 
 The second problem was solved by adding a new event which gets raised on
 animation creation instead of garbage break. This allowed the clear animation to
 be established including the spawned blocks before the combo list is checked
 against the match.
 
-{% code(lang="javascript") %}
+```js
 ClearAnimationStarted.Subscribe(({ triggeringBlocks, spawnedBlocks }) => {
   for (let combo of combos) {
     for (let block of triggeringBlocks) {
@@ -145,7 +145,7 @@ ClearAnimationStarted.Subscribe(({ triggeringBlocks, spawnedBlocks }) => {
     }
   }
 });
-{% end %}
+```
 
 Unfortunately I don't have a graphical indication that a combo was achieved
 other than an extra stop clock delay, but I was able to verify that things were
@@ -160,7 +160,7 @@ above the grid. In this case I can draw a shadow below the block by rendering
 the block image without the scaling, offset by an amount proportional to the
 scaling and with a black and transparent tint.
 
-{% code(lang="javascript") %}
+```js
 let heldDimensions = dimensions.multiply(this.scale);
 let shadowOffset = (heldDimensions.width - dimensions.width);
 
@@ -172,7 +172,7 @@ if (shadowOffset >= 0.1) {
     tint: new Color(0, 0, 0, tint.a * 0.4)
   });
 }
-{% end %}
+```
 
 The resulting effect looks like this:
 

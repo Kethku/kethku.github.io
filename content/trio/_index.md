@@ -4,7 +4,7 @@ title = "The Fork"
 
 You are at the fork of the 3 intertwined trees. 
 
-## [Climb the Hemlock](@/hemlock/_index.md)
+## [Climb the Hemlock](@/trio/hemlock/_index.md)
 
 The center tree is a western hemlock, strong and rigid. It
 doesn't wrap around the other two but acts as a scaffold
@@ -17,7 +17,7 @@ trails of lichen and vines of ivy. They link the trees
 together and give paths for any brave enough to traverse
 them.
 
-## [Climb the Oak](@/oak/_index.md)
+## [Climb the Oak](@/trio/oak/_index.md)
 
 One the two trees wrapping the hemlock is a majestic dying
 oak. Much of his bark has been stripped revealing beautiful
@@ -32,7 +32,7 @@ recently being outpaced by his counterparts. Visible from
 the fork is a series of carvings on the main branch
 depicting past projects.
 
-## [Climb the Maple](@/maple/_index.md)
+## [Climb the Maple](@/trio/maple/_index.md)
 
 The second and youngest of the three trees is a massive
 maple. She is vibrant, green, and sweet. Where the hemlock

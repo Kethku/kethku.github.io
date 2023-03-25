@@ -25,7 +25,7 @@ To manage a little bit of all the complexity, I added another "enum" similar to
 the one I created for the block type to specify all of the possible block
 states.
 
-{% code(lang="javascript") %}
+```js
 export const state = {
   WAITING: "Waiting",
   SPAWNING: "Spawning",
@@ -34,7 +34,7 @@ export const state = {
   MATCHED: "Matched",
   CLEARING: "Clearing"
 };
-{% end %}
+```
 
 I haven't implemented all of the different states yet, but these roughly match
 my expectations for a given block. When a block is in the spawn row and has not
@@ -59,7 +59,7 @@ animate the scale back to 1. Since the animation is linear, I don't need to know
 how long it has been since it started and the animation can be started and
 stopped at any point.
 
-{% code(lang="javascript") %}
+```js
 animateBlockSize() {
   if (this.state === state.DRAGGING) {
     if (this.scale < pickedUpScale) {
@@ -75,13 +75,13 @@ animateBlockSize() {
     }
   }
 }
-{% end %}
+```
 
 Then to actually do something, I modified the render function to utilize the
 scale. At the same time I also modified the `z` value of the image position to
 draw the block above the other blocks when grabbed.
 
-{% code(lang="javascript") %}
+```js
 render() {
   let { center, dimensions } = this.calculateLocation();
 
@@ -95,7 +95,7 @@ render() {
 
   image(blockImages[this.type], center, dimensions, 0, tint, Vector.center);
 }
-{% end %}
+```
 
 ![Grab Animation](GrabAnimation.gif)
 
@@ -106,17 +106,17 @@ the block position into `gridPosition` and `gridSlot` variables where the
 `gridSlot` would contain the current integer grid location in block coordinates.
 Animating back into the correct `gridSlot` was as simple as applying difference
 fraction trick I outlined
-[here](@/oak/day25-game-over-screen/index.md). The basic idea is to
+[here](@/trio/oak/day25-game-over-screen/index.md). The basic idea is to
 modify the current position by the difference between the desired position and
 the current position times some fraction. This results in a smooth jump to the
 correct location which slows down as it gets close.
 
-{% code(lang="javascript") %}
+```js
 if (this.state !== state.DRAGGING) {
   // Bounced Back to Grid
   this.gridPosition.x += (this.gridSlot.x - this.gridPosition.x) * settleVelocity;
 }
-{% end %}
+```
 
 The third and most complicated requirement was solved in a big nested if
 statement. I'm not super proud of the code at the moment and will likely try to
@@ -131,7 +131,7 @@ To initiate a drag, no block must be currently held, the block being touched
 must be in the `Waiting` state, and the touch must have started on the current
 frame.
 
-{% code(lang="javascript") %}
+```js
 if (touchDown) {
   if (heldBlock == null) {
     // Start Dragging
@@ -140,7 +140,7 @@ if (touchDown) {
       this.dragOffset = touchPosition.subtract(center);
       heldBlock = this;
     }
-{% end %}
+```
 
 Upon starting a drag, the state is updated to `Dragging`, the `heldBlock` is
 set, and the touch offset is recorded so that the block doesn't jump to the
@@ -161,7 +161,7 @@ doesn't require anymore managing.
 Lastly the x position is locked between 0 and 5 in order to prevent blocks from
 moving off of the grid.
 
-{% code(lang="javascript") %}
+```js
 } else if (heldBlock === this) {
   // Handle Dragged Block
   let previousSlotX = this.gridSlot.x;
@@ -191,19 +191,19 @@ moving off of the grid.
     }
   }
 }
-{% end %}
+```
 
 To wrap up the dragging animation, the block state is set to `Waiting` if the
 touch is no longer active. This will cause the block to stop being managed by
 the touch location and bounce back into the current grid slot.
 
-{% code(lang="javascript") %}
+```js
 } else if (this.state === state.DRAGGING) {
   // Stop Dragging
   this.state = state.WAITING;
   heldBlock = null;
 }
-{% end %}
+```
 
 The combination of the above results in this satisfying animation:
 
@@ -219,19 +219,19 @@ the kinks, but it was frustrating to say the least.
 To start out I detect if a block should be falling by looking up grid slot below
 the block.
 
-{% code(lang="javascript") %}
+```js
 handleFalling(center, dimensions) {
   if (this.state !== state.SPAWNING && !blocks[this.gridSlot.y + 1][this.gridSlot.x]) {
     this.state = state.FALLING;
     if (heldBlock === this) heldBlock = null;
   }
-{% end %}
+```
 
 Then each frame a block is falling, the position is updated by the falling
 speed, the new grid position is checked to see if the falling can stop, and if
 not, the grid structure is updated to reflect the new block position.
 
-{% code(lang="javascript") %}
+```js
 if (this.state === state.FALLING) {
   this.gridPosition.y += fallSpeed;
   if (this.gridPosition.y > this.gridSlot.y && blocks[this.gridSlot.y + 1][this.gridSlot.x]) {
@@ -246,7 +246,7 @@ if (this.state === state.FALLING) {
     }
   }
 }
-{% end %}
+```
 
 Combined, these result in this animation:
 
@@ -261,24 +261,24 @@ itself, but the position modification must happen in the grid module, so I
 created a simple function in `grid.js` which increments the blockAdvancement by
 1,
 
-{% code(lang="javascript") %}
+```js
 export function intentionalAdvance() {
   blockAdvancement = Math.floor(blockAdvancement) + 1;
 }
-{% end %}
+```
 
 And then added a check in `block.update` to call the function when tapped and
 spawning.
 
-{% code(lang="javascript") %}
+```js
 if (this.state === state.SPAWNING && touchPosition.within(center, dimensions) && touchStarted) {
   intentionalAdvance();
 }
-{% end %}
+```
 
 And with that, the update function is all caught up and documented:
 
-{% code(lang="javascript") %}
+```js
 update() {
   let { center, dimensions } = this.calculateLocation();
 
@@ -290,7 +290,7 @@ update() {
     intentionalAdvance();
   }
 }
-{% end %}
+```
 
 As it turns out, the act of documenting the code forced me to explain it and
 rewrite portions to be more understandable. I'm still not super pleased with the

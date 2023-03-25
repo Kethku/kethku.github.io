@@ -17,7 +17,7 @@ modified until they are complex." With this principle in mind I have decided
 against rewriting much of Pando.
 
 I have decided to abandon my plan I described
-[here](@/oak/day22-pando-vnext/index.md) to write my own graph
+[here](@/trio/oak/day22-pando-vnext/index.md) to write my own graph
 renderer and manipulation UI. I've decided that GraphViz produces better graphs
 than I can reasonably expect to draw with any algorithm I can come up with in a
 short period of time. So instead of rebuilding everything from scratch I will
@@ -78,10 +78,11 @@ Porting Pando was pretty easy. First I added stdweb to the toml file, and
 changed the crate type to cdylib which will allow the wasm bindgen tool used by
 the parcel plugin to produce the correct wrappers.
 
-{% code(lang="toml") %}
+```toml
 [dependencies]
 nom = "4.2.0"
 stdweb = "*"
+```
 
 [lib]
 crate-type = ["cdylib"]
@@ -90,27 +91,27 @@ crate-type = ["cdylib"]
 Then I moved main.rs to lib.rs, deleted the now unused main function and panic
 handler, and added an `js_export` attribute to the compile function.
 
-{% code(lang="rust") %}
+```rs
 #[js_export]
 pub fn compile(pando_code: &str) -> String {
     generate_dot_file(parse_pando(pando_code))
 }
-{% end %}
+```
 
 Finally I created a super simple html file with a link to an `index.js` file:
 
-{% code(lang="html") %}
+```html
 <html>
   <body>
     <script src="./index.js"></script>
   </body>
 </html>
-{% end %}
+```
 
 and created a javascript file which imports Viz.js, the compiled Pando binary,
 and renders a test svg to the screen:
 
-{% code(lang="javascript") %}
+```js
 import {compile} from "./PandoRust/Cargo.toml";
 import Viz from "viz.js";
 import { Module, render } from 'viz.js/full.render.js';
@@ -124,7 +125,7 @@ async function renderGraph() {
 }
 
 renderGraph();
-{% end %}
+```
 
 After running the produced graph is identical to what I would have gotten from
 the command line version but in the browser.

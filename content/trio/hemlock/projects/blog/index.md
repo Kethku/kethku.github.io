@@ -30,10 +30,10 @@ tried this, I will be writing daily blog posts on something programming related.
 If all goes well, I may continue after that.
 
 The archive containing all of the daily posts from my last attempt can be found
-[here](@/oak/_index.md).
+[here](@/trio/oak/_index.md).
 
 The archive containing all of the current daily posts can be found
-[here](@/maple/_index.md).
+[here](@/trio/maple/_index.md).
 
 ## Dev Log
 

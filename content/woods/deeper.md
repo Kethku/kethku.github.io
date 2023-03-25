@@ -15,7 +15,7 @@ very difficult to get a clear picture. Traveling along the
 trail becomes monotonous and seems to be the incorrect
 speed. You imagine communicating here would be difficult.
 
-## [Continue Along the Path](@/woods.md)
+## [Continue Along the Path](@/woods/_index.md)
 After a bit, you realize you've stopped progressing forward
 and gotten distracted. It takes some effort to continue
 moving forward but with some attention you think you'd be

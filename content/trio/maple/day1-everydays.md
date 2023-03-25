@@ -14,12 +14,10 @@ project = "blog"
 > connects to one of the Oak's branches a ways out and then
 > higher up into the Hemlock.
 >
-> Scattered around the platform are carving tools, some
-> metal scribes that are blackened at the end and a panel
-> with text written on it. The tools are collected in a
-> haphazard pile next to a burlap sack as though whoever
-> used them is getting ready to move everything to another
-> location soon.
+> Placed at the edge of the platform is a rough lectern with
+> a sheet of paper. On that paper is a rough plan for how
+> the Maple will be developed and molded over time. The
+> basic idea is there but many details need to be filled in.
 
 Here goes nothing.
 
@@ -57,9 +55,9 @@ I want to iterate on it and at least expand the places you
 can explore. I suspect there may be some daily posts about
 implementing the dynamic pieces, but we'll see where it
 takes me. As it stands today, the older posts can be found
-in [The Oak](@/oak/_index.md) so you can scrub through and
+in [The Oak](@/trio/oak/_index.md) so you can scrub through and
 read those if you like. New posts will show up in [The
-Maple](@/maple/_index.md).
+Maple](@/trio/maple/_index.md).
 
 ## Build and Publish Github Action
 
@@ -75,7 +73,7 @@ The previous setup used two repositories, one for the source
 code which contained all of the markdown content and scripts
 for building things, and the other which was the github.io
 repo containing the built html pages. I previously used
-[okeydokey](@/hemlock/projects/okeydokey/index.md) to automate
+[okeydokey](@/trio/hemlock/projects/okeydokey/index.md) to automate
 building of the content, copying it to the publish repo, and
 pushing it up in individual commits. This worked ok but
 meant abusing git for something it wasn't made for.

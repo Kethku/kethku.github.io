@@ -15,7 +15,7 @@ everywhere. The sounds here are of rustling leaves and
 birds. Not much but the branches and trees themselves can be
 seen here.
 
-A few feet out from [The Fork](@/fork.md) there is a branch
+A few feet out from [The Fork](@/trio/_index.md) there is a branch
 adjacent to the main trunk containing a map similar to the
 one found on the Hemlock, but rather than depicting all 3 of
 the trees, it only depicts the entries found on the Maple
