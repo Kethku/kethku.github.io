@@ -6,7 +6,7 @@ date = 2023-03-25
 
 > A branch splits off the main trunk of the Maple and stops
 > abruptly at a stump. A rough bench is carved into the
-> space for climbers to rest at before climbing on. Resting
+> space for climbers to rest at before climbing on. Sitting
 > on the bench is a pile of papers containing research on
 > the nature of the trio and speculation about their
 > origins. Although maybe plausible, the ideas are likely
@@ -107,7 +107,7 @@ Skia with. My conclusion was that we could use the struct
 replication strategy but instead of using PushConstants like
 my demo does for the uniforms, use a Uniform Buffer filled
 with a flat array of instance structs. That Buffer is then
-bound in the shader and indexed into using the index id.
+bound in the shader and indexed into using the instance id.
 This way we define the shape of the instance in one place
 and use it both in the shader and the app code.
 

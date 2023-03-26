@@ -2,8 +2,6 @@
 title = "Day2 - Blog Planning"
 description = "Making a Todo List for the Blog"
 date = 2023-03-24
-
-[extra]
 +++
 
 > Another platform of boards and cords sits around a maple
