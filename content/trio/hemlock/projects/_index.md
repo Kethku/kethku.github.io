@@ -3,6 +3,9 @@ title = "The Map"
 sort_by = "date"
 page_template = "project.html"
 weight = 0
+
+[extra]
+page_list = true
 +++
 
 The map is extremely detailed and appears to be carefully
