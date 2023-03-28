@@ -17,7 +17,7 @@ later.
 
 ## Einstein Tiles
 
-![Tiling](tiling.png)
+![Tiling](Tiling.png)
 
 Earlier this week my brother Rain sent me a link to an
 article talking about a recent discovery of an aperiodic
