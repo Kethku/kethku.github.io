@@ -272,6 +272,13 @@ are still a few points of fragility. The biggest in my mind
 is that the structure of the render pipeline is dependent on
 the contents of the shader but is defined in two places.
 
+With all of above in place, I have two little quads with
+different colors and positions drawing to the screen. Given
+my experience at Zed, this approach scales pretty well, so I
+think its reasonable to move on.
+
+![RenderingQuads](RenderingQuads.png)
+
 One approach I really love from a library called [TWGL](https://twgljs.org/)
 is to fetch the relevant info from the shader itself. I
 don't think that wgpu gives us that capability, but the rust
