@@ -1,6 +1,6 @@
 +++
-title = "Day4 - Quad Shader"
-description = "Playing around with Einstein Tiles and 3d Printing"
+title = "Day5 - Quad Shader"
+description = "Working on rust-gpu quad rendering"
 date = 2023-03-29
 +++
 
