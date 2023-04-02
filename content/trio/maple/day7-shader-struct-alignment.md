@@ -100,7 +100,7 @@ pub struct InstancedGlyph {
 }
 ```
 
-This compile just fine so I believe the issue is resolved.
+This compiles just fine so I believe the issue is resolved.
 I may work on a proc macro for automatically inserting this
 padding so that we don't have to worry about it, but that
 may be a job for another day. Next up tech wise is to add
