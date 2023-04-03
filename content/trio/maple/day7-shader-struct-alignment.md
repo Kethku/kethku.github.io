@@ -1,7 +1,7 @@
 +++
 title = "Day7 - Shader Struct Alignment"
 description = "Broke ground for glyph rendering"
-date = 2023-03-31
+date = 2023-04-01
 +++
 
 Today I pushed more on glyph rendering. I don't have it
