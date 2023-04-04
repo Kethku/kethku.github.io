@@ -4,6 +4,12 @@ description = "Partial support for rendering strings of text"
 date = 2023-04-03
 +++
 
+> Scratched into a nearby branch is a scattered and unhinged
+> rendition of the words "Hello World!". The text is
+> misaligned and looks similar to that of a ransom message
+> cut out of a magazine. Though misshapen and unnerving, the
+> text is recognizable which represents progress.
+
 Short day today where I worked on setting up the initial
 text shaping with swash. In doing so a couple bugs were
 revealed with the text rendering which I plan on
