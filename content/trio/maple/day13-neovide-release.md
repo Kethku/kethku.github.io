@@ -1,5 +1,5 @@
 +++
-title = "Day12 - Neovide Release"
+title = "Day13 - Neovide Release"
 description = "Short day where I cut a Neovide release"
 date = 2023-04-09
 +++
