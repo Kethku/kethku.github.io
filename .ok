@@ -1,1 +1,2 @@
 dev: zola serve -O
+new: e "$(rust-script .\scripts\new.rs "{0}")"
