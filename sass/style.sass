@@ -4,16 +4,57 @@ $accentBlue: #4a7a96
 $accentDarkBlue: #333f58
 $background: #292831
 
+$maxWidth: 11in
+$contentWidth: 8in
+
+// If screen is small, don't show the sidebar
+// just have a single column of content centered on the screen
 body
     background-color: $background
+    display: grid
+    justify-content: center
+    grid-template-columns: minmax(10px, $contentWidth)
+    grid-template-rows: auto auto auto 1fr
+    grid-template-areas: "header" "main" "footer" "."
+
+#sidebar
+    display: none
+
+@media (min-width: $contentWidth)
+    // If the screen is bigger than 11 inches show the sidebar
+    // fit-content is used so that if the sidebar doesn't exist,
+    // the main content is still centered on the screen
+    body
+        display: grid
+        grid-template-columns: 1fr $contentWidth 10px fit-content(3in) 1fr
+        grid-template-rows: auto auto auto 1fr
+        grid-template-areas: ". header header header . " ". main . sidebar ." ". footer footer footer ." ". . . . ."
+
+    #sidebar
+        display: block
+        align-self: start
+        grid-area: sidebar
+        top: 0
+        position: sticky
+
+header
+    grid-area: header
+    border-bottom: 1px solid $accentDarkBlue
+    padding: 10px
+
+#content
+    grid-area: main
+
+footer
+    grid-area: footer
+    border-top: 1px solid $accentDarkBlue
+    padding: 10px
 
 h1, h2, h3, p, date, ul, ol, blockquote
     font-family: 'Roboto', sans-serif
     line-height: 175%
 
-
 h1, h2, h3, p, date, ul, ol, #page-nav-links, blockquote
-    max-width: 8.5in !important
     margin-left: auto !important
     margin-right: auto !important
     color: $foreground
@@ -24,12 +65,10 @@ blockquote
     border-left: solid $accentBlue
 
 pre
-    display: flex
-
-pre code
+    border-radius: 10px
+    padding: 10px
     flex-grow: 100
     text-align: left
-    max-width: 8.5in
     margin-left: auto
     margin-right: auto
 
@@ -62,10 +101,6 @@ code > span
     color: $accentBlue
     font-weight: bold
 
-header
-    border-bottom: 1px solid $accentDarkBlue
-    padding: 10px
-
 article
     padding-bottom: 20px
     border-bottom: 1px solid $accentDarkBlue
@@ -77,11 +112,7 @@ a:visited
     color: $accentBlue
 
 img
-    max-width: 100vw
-
-@media (min-width: 8.5in)
-    img
-        max-width: 8.5in
+    max-width: 100%
 
 #next-nav, #latest-nav
     float: right

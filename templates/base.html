@@ -23,8 +23,15 @@
     <header>
       <h3>{% block header %}{% endblock header %}</h3>
     </header>
-    <main>
-      {% block content -%}{% endblock content %}
-    </main>
+    <div id="content">
+    {% block content -%}{% endblock content %}
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      {% block footer %}{% endblock footer %}
+    </footer>
   </body>
 </html>

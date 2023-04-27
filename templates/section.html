@@ -10,6 +10,7 @@
 {% endblock header %}
 
 {% block content %}
+  <article>
   {{ section.content | safe }}
   {% if section.extra.page_list %}
     {% for page in section.pages %}
@@ -21,4 +22,5 @@
       {% endif %}
     {% endfor %}
   {% endif %}
+  </article>
 {% endblock content %}
