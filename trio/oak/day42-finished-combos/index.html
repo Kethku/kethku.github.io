@@ -1,0 +1,213 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day42 - Finished Combos!
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Built combo recognition
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-20
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day42-finished-combos/./todo.svg" alt="Todo" /></p>
+<p>Today I finally finished the combo recognition feature! It took me a couple of
+days to figure out the exact semantics, but I am fairly confident that I have
+gotten it correct. The combo feature in the original game was more complicated than I originally thought!</p>
+<h2 id="problem-definition">Problem Definition</h2>
+<p>Although easy to understand intuitively, the combo feature in Tetris attack is
+somewhat nuanced. The complication stems from the fact that combo extension can
+happen a ways after the original match occurred. Any block that falls as the
+result of a match may be used to extend the combo. To that end when implementing the combo recognition, every block effected by a match must be watched until we can prove the block has &quot;settled&quot; and will not fall anymore.</p>
+<p>Another complication is that the current combo status must be reported at the
+start of a match while the tracked blocks must be collected after the match has
+been cleared. So to keep concerns properly separated I introduced events for
+match creation and completion and used them to track when to create and manage
+matches.</p>
+<h2 id="events">Events</h2>
+<pre>
+  <code class="language-en">MatchStarted.Subscribe(matchedBlocks =&gt; {
+  for (let combo of combos) {
+    if (matchedBlocks.some(matchedBlock =&gt; combo.trackedBlocks.has(matchedBlock))) {
+      combo.cascades++;
+      ComboExtended.Publish(matchedBlocks, combo.cascades);
+    }
+  }
+});
+
+MatchCompleted.Subscribe(clearedBlocks =&gt; {
+  let foundExistingCombo = false;
+  for (let combo of combos) {
+    if (clearedBlocks.some(clearedBlock =&gt; combo.trackedBlocks.has(clearedBlock))) {
+      foundExistingCombo = true;
+      combo.processMatchedBlocks(clearedBlocks);
+    }
+  }
+
+  if (!foundExistingCombo) {
+    combos.add(new Combo(clearedBlocks));
+  }
+});</code>
+</pre>
+<p>At match creation, any combos with tracked blocks participating in the match
+increment their counters and notify of their extension.</p>
+<p>Upon completion, any combos with tracked blocks will search upward for new
+blocks to track and if no existing combos are participating a new combo is
+created for the newly matched blocks.</p>
+<h2 id="combo-class">Combo Class</h2>
+<pre>
+  <code class="language-en">export class Combo {
+  constructor(matchedBlocks) {
+    this.cascades = 0;
+    this.trackedBlocks = new Set();
+    this.processMatchedBlocks(matchedBlocks);
+  }</code>
+</pre>
+<p>This new combo tracks the number of cascades it has participated in, a set of
+the blocks it is currently tracking, and searches upward from the initial block
+set for blocks to track.</p>
+<pre>
+  <code class="language-en">processMatchedBlocks(matchedBlocks) {
+  for (let matchedBlock of matchedBlocks) {
+    for (let y = matchedBlock.gridSlot.y - 1; y &gt; 0; y--) {
+      let fallingBlock = getBlock(matchedBlock.gridSlot.withY(y));
+      if (!fallingBlock) break;
+      if (fallingBlock.state === state.WAITING) {
+        this.trackedBlocks.add(fallingBlock);
+      }
+    }
+    this.trackedBlocks.delete(matchedBlock);
+  }
+}</code>
+</pre>
+<p>Since the matched blocks are no longer needed, I search upward from each one
+until the top of the grid or the first empty block space. Any blocks currently
+in the <code>Waiting</code> state are added to the tracking list. Then every update loop
+the blocks are checked to ensure they are not settled. Any settled blocks are
+removed from the list and if the combo no is no longer tracking any blocks, then
+it is assumed that the combo is finished and it reports completion with the
+<code>ComboFinished</code> event as well as returning a true value to indicate that this
+combo should be removed from the combo list.</p>
+<pre>
+  <code class="language-en">update() {
+  for (let trackedBlock of this.trackedBlocks) {
+    if (trackedBlock.state !== state.FALLING &amp;&amp;
+        trackedBlock.state !== state.MATCHED &amp;&amp;
+        trackedBlock.state !== state.CLEARING &amp;&amp;
+        !emptySlotBelow(trackedBlock)) {
+      this.trackedBlocks.delete(trackedBlock);
+    }
+  }
+
+  if (this.trackedBlocks.size == 0) {
+    if (this.cascades &gt; 0) {
+      ComboFinished.Publish(this.cascades);
+    }
+    return true;
+  }
+
+  return false;
+}</code>
+</pre>
+<h2 id="settled">Settled</h2>
+<p>A block is considered settled if it is not <code>Falling</code>, <code>Matched</code>, or <code>Clearing</code>,
+or if there is an empty block somewhere below it as defined by the
+<code>emptySlotBelow</code> function:</p>
+<pre>
+  <code class="language-en">function emptySlotBelow(block) {
+  for (let y = block.gridSlot.y + 1; y &lt;= previousFilledY; y++) {
+    let possiblyEmptyBlock = getBlock(block.gridSlot.withY(y));
+    if (!possiblyEmptyBlock || volatileStates.includes(possiblyEmptyBlock.state)) {
+      return true;
+    }
+  }
+  return false;
+}</code>
+</pre>
+<p>Which super cleanly searches downward from each block checking if any of them
+are blank or about to be blank.</p>
+<p>And thats it! Not super complicated when put together, but it took me a long
+time to get to this point. And to top it all off, while writing this description
+I realized that my definition of settled will need some help since garbage
+blocks can let settled blocks rest above empty spaces. For now though this
+solution is good enough and I will cross that bridge when I get to it.</p>
+<p>Not a super visual post today, but I plan on working on some better artwork soon
+so hopefully those posts will make for prettier reading.</p>
+<p>Till tomorrow!<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day41-stop-clock-and-combo-struggles&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day43-new-block-art&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,146 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day73 - Visual Studio iOS Debug Debugging
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Working out the kinks in the Visual Studio remote iOS debugging
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-26
+    
+    
+      <br>
+      <a href="../../hemlock/projects/robot/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day73-visual-studio-ios-debug-debugging/./todo.svg" alt="Todo" /></p>
+<p>Today I spent my time getting rid of black bars on the top and bottom of the
+screen of my Monogame app. Along the way I also figured out some gotchas when
+remote debugging an iOS app from within Visual Studio.</p>
+<h2 id="gotcha-number-1">Gotcha Number 1</h2>
+<p>The first issue I ran into was that debugging the app in VS while connected
+brought up a &quot;Please Select Valid Device&quot; error.</p>
+<p><img src="https://kaylees.dev/trio/oak/day73-visual-studio-ios-debug-debugging/PleaseSelectValidDevice.PNG" alt="Please Select Valid Device" /></p>
+<p>At first I thought there was a version mismatch between my VS install, and the
+version of XCode and VS on the mac. An hour of wasted time later with everything
+updated and still nothing working I took a step back and looked up some
+tutorials. At this point I noticed that all of the tutorials showed the debug
+button with the actual device name rather than the generic &quot;device&quot;.</p>
+<p><img src="https://kaylees.dev/trio/oak/day73-visual-studio-ios-debug-debugging/DebuggingDevice.PNG" alt="Debugging Device" /></p>
+<p>Some further investigation later, and I figured out how to guarantee VS
+recognizes the correct debug target. It turns out my device wasn't properly
+connected to the Mac. I discovered that iTunes is a reliable way to figure out
+whether the connection is successful. There is a device button which only shows
+up in iTunes when an iPhone is connected.</p>
+<p><img src="https://kaylees.dev/trio/oak/day73-visual-studio-ios-debug-debugging/iTunesDeviceIcon.png" alt="iTunes Device Icon" /></p>
+<p>Once that icon shows up, and VS is properly connected, the device name will
+change to the name of whatever device is connected. At this point debugging
+should usually succeed.</p>
+<p><img src="https://kaylees.dev/trio/oak/day73-visual-studio-ios-debug-debugging/CorrectDebuggingDevice.PNG" alt="Correct Debugging Device" /></p>
+<h2 id="gotcha-number-2">Gotcha Number 2</h2>
+<p>VS has a feature that enables automatic provisioning of devices. Normally this
+works fine, but a number of times during my fiddling about VS would get stuck on
+the automatic provisioning step. In practice I found the only easy way to
+prevent this was to restart both VS and the Mac. After restart, I was able to
+provision and debug properly.</p>
+<h2 id="gotcha-number-3">Gotcha Number 3</h2>
+<p>When debugging and running the default Monogame iOS application there are giant
+black bars above and below the screen.</p>
+<p><img src="https://kaylees.dev/trio/oak/day73-visual-studio-ios-debug-debugging/BlackBar.jpg" alt="Black Bar" /></p>
+<p>Again a bunch of frustrating stumbling around later, and I ran into <a href="https://stackoverflow.com/questions/12395200/how-to-develop-or-migrate-apps-for-iphone-5-screen-resolution">this Stack
+Overflow
+post</a>
+pointing me to the startup image as how iOS decides what resolution to render
+at. Apparently if the app doesn't have all of the intro sizes, then the app will
+render at the most compatible resolution.</p>
+<p>Luckily fixing this issue was pretty easy. VS has an editor for iOS app Asset
+Catalogs and has a default category called Launch Images. I created red images
+of all 15 of the required sizes just as temporary assets for a quick fix.</p>
+<p><img src="https://kaylees.dev/trio/oak/day73-visual-studio-ios-debug-debugging/StartImageList.PNG" alt="Start Image List" /></p>
+<p>Then in the <code>Info.plist</code> editor I set the Launch Images property to point to
+Launch Images instead of None.</p>
+<p><img src="https://kaylees.dev/trio/oak/day73-visual-studio-ios-debug-debugging/LaunchImageUI.PNG" alt="Launch Image UI" /></p>
+<p>Then rebuilding and debugging on the device I was presented with a nice full
+screen red launch image and blue default game.</p>
+<p><img src="https://kaylees.dev/trio/oak/day73-visual-studio-ios-debug-debugging/NoBar.jpg" alt="No Bar" /></p>
+<h2 id="summary">Summary</h2>
+<p>Much of this work is pretty frustrating because it just involves stumbling about
+googling things until I can figure out what works. Writing them down here means
+I will always have it as a resource though, so I wont have to do this work
+again. Its actually kind of satisfying to understand all the quirks of a system
+because now I can get on with the actually interesting work.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day72-imgui-and-ggez-experimentation&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day74-debug-infrastructure-and-text&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

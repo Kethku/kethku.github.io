@@ -1,0 +1,313 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day3 - Okeydokey Cont.
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Rust Command Line Tools
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-09
+    
+    
+      <br>
+      <a href="../../hemlock/projects/okeydokey/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p>Continuing on from yesterday, I built a feature equivalent version of my lost
+directory profile tool in rust. What follows were the steps and tools I used in
+the process.</p>
+<h2 id="previous-version-structure">Previous Version Structure</h2>
+<p>The decompiled
+<a href="https://gist.github.com/Kethku/ee982b01ef4ef022da3522b28e3997ad">source</a> we got
+from yesterday gave us the basic structure of the original version. The tool has
+two main executable paths. Either it is run without any arguments, or it is
+passed the prefix of a command to run. </p>
+<p>In the first case, it searches for the <code>.ok</code> profile and lists the command names
+to the console.</p>
+<pre>
+  <code class="language-en">&gt; ScriptProfileManager
+use
+build
+clean</code>
+</pre>
+<p>In the second case it finds the longest match in the profile commands for the
+passed in prefix and prints the associated command to the console.</p>
+<pre>
+  <code class="language-en">&gt; ScriptProfileManager b
+cargo build</code>
+</pre>
+<p>The original version of the tool assumed that the output list of commands would
+be post-processed by some form of pretty printer. I think this puts too much
+burden on the script side of things, so my new version will print the command
+list in one line.</p>
+<p>Similarly the old version assumed that the script environment contained a pushd
+and popd command. In the new version I am relaxing that requirement by adding
+prefix and suffix arguments. They take a string which can optionally have a <code>{}</code>
+hole which will be filled with the directory path to the <code>.ok</code> file. This lets
+the user of okeydokey specify how they would like to wrap the command.</p>
+<h2 id="clap">Clap</h2>
+<p>I decided to use the popular <a href="https://github.com/clap-rs/clap">Clap</a> crate for
+command line argument parsing. The library allows to declaritively describe the
+command line interface and then query the parsed arguments in a simple way. Clap
+gives you many options for ways to describe the interface, but he one I picked
+was a yaml file which gets parsed at compile time. This lets me separate the
+interface out of the rust code and move on with the actual command logic.</p>
+<p>The yaml file was pretty simple, but I did have to do some guesswork in order to
+get everything right. For example it wasn't clear what <code>value_name</code> did.
+Eventually I landed on this structure:</p>
+<pre>
+  <code class="language-en">name: Okeydokey
+version: &quot;0.1&quot;
+author: Kaylee Simmons
+about: .ok file manager
+args:
+  - COMMAND:
+      help: The command in the profile to run
+  - prefix:
+      short: p
+      long: prefix
+      value_name: PREFIX
+      help: Prepends argument to the returned command replacing {} with the full path to the found .ok file.
+  - suffix:
+      short: s
+      long: suffix
+      value_name: SUFFIX
+      help: Appends argument to the returned command replacing {} with the full path to the found .ok file.</code>
+</pre>
+<p>Then in the main function I was able to build up the matches and query them like so:</p>
+<pre>
+  <code class="language-en">let yaml = load_yaml!(&quot;cli.yml&quot;);
+let matches = App::from_yaml(yaml).get_matches();
+
+println!(&quot;{}&quot;, matches.value_of(&quot;COMMAND&quot;));</code>
+</pre>
+<h2 id="walking-up-the-directory-tree">Walking Up the Directory Tree</h2>
+<p>Both of the execution paths of the tool require a parsed <code>.ok</code> file. To find it
+the tool needs to walk up the directory tree searching for a parent directory
+which contains the <code>.ok</code> file. Rust has safe and complete file system apis, but
+as with most things in the Rust standard library, it does some gymnastics to
+make sure everything is above board with regards to memory safety. Similar to
+the relationship between <code>&amp;str</code> and <code>String</code>, Rust has <code>Path</code> and <code>PathBuf</code>
+where <code>Path</code> is an immutable filesystem path and <code>PathBuf</code> is an owned mutable
+variant. The confusing part is that <code>PathBuf</code> implements the trait <code>Deref</code> to
+<code>Path</code> which as far as I can understand it means that the compiler is allowed to
+dereference the <code>PathBuf</code> implicitly. So any place a function can take a <code>Path</code>
+you can also pass in a <code>PathBuf</code> and things <em>should</em> work out. For example,
+although <code>PathBuf</code> does not contain a <code>parent</code> function directly, you can still
+call <code>parent</code> on it since it gets dereferenced into a <code>Path</code> which does.</p>
+<p>On top of being immutable, <code>str</code> and <code>Path</code> are <em>unsized</em> types meaning that you
+can't store variables to them without a pointer or similar without the compiler
+yelling at you. Given my C# background, I'm still a little fuzzy about the
+idiomatic way to use these types, but in practice I have found that using the
+PathBuf and String versions of the types is maybe not the most efficient method,
+but gets the job done, allows you the most flexibility, and keeps our friend the
+compiler happy. </p>
+<p>Frustratingly, there is a fair amount of syntactic overhead for ensuring that
+you are using the correct type. The previously mentioned <code>parent</code> function does
+not return a <code>PathBuf</code> but instead the more frustrating <code>Path</code>, so whenever I
+use the function, I needed to call <code>to_path_buf</code> just adding to the visual
+noise. I get that it is for my own good, but its an example of the Rust making
+easy things harder.</p>
+<p>After stumbling through understanding the above, the actual task of finding the
+<code>.ok</code> file and parsing it into command name, command pairs was pretty trivial.</p>
+<pre>
+  <code class="language-en">fn find_profile(current_path: PathBuf) -&gt; Option&lt;Profile&gt; {
+    let possible_profile = current_path.join(&quot;.ok&quot;);
+    if possible_profile.exists() {
+        Some(read_profile(possible_profile)?)
+    } else {
+        Some(find_profile(current_path.parent()?.to_path_buf())?)
+    }
+}
+
+fn read_profile(profile_path: PathBuf) -&gt; Option&lt;Profile&gt; {
+    match File::open(profile_path.clone()) {
+        Ok(ref mut file) =&gt; {
+            let mut commands = HashMap::new();
+
+            for line in BufReader::new(file).lines() {
+                let (name, command) = split_on_colon(line.unwrap())?;
+                commands.insert(name, command);
+            }
+
+            Some(Profile { commands, path: profile_path })
+        },
+        Err(_) =&gt; None
+    }
+}
+
+fn split_on_colon(line: String) -&gt; Option&lt;(String, String)&gt; {
+    let mut splitter = line.splitn(2, &#x27;:&#x27;);
+    let name = splitter.next()?;
+    let command = splitter.next()?;
+    Some((name.to_string(), command.to_string()))
+}</code>
+</pre>
+<h2 id="string-manipulation">String Manipulation</h2>
+<p>The argumentless version of okeydokey which prints the commands to the console
+was deceptively difficult to get right. The problem stems from the fact that I
+store the commands in a <code>HashMap&lt;String, String&gt;</code> where the key is the command
+name and the value is the command. The naive solution would be to pull the keys
+out into a collection, and use the <code>String</code> utilities to join them into a single
+<code>String</code>. In practice though, we run into ownership problems. <code>HashMap.keys</code>
+returns an iterator of <code>&amp;String</code>, not <code>String</code>. This prevents us from using
+<code>join</code> which must operate on values not references. Eventually I landed
+on a call to <code>fold</code> passing in <code>String</code> accumulator but it wasn't my first choice.</p>
+<p>The query execution path went relatively smoothly after the above. The <code>query</code> function finds the best match in the commands list using <code>filter_map</code> and <code>max_by_key</code> and then passes the found command as well as the passed in prefix and suffix options on to get formatted into the final output.</p>
+<pre>
+  <code class="language-en">fn list(profile: Profile) {
+    let list = profile.commands
+        .keys()
+        .fold(String::new(), |acc, next| {
+            acc + &quot; &quot; + next
+        });
+    println!(&quot;{}&quot;, list.trim());
+}
+
+fn query(profile: Profile, command: &amp;str, prefix: Option&lt;&amp;str&gt;, suffix: Option&lt;&amp;str&gt;) {
+    let best_option = profile
+        .commands
+        .keys()
+        .filter_map(|possible_command| shared_prefix(possible_command, command))
+        .max_by_key(|&amp;(shared_chars, _)| shared_chars);
+
+    match best_option {
+        Some((_, actual_command)) =&gt; print_decorated_command(profile, actual_command, prefix, suffix),
+        None =&gt; ()
+    }
+}
+
+fn shared_prefix(possible_command: &amp;str, command: &amp;str) -&gt; Option&lt;(usize, String)&gt; {
+    match possible_command.starts_with(command) {
+        true =&gt; Some((command.len(), possible_command.to_string())),
+        false =&gt; None
+    }
+}
+
+fn print_decorated_command(profile: Profile, command_name: String, prefix: Option&lt;&amp;str&gt;, suffix: Option&lt;&amp;str&gt;) {
+    let prefix = fill_in_profile_directory(&amp;profile, prefix);
+    let suffix = fill_in_profile_directory(&amp;profile, suffix);
+    let command = profile.commands.get(&amp;command_name).unwrap();
+
+    println!(&quot;{}&quot;, vec![prefix, command.to_string(), suffix].concat())
+}
+
+fn fill_in_profile_directory(profile: &amp;Profile, pattern: Option&lt;&amp;str&gt;) -&gt; String {
+    let profile_directory = profile.path.parent().unwrap().to_str().unwrap();
+    pattern.unwrap_or_default().replace(&quot;{}&quot;, profile_directory)
+}</code>
+</pre>
+<h2 id="the-script-wrapper">The Script Wrapper</h2>
+<p>At this stage, the tool is feature complete for the first version, but it
+requires a couple of modifications to my script profile to work properly. I have
+a function defined in my PowerShell profile called <code>ok</code> which gets called in my
+prompt function so that ever time I change directories the command list is
+printed if it exists. If the function is given any arguments, they are fed into
+the profile utility and the output is executed directly.</p>
+<p>Previously, I did special formatting of the command list in PowerShell, which
+has since been pushed to the tool side. Similarly the command execution assumed
+that the directory management was handled in the tool, but I have pushed that to
+the command arguments instead to be more flexible. So the execution of okeydokey
+needed to be modified as well. I landed on this:</p>
+<pre>
+  <code class="language-en">function ok
+{
+  Param($command = $null)
+  if ($command -eq $null) {
+    $fore = $host.UI.RawUI.ForegroundColor
+    $host.UI.RawUI.ForegroundColor = &#x27;Blue&#x27;
+    okeydokey
+    $host.UI.RawUI.ForegroundColor = $fore
+  } else {
+    $script = okeydokey $command -p &quot;pushd {};&quot; -s &quot;; popd&quot;
+    if ($script -ne $null) {
+      iex $script
+    }
+  }
+}</code>
+</pre>
+<p>Simple and straight forward.</p>
+<h2 id="summary">Summary</h2>
+<p>I have pushed the current version of the tool to
+<a href="https://github.com/Kethku/okeydokey">github</a> so anyone can use it if they like.
+Depending on how much I've got left in me (this took many hours again... I need
+to dial this back if I want to do it every day), I may build a simple home page
+for the tool describing its usage shortly. I've used a version of this tool
+pretty much daily for the past 6 months, and I have some ideas for how to make
+it even better. Among them is argument support, profile references, and a better
+UI. For now though, I will probably do some site styling and call it a day.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day2-okeydokey&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day4-pando&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

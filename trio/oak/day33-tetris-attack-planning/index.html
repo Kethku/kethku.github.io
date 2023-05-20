@@ -1,0 +1,139 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day33 - Tetris Attack Planning
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Set out todo items for Tetris Attack
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-11
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day33-tetris-attack-planning/./todo.svg" alt="Todo" /></p>
+<p>Today I spent some time laying out the tasks that will need done for a playable
+version of Tetris Attack. I've already finished the first step of getting a
+workable engine up and running and will probably write a post about it shortly.
+I also setup a project page for the Tetris Attack game as well as a <a href="https://github.com/Kethku/TetrisAttackClone">Github
+Repo</a> and associated
+<a href="https://kethku.github.io/TetrisAttackClone/">Website</a> containing the current
+running version of the game.</p>
+<p>In my mind, I have 3 main arcs of development: Single Player, Multi Player, and Polish.</p>
+<h2 id="arc-1-single-player">Arc 1: Single Player</h2>
+<p>The first will be once I have a playable single player version of the game. This
+will include block rendering, touch controls, block animations, and a working
+stop clock. This is a crucial stage as it will tell me if the benefits of touch
+controls for this game are worth the effort. I will do an initial pass over
+animations during this time to test out architectures here.</p>
+<h2 id="arc-2-multiplayer">Arc 2: Multiplayer</h2>
+<p>Multiplayer will require coding up a simple server and setting up a match making
+system. My plan here is to make the server dumb and only forward events for the
+clients. This strategy is completely unsafe and allows for all sorts of
+cheating, but I only plan on playing this with my friends so this shouldn't be a
+huge issue.</p>
+<p>Matching Making will be done by giving a random room id to a player when they
+first trigger a multiplayer session. Then said user can share the link to the
+room via messaging or other means. Once two people are in the room, the game
+will start. Since the server will be dumb and only share events, this system
+works well because we can assume users will only connect if they own or want to
+join a room.</p>
+<p>If I finish all 3 of the current arcs, then I may think about modifying this
+system to work with a more general purpose online compatible multiplayer. I
+would love to play the game against random people online, but I need a working
+game before that is remotely a possibility :)</p>
+<h2 id="arc-3-polish">Arc 3: Polish</h2>
+<p>This arc is much less thought out. The idea here is that after the initial
+gameplay is finished, I should spend some time iterating on the animations and
+graphics. Initial tests of my renderer indicate tons of room for particles and
+juicy effects, so I would like to use this game as a learning exercise for
+adding fun animations to a game.</p>
+<h2 id="goals">Goals</h2>
+<p>My goal for this project are to build a simple but very polished experience. I
+don't expect this game to be the next bejeweled, but I do expect it to be easier
+to approach and play than the original game. The hardest part of playing should
+be thinking of the steps to do, not executing them. Frequently in the original
+game, I am able to think of what I want to do, but there is a frustrating
+execution barrier of simply getting the swapper over the correct position and
+dragging the block where I want it to go. I hope that a touch interface will
+make this cleaner and prevent some of these problems.</p>
+<p>I think this is a big project, but I've wanted to do it for a long time. Wish me
+luck! I leave you with a wacky gif from fiddling with the renderer:</p>
+<p><img src="https://kaylees.dev/trio/oak/day33-tetris-attack-planning/woah.gif" alt="woah" /></p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day32-tetris-attack-clone&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day34-eval-error-sources&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

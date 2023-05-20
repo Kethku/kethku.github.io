@@ -1,0 +1,174 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day91 - Lose Screen Progress
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Spent too long on a lose screen graphic
+    </h2>
+    
+    
+    <p>
+    
+      2019-10-24
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day91-lose-screen-progress/./todo.svg" alt="Todo" /></p>
+<p>Today I spent way too much time building a win and lose screen graphic for the tetris attack remake:</p>
+<p><img src="https://kaylees.dev/trio/oak/day91-lose-screen-progress/./Win.png" alt="Win" />
+<img src="https://kaylees.dev/trio/oak/day91-lose-screen-progress/./Lose.png" alt="Lose" /></p>
+<p>Luckily I also spent a slightly less amount of time working on some infrastructure to enable screens in the game engine
+I have written for the TA clone. My approach is inspired by the one described by the youtube channel <a href="https://www.youtube.com/channel/UCdT68dsulMFouI2InvXWM5w/videos">Lazy
+Devs</a>. In their roguelike tutorial they switch screens
+by swapping out the draw and update functions. I think this is an awesome premise and is not far from my event based
+update and draw systems already.</p>
+<pre>
+  <code class="language-en">import * as baseScreen from &quot;.&#x2F;events&quot;;
+import * as playScreen from &quot;.&#x2F;play&quot;;
+
+interface IScreen {
+  Update: EventManager&lt;[number]&gt;;
+  Draw: EventManager&lt;[number]&gt;;
+}
+
+export let currentScreen: IScreen = playScreen;
+
+let frames = 0;
+function loop() {
+  frames++;
+
+  baseScreen.Update.Publish(frames);
+  currentScreen.Update.Publish(frames);
+  currentScreen.Draw.Publish(frames);
+  baseScreen.Draw.Publish(frames);
+  window.requestAnimationFrame(loop);
+}
+
+async function start()  {
+  await Promise.all(baseScreen.Setup.Publish());
+  playScreen.Setup.Publish();
+  window.requestAnimationFrame(loop);
+}
+start();</code>
+</pre>
+<p>I define a Screen interface which is any object with Update and Draw events, which I then call in the animation loop. I
+use a base screen to handle events which should run regardless of which screen is set to the current screen. Then I can
+swap out the current screen to change the render and update code.</p>
+<p>My first test of this is only partially done, but will eventually be used as the game over screen to show the user
+whether they Won or Lost.</p>
+<pre>
+  <code class="language-en">import { EventManager } from &quot;.&#x2F;eventManager&quot;;
+import { Vector } from &quot;.&#x2F;math&quot;;
+import { screenSize } from &quot;.&#x2F;renderer&#x2F;webgl&quot;;
+import { image } from &quot;.&#x2F;renderer&#x2F;graphics&quot;;
+import { Lose, LoseWidthOverHeight, Win, WinWidthOverHeight } from &quot;.&#x2F;renderer&#x2F;images&quot;;
+
+import { Draw as gameDraw } from &quot;.&#x2F;play&#x2F;events&quot;;
+
+let imageToDraw: string;
+let widthOverHeight: number;
+
+export const Draw = new EventManager&lt;[number]&gt;();
+export const Update = new EventManager&lt;[number]&gt;();
+
+export function Init(lose: boolean) {
+  if (lose) {
+    imageToDraw = Lose;
+    widthOverHeight = LoseWidthOverHeight;
+  } else {
+    imageToDraw = Win;
+    widthOverHeight = WinWidthOverHeight;
+  }
+}
+
+Draw.Subscribe(gameDraw.Publish.bind(gameDraw));
+
+Draw.Subscribe(() =&gt; {
+  let width = screenSize.width * 0.75;
+  image({
+    imageUrl: imageToDraw,
+    position: screenSize.divide(2),
+    dimensions: new Vector(width, width &#x2F; widthOverHeight)
+  });
+});</code>
+</pre>
+<p>Here is the entire code. Importantly it renders it's own image to the screen but also subscribes to the draw call for
+the play screen so that the board state is rendered behind the win graphic. I'm hopefull that tricks like this will keep
+things simple while still being flexible enough to play tricks like above to make it look nice and be cohesive.</p>
+<p>Thats it for today. Got a lot done, but its super late, so I'll try to finish the game over experience in the next day
+or two.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day90-typed-event-manager&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day92-lose-screen&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,373 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day39 - Block Matches
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Implement block matching and clear animation
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-17
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day39-block-matches/./todo.svg" alt="Todo" /></p>
+<p>Today I finished the match recognition code I started yesterday and built the
+clear animation for completed matches. Along the way I fixed some minor bugs and
+added a rudimentary stop clock which would pause advancing of the grid while a
+match is clearing. To counteract this I also caused the grid to speed up over
+time.</p>
+<h2 id="match-recognition">Match Recognition</h2>
+<p>To start off I built a pretty naive recognition algorithm which makes a number
+of assumptions and was the first thing I came up with. In practice though I
+don't expect the recognition to become much more complicated since the grid is
+only 6 by 12 blocks. At these sizes, it almost doesn't matter what I do because
+the &quot;n&quot; in my O(n) will never be large enough to matter.</p>
+<p>The main assumption I make is that any blocks in a line of 3 or more, will be
+grouped together in a single frame. This means if a player makes a match at the
+exact same instant as a match is caused by a falling block or blocks spawning
+in, that those blocks will be considered a part of the same match and the player
+will be rewarded for the larger size match even if they didn't actually pull it
+off.</p>
+<p>In some ways I actually like this assumption because it opens the door for some
+high level shenanigans, but is hard enough that it wont happen in normal play.</p>
+<p>The basic idea behind my algorithm is to consider each axis separately. I loop
+over every block row by row, checking if there are repeated blocks. Each
+repeated block is added to a list, and once a non-matching block is found, the
+length of the list is checked and it is added to the match if it has more than 3
+blocks. Then the same thing is repeated column by column. Since the rows and
+columns have the same basic algorithm I split the repeat checker into its own
+local function to prevent repeating myself.</p>
+<pre>
+  <code class="language-en">function findNewMatches() {
+  let matchBlocks = new Set();
+  let currentMatch = [];
+  let currentBlockType = null;
+
+  function breakMatch(nextBlock) {
+    if (currentMatch.length &gt;= 3) {
+      for (let block of currentMatch) {
+        matchBlocks.add(block);
+      }
+    }
+    if (nextBlock) {
+      currentMatch = [nextBlock];
+      currentBlockType = nextBlock.type;
+    } else {
+      currentMatch = [];
+      currentBlockType = null;
+    }
+  }
+
+  function processBlock(block) {
+    if (block &amp;&amp; (block.state !== state.WAITING &amp;&amp; block.state !== state.DRAGGING)) {
+      breakMatch();
+      return;
+    }
+
+    if (currentBlockType == null &amp;&amp; block) {
+      currentBlockType = block.type;
+      currentMatch.push(block);
+      return;
+    }
+
+    if (!block) {
+      breakMatch();
+      return;
+    }
+
+    if (block.type !== currentBlockType) {
+      breakMatch(block);
+    } else {
+      currentMatch.push(block);
+    }
+  }
+
+  for (let y = 1; y &lt;= previousFilledY; y++) {
+    let row = blocks[y];
+    if (!row) continue;
+    for (let x = 0; x &lt; gridBlockDimensions.x; x++) {
+      processBlock(row[x]);
+    }
+    breakMatch();
+  }
+
+  for (let x = 0; x &lt; gridBlockDimensions.x; x++) {
+    for (let y = 1; y &lt;= previousFilledY; y++) {
+      let row = blocks[y];
+      if (!row) continue;
+      processBlock(row[x]);
+    }
+    breakMatch();
+  }
+
+  if (matchBlocks.size != 0) {
+    matches.add(new Match(matchBlocks));
+  }
+}</code>
+</pre>
+<p>Since a block may be a part of a row match and a column match, I use a
+JavaScript <code>Set</code> to prevent repeats in the resulting list. After looping over
+both axis, I construct a <code>Match</code> object containing the blocks.</p>
+<pre>
+  <code class="language-en">class Match {
+  constructor(matchBlocks) {
+    this.blocks = matchBlocks;
+    this.timer = 0;
+
+    for (let block of this.blocks) {
+      block.state = state.MATCHED;
+      dropBlock(block);
+    }
+  }
+
+  update() {
+    if (this.timer &lt; clearDelay) {
+      this.timer++;
+    } else {
+      let anyClearing = false;
+      for (let block of this.blocks) {
+        if (block.state === state.MATCHED) {
+          block.state = state.CLEARING;
+          anyClearing = true;
+          break;
+        } else if (block.state === state.CLEARING) {
+          anyClearing = true;
+          if (block.clearTimer &gt; continueClearTime) {
+            continue;
+          }
+          break;
+        }
+      }
+
+      if (!anyClearing) {
+        for (let block of this.blocks) {
+          deleteBlock(block);
+        }
+        return true;
+      }
+    }
+
+    return false;
+  }
+}</code>
+</pre>
+<p>The match object is in charge of tracking when to start clearing blocks.
+Immediately after being formed, each block must be marked as <code>Matched</code> and
+dropped if held in order to prevent them being simulated further. Then each
+frame a timer is incremented until it passes a certain threshold at which point
+each block is set to the <code>Clearing</code> state in order until no <code>Clearing</code> blocks
+remain at which point the blocks are deleted and the match reports completion by
+returning true.</p>
+<p>Combining the <code>findMatches</code> and <code>Match</code> class in the <code>Update</code> event subscription
+completes the core changes.</p>
+<pre>
+  <code class="language-en">Update.Subscribe(() =&gt; {
+  findNewMatches();
+
+  let finishedMatches = [];
+  for (let match of matches) {
+    if (match.update()) {
+      finishedMatches.push(match);
+    }
+  }
+
+  for (let finishedMatch of finishedMatches) {
+    matches.delete(finishedMatch);
+  }
+});</code>
+</pre>
+<h2 id="animations">Animations</h2>
+<p>On the block side I modified the <code>calculateColor</code> and <code>animateBlockSize</code>
+functions to reflect the new block states. I also added a <code>handleClearAnimation</code>
+method which keeps track of the animation frames and moves the block state to
+<code>Cleared</code> once the animation has finished.</p>
+<pre>
+  <code class="language-en">handleClearAnimation() {
+  if (this.state === state.CLEARING) {
+    if (!this.clearTimer) this.clearTimer = 0;
+    this.clearTimer++;
+
+    let percentDone = this.clearTimer &#x2F; clearingTime;
+    if (this.clearTimer &gt;= clearingTime) {
+      this.state = state.CLEARED;
+    }
+  }
+}</code>
+</pre>
+<p>Before today, I used a <code>calculateOpacity</code> method to animate the opacity in while
+spawning. Now instead I changed it to a <code>calculateColor</code> method so that matched
+blocks may be brightened when <code>Matched</code>. When <code>Clearing</code> the opacity fades out
+linearly from 1 to 0 as the <code>clearTimer</code> moves toward completion. Finally if the
+state is <code>Cleared</code>, then a tint of clear is returned.</p>
+<pre>
+  <code class="language-en">calculateColor(centerY) {
+  if (this.state === state.MATCHED) {
+    return new Color(1.5, 1.5, 1.5, 1);
+  } else if (this.state === state.CLEARING) {
+    let percentageDone = this.clearTimer &#x2F; clearingTime;
+    return new Color(1, 1, 1, 1 - percentageDone);
+  } else if (this.state === state.CLEARED) {
+    return Color.clear;
+  } else if (this.state === state.SPAWNING) {
+    let gridBottom = gridCenter.y - gridDimensions.height &#x2F; 2;
+    let blockBottom = centerY - blockWidth &#x2F; 2;
+    let distanceFromBottom = blockBottom - gridBottom;
+
+    if (distanceFromBottom &gt;= 0) {
+      if (this.state === state.SPAWNING) {
+        this.state = state.WAITING;
+      }
+      return 1;
+    }
+    if (distanceFromBottom &lt; -blockWidth) return 0;
+
+    return new Color(1, 1, 1, (distanceFromBottom + blockWidth) &#x2F; (blockWidth * 2));
+  } else {
+    return Color.white;
+  }
+}</code>
+</pre>
+<p>On the block size side, I just added a new branch if the state is <code>Clearing</code>
+which increases the scale by a set amount each frame.</p>
+<pre>
+  <code class="language-en">animateBlockSize() {
+  if (this.state === state.CLEARING) {
+    this.scale += 0.01;
+  } else if (this.state === state.DRAGGING) {
+    if (this.scale &lt; pickedUpScale) {
+      this.scale += scaleVelocity;
+    } else {
+      this.scale = pickedUpScale;
+    }
+  } else {
+    if (this.scale &gt; 1) {
+      this.scale -= scaleVelocity;
+    } else {
+      this.scale = 1;
+    }
+  }
+}</code>
+</pre>
+<p>The resulting animation looks like this:</p>
+<p><img src="https://kaylees.dev/trio/oak/day39-block-matches/ClearAnimation.gif" alt="Clear Animation" /></p>
+<h2 id="misc-fixes">Misc Fixes</h2>
+<p>During the clear animation, the block advancement should stop giving the player
+a further incentive to clear larger matches. Doing was pretty simple and only
+required changing the grid update handler to check the matches list size when
+advancing. While I was in the area, I also modified the advancement speed to
+increase over time to ramp up difficulty.</p>
+<pre>
+  <code class="language-en">if (matches.size == 0) {
+  blockAdvancement += advanceSpeed;
+  advanceSpeed += advanceAcceleration;
+}</code>
+</pre>
+<p>A slightly more difficult problem to fix was the fact that the player could swap
+clearing blocks. The fix was to modify the drag handling code to check the
+surrounding blocks and reset the block position back to the slot position if the
+block had been dragged into a non <code>Waiting</code> block. Unfortunately I didn't come
+up with a clean way to write this, so it ended up as two largely repeated
+checks. I'm tired. Sue me.</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F; Handle Boundaries
+if (this.gridSlot.x &gt; 0) {
+  let leftBlock = blocks[this.gridSlot.y][this.gridSlot.x - 1];
+  if (leftBlock &amp;&amp; leftBlock.state !== state.WAITING) {
+    if (this.gridPosition.x &lt; this.gridSlot.x) {
+      this.gridPosition.x = this.gridSlot.x;
+    }
+  }
+}
+
+if (this.gridSlot.x &lt; 5) {
+  let rightBlock = blocks[this.gridSlot.y][this.gridSlot.x + 1];
+  if (rightBlock &amp;&amp; rightBlock.state !== state.WAITING) {
+    if (this.gridPosition.x &gt; this.gridSlot.x) {
+      this.gridPosition.x = this.gridSlot.x;
+    }
+  }
+}</code>
+</pre>
+<p>And that was it! At this point I believe the core gameplay is done. Blocks are
+manipulatable, and matches clear in a fairly smooth way. Feature wise, combos,
+stop watch, and multiplayer are left, none of which I suspect will be too
+difficult. After that I will need to do a ton of polish and cleanup. I am very
+pleased with the progress so far.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day38-block-manipulation&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day40-webgl-renderer&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

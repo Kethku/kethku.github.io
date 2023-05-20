@@ -1,0 +1,163 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day87 - Desktop Updater
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      The terrifying power of JS
+    </h2>
+    
+    
+    <p>
+    
+      2019-10-20
+    
+    
+      <br>
+      <a href="../../hemlock/projects/rusty-marble/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day87-desktop-updater/./todo.svg" alt="Todo" /></p>
+<p>Today I worked on the desktop updater script which will take a url to an image and an update frequency and set the image
+from that url as your desktop background at the specified frequency. To achieve this, I used JavaScript. Not because I'm
+overly fond of the language, but because it meant I could take advantage of it's secret super power.</p>
+<h2 id="the-secret-power-of-javascript">The Secret Power of JavaScript</h2>
+<p>I think its easy to see JS as a language that is only used when you absolutely have to deploy some app to the web. Its a
+necessary evil, but is the path of least resistance inside a browser. I would like to suggest that this is not the only
+reason to use JS. JS has more users than any other language and as a result it has more coverage than any other
+language. This leads to some very strange effects. Give me a simple task and I can show you a package which does that
+task to a fault.</p>
+<p>As an example, a desktop updater script which takes a URL to an image, parses a frequency written in natural language,
+and sets it to the desktop background is possible in every language. However I would be hard pressed to find a language
+which could do it simpler and more understandably than Javascript with npm packages.</p>
+<pre>
+  <code class="language-en">const juration = require(&#x27;juration&#x27;);
+const http = require(&#x27;http&#x27;);
+const fs = require(&#x27;fs&#x27;);
+const wallpaper = require(&#x27;wallpaper&#x27;);
+
+const argv = require(&#x27;yargs&#x27;)
+  .option(&#x27;url&#x27;, {
+    alias: &#x27;u&#x27;,
+    type: &#x27;string&#x27;,
+    description: &#x27;Url to fetch an image from&#x27;
+  })
+  .option(&#x27;frequency&#x27;, {
+    alias: &#x27;f&#x27;,
+    type: &#x27;string&#x27;,
+    description: &#x27;The frequency with which to fetch the image&#x27;
+  })
+  .demandOption([&#x27;url&#x27;, &#x27;frequency&#x27;])
+  .argv;
+
+let duration = juration.parse(argv.frequency) * 1000;
+
+console.log(&quot;Updating every &quot; + duration &#x2F; 1000 + &quot; seconds&quot;);
+
+function downloadAndUpdate() {
+  const file = fs.createWriteStream(&quot;file.jpg&quot;);
+  http.get(argv.url, function(response) {
+    response.pipe(file);
+    file.on(&#x27;finish&#x27;, function() {
+      file.close(function () {
+        wallpaper.set(&#x27;file.jpg&#x27;);
+      });
+    })
+  });
+}
+
+downloadAndUpdate();
+
+setInterval(downloadAndUpdate, duration);</code>
+</pre>
+<p>The entire script is above. I use 3 external packages and 2 node modules.</p>
+<ol>
+<li>Juration: which parses natural text descriptions of time spans</li>
+<li>wallpaper: which sets the desktop background to a given image</li>
+<li>yargs: which parses command arguments with a fluent api</li>
+<li>fs: which manages writing files</li>
+<li>http: which fetches data from the internet</li>
+</ol>
+<p>With these packages doing the heavy lifting, JS is free to act as a flexible glue to move data around and write to the
+console. JavaScript's main super power is write once, run everywhere. Its secret power is the package system. It took
+what might have taken me all day and turned it into a simple 20 minute exercise.</p>
+<h2 id="the-script">The Script</h2>
+<p>I'm using this script to pull from my Azure server which processes GOES satellite data into real color and real time
+images. When I use
+<a href="http://rustymarble.eastus.cloudapp.azure.com:8080/current.jpg">http://rustymarble.eastus.cloudapp.azure.com:8080/current.jpg</a>
+as the url passed to the script and write &quot;10 min&quot; as the frequency argument, it pulls the satellite data automatically
+so that I always have a live view of the planet.</p>
+<p><img src="https://kaylees.dev/trio/oak/day87-desktop-updater/./desktop.png" alt="Desktop" /></p>
+<p>(You can see image assets I pulled from the WoW quest log on my desktop. Some day soon I may turn it into a project.
+We'll see)</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day86-live-satellite-feed&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day88-neovim-plugin-in-typescript&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

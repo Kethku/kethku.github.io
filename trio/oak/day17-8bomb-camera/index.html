@@ -1,0 +1,210 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day17 - 8Bomb Camera
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Implement player following camera
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-23
+    
+    
+      <br>
+      <a href="../../hemlock/projects/8bomb/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day17-8bomb-camera/./todo.svg" alt="Todo" /></p>
+<p>Quick day today, so lets get to it. Today I added some simple camera logic to
+8Bomb. In theory SCRIPT-8 supports a camera transform mechanism, but in practice
+I found it to be somewhat buggy, so instead I added some camera manipulation
+logic myself which is taken into account when drawing sprites to the screen. By
+adding a moving camera, the game gets a sense of depth and progress which wasn't
+possible before when the ball would just fall through the bottom of the screen.</p>
+<p><img src="https://kaylees.dev/trio/oak/day17-8bomb-camera/./Digging.PNG" alt="Digging" /></p>
+<h2 id="drawing">Drawing</h2>
+<p>The first step was to modify the drawing functions to take a camera position as
+an arguments and subtract that position from the y value of any drawn
+primitives. Easy enough:</p>
+<pre>
+  <code class="language-en">function drawTile(cameraY, tx, ty, topLeft, topRight, bottomRight, bottomLeft) {
+  let s = 0;
+  if (topLeft) s += 1;
+  if (topRight) s += 2;
+  if (bottomRight) s += 4;
+  if (bottomLeft) s += 8;
+  
+  let tileTop = -cameraY + ty * tileHeight;
+  if (tileTop &gt; -50 &amp;&amp; tileTop &lt; 150) { 
+    sprite(tx * tileWidth, -cameraY + ty * tileHeight, s);
+  }
+}
+
+function drawTerrain({ terrain, cameraY }) {
+  for (let y = 0; y &lt; terrain.length - 1; y++) {
+    for (let x = 0; x &lt; terrain[y].length - 1; x++) {
+      drawTile(cameraY, x, y, terrain[y][x], terrain[y][x + 1], terrain[y + 1][x + 1], terrain[y + 1][x]);
+    }
+  }
+}
+
+function drawPlayer({ player, cameraY }) {
+  sprite(player.position.x - player.radius, -cameraY + player.position.y - player.radius, 16);
+}
+
+function drawInstructions() { 
+  print(5, 0, &quot;left&#x2F;right to move&quot;);
+  print(5, 8, &quot;up to jump&quot;);
+  print(5, 16, &quot;a to cut terrain&quot;);
+}</code>
+</pre>
+<p>In the process I also converted each of the functions to take a state object and
+destructure it into the relevant data. This way any time a draw function needs
+something new, I don't need to edit two places, just the edit the draw function
+to destructure more variables.</p>
+<p>Also of note, I added a check which will filter out sprite calls if the tile
+isn't close to the screen. This allows large terrains to be drawn without much
+overhead since only the tiles on the screen will be drawn.</p>
+<h2 id="camera-update">Camera Update</h2>
+<p>The camera position update code was a little more complicated. Since the physics
+is updated based on pixel position, any movement of the camera has the potential
+to bump a pixel in an undesired way. To counteract this I built a safe zone on
+the screen within which the player ball can move freely without moving the
+camera. Once the ball leaves the safe zone however, the camera moves, and uses
+momentum with some friction to move farther than it necessarily has to.</p>
+<p>This lets the camera stay still for as long as possible while still keeping the
+player in view. In practice the camera tends to move in short bursts and stay
+still afterward.</p>
+<pre>
+  <code class="language-en">const cameraMomentum = 0.8;
+function updateCamera(state) {
+  if (state.previousCameraY) {
+    let vy = state.cameraY - state.previousCameraY;
+    state.previousCameraY = state.cameraY;
+    state.cameraY += vy * cameraMomentum;
+  }
+  
+  if (state.player.position.y &gt; state.cameraY + 96) {
+    var cameraDiff = state.player.position.y - (state.cameraY + 96);
+    state.cameraY += cameraDiff * 0.2;
+  }
+  
+  if (state.player.position.y &lt; state.cameraY + 32) {
+    var cameraDiff = state.player.position.y - (state.cameraY + 32);
+    state.cameraY += cameraDiff * 0.2;
+  }
+  
+  if (!state.previousCameraY) {
+    state.previousCameraY = state.cameraY;
+  }
+}</code>
+</pre>
+<p>The safe zone lies between one forth of the screen height, and three fourths of
+the screen height. The camera moves in fractions of the distance from the
+desired position and slows down by a constant friction percentage.</p>
+<h2 id="wrapping-up">Wrapping Up</h2>
+<p>The collision code is modified by a camera translation to fix things up.</p>
+<pre>
+  <code class="language-en">let dy = Math.sin(r) * obj.radius;
+if (getPixel(obj.position.x + dx, -cameraY + obj.position.y + dy) != 7) {
+  if (dy &gt; 3 &amp;&amp; Math.abs(dx) &lt;= 1) {</code>
+</pre>
+<p>And finally the initialization code was modified to have a 300 tile tall terrain
+storage.</p>
+<pre>
+  <code class="language-en">function initTerrain() {
+  let terrain = [];
+  for (let y = 0; y &lt; 300; y++) {
+    let row = [];
+    for (let x = 0; x &lt; 17; x++) {
+      if (y &gt; 10) {
+        row.push(1);
+      } else {
+        row.push(0);
+      }
+    }
+    terrain.push(row);
+  }
+  return terrain;
+}</code>
+</pre>
+<p>Done. The camera now smoothly follows the player while not effecting the physics
+too much. I will do some investigation shortly about why the built in camera
+function causes problems, but for now this has unblocked me and will open the
+way for the next tasks in 8Bomb.</p>
+<p>The current version of the game can be played
+<a href="https://script-8.github.io/?id=2a24d4038406b2ea5f648c9ebb8d3a6b">here</a>.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day16-script8-pull-requests&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day18-8bomb-camera-fixes&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

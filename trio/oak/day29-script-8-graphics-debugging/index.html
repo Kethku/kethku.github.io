@@ -1,0 +1,218 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day29 - SCRIPT-8 Graphics Debugging
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Fixing a weird bug in the SCRIPT-8 Bios
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-07
+    
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day29-script-8-graphics-debugging/EntireBios.gif" alt="EntireBios" /></p>
+<p>I spent today debugging a very obscure bug in the boot up animation for
+SCRIPT-8. It took a lot of trial and error to arrive at the exact solution, but
+it feels great to finally tie up the few remaining inconsistencies in the frame
+buffer drawing API.</p>
+<h2 id="the-issue">The Issue</h2>
+<p>After ironing the last of the api differences that I know about in the cassettes
+on the SCRIPT-8 shelf, I noticed a slight inconsistency in the first part of the
+boot up animation. Instead of drawing blocks of glitchy looking color, groups of
+pixels were drawn in a flickery pattern.</p>
+<p><img src="https://kaylees.dev/trio/oak/day29-script-8-graphics-debugging/BadBios.gif" alt="BadBios" /></p>
+<p>Although interesting, this isn't remotely the same as the original. Confused, I
+began to dig through the source code in the SCRIPT-8 repo to figure out how the
+actual animation is drawn. I discovered that the entire bootup animation is
+actually a special cassette that runs before the requested cassette. The source
+as of 3/8/2019 can be found
+<a href="https://github.com/script-8/script-8.github.io/blob/ac51c6b4423896fa53bb36d3688e0aebc0c749f2/src/iframe/src/utils/bios.js">here</a>.</p>
+<h2 id="first-attempt">First Attempt</h2>
+<p>After a bit of fiddling I was able to extract the important bits into a
+standalone cassette for testing purposes.</p>
+<pre>
+  <code class="language-en">const size = range(128)
+const d = 1
+const rects = flatten(size.map(x =&gt; size.map(y =&gt; [x, y, d, d])))
+let counter = 0
+
+draw = () =&gt; {
+  rects.forEach(rect =&gt; {
+    rectFill(...rect, rect[0] + (rect[1] * counter) &#x2F; 100)
+  })
+  counter++
+}</code>
+</pre>
+<p>This code was a bit strange, so I refactored slightly to just contain loop so I
+could get a better idea what was actually going on.</p>
+<pre>
+  <code class="language-en">let counter = 0;
+draw = () =&gt; {
+  counter++
+  for (let x = 0; x &lt; 128; x++) {
+    for (let y = 0; y &lt; 128; y++) {
+      fillRect(x, y, 1, 1, x + (y * counter) &#x2F; 100);
+    }
+  }
+}</code>
+</pre>
+<p>In this form, the algorithm becomes pretty clear. For every pixel on the screen,
+fill a single pixel wide and tall rectangle with the color <code>x + (y * counter) / 100</code>. I arrived at this point day before yesterday and was incredibly stumped.
+At first look, none of this makes any sense that it would draw the above. It was
+very late at this point, so I eventually went to bed.</p>
+<p>Fast forward to today, and I decided to take another stab at figuring out what
+the heck was going on. The first insight was that the color functions in my
+implementation of the canvas API cleared the color if an invalid pixel color is
+set. In the bios animation, the vast majority of pixel colors are incorrect
+because they are not integers. So for my API the pixels get cleared instead of
+being transparent. I thought that maybe, if I added a check for invalid colors
+and just skipped setting the pixel, then it might fix things.</p>
+<p><img src="https://kaylees.dev/trio/oak/day29-script-8-graphics-debugging/BetterBios.gif" alt="BetterBios" /></p>
+<h2 id="second-attempt">Second Attempt</h2>
+<p>Welp... At least I learned something. Clearly something weird was going on. At
+this point I looked back at the desired animation and noticed something
+interesting.</p>
+<p><img src="https://kaylees.dev/trio/oak/day29-script-8-graphics-debugging/Pixels.png" alt="Pixels" /></p>
+<p>The colors seemed to preserve the value from the pixel above. So a pretty simple
+change to the bios code would likely create the same effect. Since I fixed the
+transparent pixel problem, it was a one line change.</p>
+<pre>
+  <code class="language-en">let counter = 0;
+draw = () =&gt; {
+  counter++
+  for (let x = 0; x &lt; 128; x++) {
+    for (let y = 0; y &lt; 128; y++) {
+      rectFill(x, y, 1, 128, x + (y * counter) &#x2F; 100);
+    }
+  }
+}</code>
+</pre>
+<p>Instead of drawing a single pixel in each position, I draw a rectangle with
+height 128. This fills the pixels below each valid pixel value until another
+valid pixel is drawn.</p>
+<p><img src="https://kaylees.dev/trio/oak/day29-script-8-graphics-debugging/CorrectBios.gif" alt="CorrectBios" /></p>
+<h2 id="success">Success!</h2>
+<p>With my corrected version, I was able to modify the original bios code to do the
+same thing by changing the rect array declaration like so:</p>
+<pre>
+  <code class="language-en">const rects = flatten(size.map(x =&gt; size.map(y =&gt; [x, y, d, 128])))</code>
+</pre>
+<p>With my accurate animation, I checked in and took a break.</p>
+<h2 id="but-y-tho">... but y tho</h2>
+<p>Of course I couldn't just leave it at that. I needed to figure out why the old
+API acted differently. After some more inconsequential fumbling about. I
+eventually figured it out. The core issue has to do with the
+<code>rectStroke</code> code:</p>
+<pre>
+  <code class="language-en">rectStroke(x, y, w, h, c = 0) {
+  ctx.strokeStyle = colors.rgb(c)
+  ctx.strokeRect(
+    Math.floor(x) + 0.5,
+    Math.floor(y) + 0.5,
+    Math.floor(w) - 1,
+    Math.floor(h) - 1
+  )
+},</code>
+</pre>
+<p>It wasn't obvious at first, but <code>colors.rgb(c)</code> returns undefined if the passed
+color value isn't an integer. This combined with a strange quirk of the canvas
+context means that for an invalid color, the stroke color doesn't actually get
+changed and will preserve whatever stroke was set last. Since the loop over the
+pixel list draws column by column left to right, each pixel draws the color of
+the last pixel that had a valid color.</p>
+<p>To prove my theory, I simply reversed the loop so that instead of drawing column
+by column it drew row by row.</p>
+<pre>
+  <code class="language-en">let counter = 0;
+draw = () =&gt; {
+  counter++
+  for (let y = 0; y &lt; 128; y++) {
+    for (let x = 0; x &lt; 128; x++) {
+      fillRect(x, y, 1, 1, x + (y * counter) &#x2F; 100);
+    }
+  }
+}</code>
+</pre>
+<p>Which presented me with this satisfying animation:</p>
+<p><img src="https://kaylees.dev/trio/oak/day29-script-8-graphics-debugging/YToXBios.gif" alt="YToXBios" /></p>
+<p>Rows tend to have valid multiples all at once, so the color of a group of rows
+is defined by the last pixel drawn in a valid row. Mystery solved!</p>
+<p>At this point my <a href="https://github.com/script-8/script-8.github.io/pull/254">PR</a>
+is almost there. All that remains is to fix the UI surrounding actor
+manipulation which depends strongly on the old canvas API. I will leave this for
+next time.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day28-script-8-performance-pr&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day30-script-8-framebuffer-renderer&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

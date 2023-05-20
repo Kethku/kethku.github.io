@@ -1,0 +1,9 @@
+x Get Pixel
+> Collisions [ GP ]
+x Marching Squares Grid
+- Panels [ MSG ]
+- Character [ Co ]
+- Bombs [ Co, Pa ]
+- Score [ Ch, B, Pa ]
+- Sound Effects
+- Publish [ Sc, SE ]

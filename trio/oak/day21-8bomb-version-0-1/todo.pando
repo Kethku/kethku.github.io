@@ -1,0 +1,14 @@
+x Get Pixel
+x Collisions [ GP ]
+x Marching Squares Grid
+x Camera
+x Game Embed
+> Panels [ MSG, Ca ]
+- Character [ Co ]
+> Bombs [ Co, Pa ]
+> Score [ Ch, B, Pa ]
+- Sound Effects
+- Terrain Variation [ P ]
+- Paralax Background
+- Game Over Screen [ S  ]
+- Publish [ Sc, SE, GE, TV, PB, GOS ]

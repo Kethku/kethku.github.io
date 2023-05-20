@@ -1,0 +1,115 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day61 - Building IOS Apps in VS
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Building remotely on Mac from Visual Studio working
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-08
+    
+    
+      <br>
+      <a href="../../hemlock/projects/robot/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day61-building-ios-apps-in-vs/./todo.svg" alt="Todo" /></p>
+<p>Today I finished getting the iOS build system setup. Overall I'm pretty pleased
+with the final setup. Crucially none of the communication over the network works
+unless the Mac, xcode, and Visual Studio for Mac are on the most recent version.
+Getting everything updated took a long time but I finally got my fiancé's
+mac book air updated.</p>
+<p><img src="https://kaylees.dev/trio/oak/day61-building-ios-apps-in-vs/UpdatingMac.png" alt="Updating Mac" /></p>
+<p>I needed to update and install a ton of dependencies on the Mac side, but some
+of that was handled for me inside Visual Studio.</p>
+<p><img src="https://kaylees.dev/trio/oak/day61-building-ios-apps-in-vs/InstallingMacDependencies.PNG" alt="Installing Mac Dependencies" /></p>
+<p>After all of the dependencies were fully installed, I needed to access the UDID
+from my IPhone via ITunes on the Mac and setup a provisioning profile and
+license. Several visits to stack overflow later, and I was able to get the
+project building inside of Visual Studio over the network on the Mac.</p>
+<p><img src="https://kaylees.dev/trio/oak/day61-building-ios-apps-in-vs/WorkinginVS.PNG" alt="Working in VS" /></p>
+<p>Incidentally one of the fixes was to install the VS 2019 preview, so it was
+refreshing to have things working on the latest bits.</p>
+<p>Finally, I was greeted with the default start screen and cornflower blue
+background of an empty monogame project.</p>
+<p><img src="https://kaylees.dev/trio/oak/day61-building-ios-apps-in-vs/StartScreen.jpg" alt="Start Screen" />
+<img src="https://kaylees.dev/trio/oak/day61-building-ios-apps-in-vs/CornflowerBlue.jpg" alt="Cornflower Blue" /></p>
+<p>I find much of this work frustrating because it always takes longer than I
+expect it to. It never seems to be as easy as just start up the editor and get
+rolling, but afterwards the development experience is much faster so I think its
+worth it. </p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day60-setting-up-mac&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day62-new-blocks-and-camera-shake&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

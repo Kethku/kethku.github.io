@@ -1,0 +1,164 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day63 - Garbage Refactoring
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Refactored garbage block rendering to simplify and enable new multi line garbage block rendering
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-10
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day63-garbage-refactoring/./todo.svg" alt="Todo" /></p>
+<p>Today I refactored the garbage block rendering code to enable a new style of
+multi line garbage block. After discussing texture options with my friend who
+provided the updated block graphics, we decided that building a high quality
+multi line garbage block texture which can be expanded to any height would be
+unreasonable in the new style. </p>
+<p>Instead we are going to build a high quality version of each of the single block
+tall garbage blocks and add a lock sprite between them to indicate that the
+block is one unit. This makes good sense mechanic wise since multi line garbage
+blocks break one line at a time rather than all at once. So the new animation
+will have the bottom line break into separate blocks while leaving the blocks
+above unsplit.</p>
+<h2 id="code-cleanup">Code Cleanup</h2>
+<p>With the above in mind, I now have the opportunity to delete a bunch of the
+clunky multi line block rendering in favor of a much simpler algorithm.
+Similarly, since the code is much smaller after deleting the unnecessary bits, I
+can move the render code back into the garbage block class. I moved the
+<code>singleRowGarbageTexture</code> function into <code>garbage.js</code> directly unchanged.</p>
+<pre>
+  <code class="language-en">function singleRowGarbageTexture(width) {
+  switch (width) {
+  case 3:
+    return garbageImages.ThreeWide;
+  case 4:
+    return garbageImages.FourWide;
+  case 5:
+    return garbageImages.FiveWide;
+  case 6:
+    return garbageImages.SingleLine;
+  default:
+    throw &quot;Invalid single high block.&quot;;
+  }
+}</code>
+</pre>
+<p>I also moved the main render utility into the <code>render</code> function of the <code>Garbage</code>
+class. Instead of the clunky render info list I replaced it with a simple for
+loop.</p>
+<pre>
+  <code class="language-en">render() {
+  let topLeft = this.calculateTopLeft();
+  for (let i = 0; i &lt; this.gridDimensions.height; i++) {
+    image({
+      imageUrl: singleRowGarbageTexture(this.gridDimensions.width),
+      position: topLeft.withY(topLeft.y - i * blockWidth).withZ(-0.1),
+      dimensions: new Vector(this.gridDimensions.width * blockWidth, blockWidth),
+      center: Vector.topLeft
+    });
+  }
+}</code>
+</pre>
+<p>Next up to build the new rendering system is to add some form of temperary dev
+art for the locked sprite as well as a particle system for the lock break
+animation.</p>
+<h2 id="idle-optimization">Idle Optimization</h2>
+<p>Unrelated to the garbage block rendering update, I've been doing some
+development on my laptop which is much slower than my main dev machine. The
+higher resolution textures slowed down the drawing code a ton and made using
+emacs while the game was running unbearable. To fix this I added a check in the
+renderer</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;
+&#x2F;&#x2F; Draw Calls &#x2F;&#x2F;
+&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;
+export function drawToScreen() {
+  if (document.hasFocus()) {
+    gl.clearColor(0, 0, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    ...</code>
+</pre>
+<p>This quick change stops the game from rerendering when it is not the focused
+window allowing me to make editor changes while the game is still running. A
+quick change but a big quality life improvement.</p>
+<p>Thats it for today. Short posts for the next couple of days as I am busy
+attending a friends wedding, but I will see what I can do.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day62-new-blocks-and-camera-shake&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day64-spacemacs-chrome-debugging&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

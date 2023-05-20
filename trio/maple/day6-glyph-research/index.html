@@ -1,0 +1,169 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Maple
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;">Maple</a>
+
+Day6 - Glyph Research
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Refactoring and looking into rendering glyphs
+    </h2>
+    
+    
+    <p>
+    
+      2023-03-31
+    
+    
+    </p>
+    
+  </summary>
+  <p>Short post today because much of my time was spent
+refactoring the wgpu boilerplate and investigating atlas
+crates for managing rendered glyphs on the gpu.</p>
+<h2 id="wgpu-refactorings">Wgpu Refactorings</h2>
+<p>I dropped off yesterday once I had rectangles rendering to
+the window. That code was pretty messy and involved hacking
+together some old demos and pieces of tutorials. So today I
+refactored things in preparation for text rendering.</p>
+<p>The first change I made was to look up how to pull a set of
+entry points in the shader crate into their own module. This
+took some searching, but eventually I found an issue from
+somebody trying to do something similar. The trick was to
+reference the entry point using the module name when
+creating the render pipeline.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-storage z-type z-rust">let</span> render_pipeline <span class="z-keyword z-operator z-assignment z-rust">=</span> device<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">create_render_pipeline</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-meta z-path z-rust">wgpu<span class="z-punctuation z-accessor z-rust">::</span></span>RenderPipelineDescriptor <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    label<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-string z-quoted z-double z-rust"><span class="z-punctuation z-definition z-string z-begin z-rust">&quot;</span>Quad Pipeline<span class="z-punctuation z-definition z-string z-end z-rust">&quot;</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    layout<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>render_pipeline_layout</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    vertex<span class="z-punctuation z-separator z-rust">:</span> <span class="z-meta z-path z-rust">wgpu<span class="z-punctuation z-accessor z-rust">::</span></span>VertexState <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        module<span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>shader<span class="z-punctuation z-separator z-rust">,</span>
+        entry_point<span class="z-punctuation z-separator z-rust">:</span> <span class="z-string z-quoted z-double z-rust"><span class="z-punctuation z-definition z-string z-begin z-rust">&quot;</span>quad::vertex<span class="z-punctuation z-definition z-string z-end z-rust">&quot;</span></span><span class="z-punctuation z-separator z-rust">,</span>
+        buffers<span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    fragment<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-path z-rust">wgpu<span class="z-punctuation z-accessor z-rust">::</span></span>FragmentState <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        module<span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>shader<span class="z-punctuation z-separator z-rust">,</span>
+        entry_point<span class="z-punctuation z-separator z-rust">:</span> <span class="z-string z-quoted z-double z-rust"><span class="z-punctuation z-definition z-string z-begin z-rust">&quot;</span>quad::fragment<span class="z-punctuation z-definition z-string z-end z-rust">&quot;</span></span><span class="z-punctuation z-separator z-rust">,</span>
+        targets<span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-path z-rust">wgpu<span class="z-punctuation z-accessor z-rust">::</span></span>ColorTargetState <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+            format<span class="z-punctuation z-separator z-rust">:</span> swapchain_format<span class="z-punctuation z-separator z-rust">,</span>
+            blend<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">None</span><span class="z-punctuation z-separator z-rust">,</span>
+            write_mask<span class="z-punctuation z-separator z-rust">:</span> <span class="z-meta z-path z-rust">wgpu<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">ColorWrites<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">ALL</span><span class="z-punctuation z-separator z-rust">,</span>
+        </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+</span></span></span></code></pre>
+<p>This lets me separate the code relevant to each draw call in
+their own sections rather than co-locating them all in the
+same place like many shaders end up being.</p>
+<p>The next step was to pull the portions of the GraphicsState
+struct out into its own struct containing all of the quad
+related data and gpu handles relevant for rendering the quad
+shader. I wont elaborate too much here as its relatively
+straight forward, but the end goal is to be able to generate
+this code from the shader and attributes in the shader
+crate.</p>
+<p>I have this idea of writing a proc macro which reads
+arguments to the fragment and vertex shaders and completely
+generates the pipeline which can execute those shaders
+automatically or with some minor hints via custom
+attributes. Again taking some ideas from the twgl library I
+mentioned yesterday. I have a rule that you should only
+refactor something like that if you have at least 2 examples
+and expect to write more, so now is not the time. However
+its good to have that in mind when pulling this code out.</p>
+<h2 id="glyph-atlases">Glyph Atlases</h2>
+<p>The other half of my work today involved researching how to
+render glyphs. The standard way to draw text to the screen
+using the gpu is a texture atlas. This is a persistent
+texture to which glyphs are rendered as they are requested.
+Any time that same glyph needs to be drawn again in the
+future, rather than using cpu time to redraw the glyph, the
+position of it in the texture can be looked up and used
+instead.</p>
+<p>A common crate for doing this kind of work is <a href="https://docs.rs/etagere/latest/etagere/">etegere</a>
+which provides a simple interface for allocating rectangles
+of a given size to a memory buffer. Once that is integrated
+and working properly, we have to actually draw the glyphs.
+For that I plan on using <a href="https://github.com/dfrg/swash">swash</a>
+which is a new text shaper written in rust that we have used
+for a while now in Neovide. It also has a performant text
+renderer which should work perfectly for this demo.</p>
+<p>With those pieces in place, it shouldn't be hard to
+implement text rendering. I'm looking forward to having a
+pretty understandable stack using such low level components.</p>
+<p>Some of the first software I ever wrote was some basic
+graphics programming demos in c# using the old gdi apis to
+draw pixels to the screen. At the time I was pretty
+frustrated at how slow that was since it was writing pixels
+directly to a back buffer on the cpu. It feels pretty great
+to finally have the equivalent working but for modern
+hardware and in such a way that I can fully understand all
+of the moving parts.</p>
+<p>I'm hoping to have basic glyph rendering done tomorrow, but
+its quite possible I'll get distracted by something else. We
+will see.</p>
+<p>Till tomorrow,<br />
+Kay</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day5-quad-shader&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day7-shader-struct-alignment&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

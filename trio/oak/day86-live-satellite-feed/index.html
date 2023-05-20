@@ -1,0 +1,138 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day86 - Live Satellite Feed
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Using Azure Server to Process Satellite Data
+    </h2>
+    
+    
+    <p>
+    
+      2019-10-19
+    
+    
+      <br>
+      <a href="../../hemlock/projects/rusty-marble/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day86-live-satellite-feed/./todo.svg" alt="Todo" /></p>
+<h1 id="a-cosmic-rabbit-hole">A cosmic rabbit hole</h1>
+<p>A new project today. Well not actually new, I've been working on it for about a week or two, but new enough! About a
+week or so ago I saw <a href="https://twitter.com/tylerhall/status/1181343024900722688">this tweet</a> pointing to a Mac app which
+updates your desktop background to the current view from one of the three current true color satellites: GOES-East,
+GOES-West, and Himawari. Much to my disappointment the app does not currently have a windows version.</p>
+<p>Further after some more looking and research, I discovered that the imagery used by the app is the so called GeoColor
+images developed by the Cooperative Institute for Research in the Atmosphere (CIRA) and the Regional and Mesoscale
+Meteorology Branch (RAMMB).</p>
+<p><img src="https://kaylees.dev/trio/oak/day86-live-satellite-feed/./geocolor.jpg" alt="GeoColor" /></p>
+<p>This imagery was developed primarily for weather forecasting purposes, so during the night when the earth is hardly
+visible in the normal spectrums, the system draws a precomputed &quot;night lights&quot; view with infrared data to display
+clouds. In my opinion this leaves a lot to be desired as the cloud data looks extra artificial and the purple is pretty
+unrealistic. On top of that country and state lines are overlayed both during the day and night ruining the illusion of
+realistic satellite imagery further.</p>
+<p>Luckily I discovered that the raw data from the satellites are uploaded every 10 minutes or so to an AWS S3 bucket
+<a href="https://registry.opendata.aws/noaa-goes/">here</a>. This data contains all of the raw imagery from the satellite imager.
+This adds some extra complication however as the imager does not combine the data into normal image formats, but instead
+publishes the data as netcdf files which I'm told is a common research format. To make matters worse, neither of the
+current GOES satellites (16 and 17) have true color capability. They have imagers for the red and blue wavelengths, but
+do not have a green channel. Instead they have a near infrared channel called &quot;veggie&quot; which is supposed to reflect
+highly in chlorophyll.</p>
+<p>The GeoColor images get around this limitation by using a precomputed lookup from all of the common channels in the GOES
+and Himawari satellite (the Japanese geosynchronous satellite) which does have a visible green light channel. For my
+purposes I used a <a href="https://github.com/Kethku/RustyMarble/blob/302d80b393288dd8143c6bcaf94d778b0402518f/src/main.rs#L119">simple
+hack</a> which
+linearly combines the red blue and veggies channels into a fake green channel that does good enough. As shown below, the
+images are pretty stunning.</p>
+<p><img src="https://kaylees.dev/trio/oak/day86-live-satellite-feed/./marble.jpg" alt="Blue Marble" /></p>
+<h1 id="azure">Azure</h1>
+<p>Although I now had a clean method for converting the raw data into pretty images, I wasn't out of the woods yet. I now
+faced the problem of how to get the data to my machine, and convert it without hitting my data caps from Comcast. Turns
+out each of the raw data bundles is about 300mb in size, so if I were to download the full data bundle every 10 minutes
+for the entire month, I would blow through my data cap from that alone. Luckily, being an employee at Microsoft, I am
+given a certain amount of Azure server credit and after a quick googl-I mean bing search I discovered that Azure servers
+don't have a data download limit.</p>
+<p>With this information in hand I set about creating a simple server which would download the most recent AWS data,
+process it into an image, and rehost that image as a DAT archive so that others could download it without breaking the
+bank. As of today the dat address is dat://3663c8db9286a28139c54918443d83e807817064129b74af938937e221f1ad13/current.jpg.
+The code I am currently running on the server can be found in the <a href="https://github.com/Kethku/RustyMarble">github repo</a>.</p>
+<h1 id="next-steps">Next Steps</h1>
+<p>Its pretty functional at the moment, but there's still a bunch to do. I would like to build a desktop app which auto
+fetches the most recent image from the dat archive and sets it as the desktop background. Further, I would like to play
+around with the post processing some more. It would be interesting to build in Rayleigh scattering correction to make
+the colors more accurate, or even do a similar color lookup to what the Geocolor images use. I have also contacted the
+original author of the Downlink app that started me down this rabbit hole with the hope that maybe he would find the
+images I am producing useful.</p>
+<p>In general I believe I have been successful with my original goal. Now its time to just push it the rest of the way.</p>
+<p>Till tomorrow!</p>
+<p>Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day85-ze&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day87-desktop-updater&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

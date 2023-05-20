@@ -1,0 +1,190 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day82 - Refactored Entity Rendering and Arrow Sprites
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Changed entity rendering to use a grid and drew arrow textures
+    </h2>
+    
+    
+    <p>
+    
+      2019-05-17
+    
+    
+      <br>
+      <a href="../../hemlock/projects/robot/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day82-refactored-entity-rendering-and-arrow-sprites/./todo.svg" alt="Todo" /></p>
+<p>Today and yesterday I spent some time doing miscellaneous tasks to get ready for
+path finding. I refactored the entity rendering and storage code to use a two
+dimensional grid for easier lookup, I allowed multiple drawables to draw using
+the same sort order context, and I drew arrow sprites to make a pretty animation
+once the pathfinding code is done.</p>
+<h2 id="entity-refactor">Entity Refactor</h2>
+<p>Up until now I have stored the entities to be drawn on the terrain in a list
+which I loop over and render one by one. This works great if I don't care about
+looking up a particular entity at a given location, but falls down once location
+actually matters. To get around this I refactored to use the same data structure
+and layout as the map tiles: An array of arrays indexed by x and y coordinate.</p>
+<p>First step was to initialize the arrays in the same place I initialized the
+terrain map.</p>
+<pre>
+  <code class="language-en">TileMap = new (Tiles, int)[heightMap.Length - 1][];
+EntityMap = new Tiles?[heightMap.Length - 1][];
+for (int x = 0; x &lt; TileMap.Length; x++) {
+    TileMap[x] = new (Tiles, int)[heightMap[x].Length - 1];
+    EntityMap[x] = new Tiles?[heightMap[x].Length - 1];
+    for (int y = 0; y &lt; TileMap[x].Length; y++) {
+        ...
+    }
+}</code>
+</pre>
+<p>I then modify the entity creation code to check the entity location for an
+existing entity before storing it in the array.</p>
+<pre>
+  <code class="language-en">for (int i = 0; i &lt; 10; i++) {
+  int x = random.Next(Width - 1);
+  int y = random.Next(Height - 1);
+
+  if (TileMap[x][y].tile == Tiles.Flat &amp;&amp; EntityMap[x][y] == null) {
+      Tiles tile = random.Next(2) == 1 ? Tiles.Tree : Tiles.Wall;
+      EntityMap[x][y] = tile;
+  }
+}
+
+while (true) {
+  int x = random.Next(Width - 1);
+  int y = random.Next(Height - 1);
+  if (TileMap[x][y].tile == Tiles.Flat &amp;&amp; EntityMap[x][y] == null) {
+      EntityMap[x][y] = Tiles.Ball;
+      BallPosition = new Vector2(x, y);
+      break;
+  }
+}</code>
+</pre>
+<p>Finally I slightly modified the map rendering code to just render the entity at
+each location if it exists.</p>
+<pre>
+  <code class="language-en">for (int x = 0; x &lt; mapManager.TileMap.Length; x++) {
+    var mapColumn = mapManager.TileMap[x];
+    var entityColumn = mapManager.EntityMap[x];
+    for (int y = 0; y &lt; mapColumn.Length; y++) {
+        (Tiles tile, int height) = mapColumn[y];
+        Vector3 position = new Vector3(x, y, height);
+        DrawTile(tile, position);
+        Tiles? entityTile = entityColumn[y];
+        if (entityTile != null) {
+            DrawTile(entityTile.Value, position, 2);
+        }
+    }
+}</code>
+</pre>
+<h2 id="layer-merging">Layer Merging</h2>
+<p>In anticipation for rendering entity paths, I worked on enabling merging of tile
+renders between drawables. In the current system, each drawable is rendered
+using it's own draw call from the SpriteBatch. This lets me draw each drawable
+on a separate layer. Unfortunately this requires all elements drawn together to
+be drawn by the same drawable. To fix this I grouped drawables by their
+<code>DrawOrder</code> and only created a draw call per grouping instead of per drawable.
+This should let me draw paths using a dedicated path finding module keeping
+concerns separate.</p>
+<pre>
+  <code class="language-en">foreach (IGrouping&lt;int, IDrawable&gt; drawablesLayer in drawables.GroupBy(drawable =&gt; drawable.DrawOrder)) {
+    spriteBatch.Begin(samplerState: SamplerState.PointClamp, sortMode: SpriteSortMode.FrontToBack);
+    foreach (IDrawable drawable in drawablesLayer) {
+        drawable.Draw(gameTime);
+    }
+    spriteBatch.End();
+}</code>
+</pre>
+<h2 id="arrows">Arrows</h2>
+<p>I spent the rest of my time drawing arrow sprites. I drew each of the cardinal
+directions as well as up and down each of the diagonal slopes. I decided to
+disable walking sideways along slopes and walking down or up the vertical slope
+since the animation would be tricky.</p>
+<p>Cardinal Flat Arrows:</p>
+<p><img src="https://kaylees.dev/trio/oak/day82-refactored-entity-rendering-and-arrow-sprites/FlatNegativeX.png" alt="Flat Negative X" />
+<img src="https://kaylees.dev/trio/oak/day82-refactored-entity-rendering-and-arrow-sprites/FlatNegativeY.png" alt="Flat Negative Y" />
+<img src="https://kaylees.dev/trio/oak/day82-refactored-entity-rendering-and-arrow-sprites/FlatPositiveX.png" alt="Flat Positive X" />
+<img src="https://kaylees.dev/trio/oak/day82-refactored-entity-rendering-and-arrow-sprites/FlatPositiveY.png" alt="Flat Positive Y" /></p>
+<p>Slope Arrows:</p>
+<p><img src="https://kaylees.dev/trio/oak/day82-refactored-entity-rendering-and-arrow-sprites/SlopeNegativeX.png" alt="Slope Negative X" />
+<img src="https://kaylees.dev/trio/oak/day82-refactored-entity-rendering-and-arrow-sprites/SlopeNegativeY.png" alt="Slope Negative Y" />
+<img src="https://kaylees.dev/trio/oak/day82-refactored-entity-rendering-and-arrow-sprites/SlopePositiveX.png" alt="Slope Positive X" />
+<img src="https://kaylees.dev/trio/oak/day82-refactored-entity-rendering-and-arrow-sprites/SlopePositiveY.png" alt="Slope Positive Y" /></p>
+<p>Thats it for today. I'm hoping that at this point I have finished all of the
+prerequisites for pathfinding so I can finally do it next time. We'll see.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day81-sprite-rendering-and-gap-fix&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day83-isometric-picking&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

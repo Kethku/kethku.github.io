@@ -1,0 +1,314 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day36 - TA Utilities and Touch
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Added utility classes and touch support to Tetris Attack
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-14
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day36-ta-utilities-and-touch/./todo.svg" alt="Todo" /></p>
+<p>Today I ported the <code>Vector</code> class from 8Bomb, extended it to 3 dimensions, added a
+<code>Color</code> class, and built initial touch support into my engine.</p>
+<h2 id="vector">Vector</h2>
+<p>I decided to spend some time rewriting the code from yesterday to use the
+<code>Vector</code> type I developed for 8Bomb and to use a new <code>Color</code> type for tinting
+sprite colors. This meant converting the graphics code (still not described here
+because its still gross... I'll try to clean it up soon and talk about it) to
+use the new types and add support for z positioning and tinting.</p>
+<p>The <code>Vector</code> class implementation didn't change much besides adding some aliases
+for various combinations of the components and a number of constant values.</p>
+<pre>
+  <code class="language-en">export class Vector {
+  constructor(x, y, z = 0) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+  }
+
+  get length() {
+    return Math.sqrt(this.x * this.x + this.y * this.y + this.z * this.z);
+  }
+
+  get xy() {
+    return new Vector(this.x, this.y, 0);
+  }
+
+  get yz() {
+    return new Vector(0, this.y, this.z);
+  }
+
+  get xz() {
+    return new Vector(this.x, 0, this.z);
+  }
+
+  get width() {
+    return this.x;
+  }
+
+  get height() {
+    return this.y;
+  }
+
+  distance(other) {
+    return this.subtract(other).length;
+  }
+
+  add(other) {
+    return new Vector(this.x + other.x, this.y + other.y, this.z + other.z);
+  }
+
+  subtract(other) {
+    return new Vector(this.x - other.x, this.y - other.y, this.z - other.z);
+  }
+
+  multiply(scalar) {
+    return new Vector(this.x * scalar, this.y * scalar, this.z * scalar);
+  }
+
+  multiplyParts(other) {
+    return new Vector(this.x * other.x, this.y * other.y, this.z * other.z);
+  }
+
+  divide(scalar) {
+    return new Vector(this.x &#x2F; scalar, this.y &#x2F; scalar, this.z &#x2F; scalar);
+  }
+
+  normalize() {
+    return this.divide(this.length);
+  }
+
+  floor() {
+    return new Vector(Math.floor(this.x), Math.floor(this.y), Math.floor(this.z));
+  }
+
+  ceil() {
+    return new Vector(Math.ceil(this.x), Math.ceil(this.y), Math.ceil(this.z));
+  }
+}
+
+Vector.zero = new Vector(0, 0, 0);
+Vector.one = new Vector(1, 1, 1);
+Vector.half = new Vector(0.5, 0.5, 0.5);
+Vector.topLeft = new Vector(0, 1);
+Vector.topRight = new Vector(1, 1);
+Vector.bottomRight = new Vector(1, 0);
+Vector.bottomLeft = Vector.zero;
+
+Vector.down = new Vector(0, -1);
+Vector.up = new Vector(0, 1);
+Vector.right = new Vector(1, 0);
+Vector.left = new Vector(-1, 0);</code>
+</pre>
+<p>Of note is <code>multiplyParts</code> which is like scalar multiply except multiplying by
+another <code>Vector</code>. I'm not super happy with the name, but for now it will do. The
+<code>Color</code> class is very simple:</p>
+<pre>
+  <code class="language-en">export class Color {
+  constructor(r, g, b, a = 1) {
+    this.r = r;
+    this.g = g;
+    this.b = b;
+    this.a = a;
+  }
+}
+
+Color.white = new Color(1, 1, 1, 1);
+Color.black = new Color(0, 0, 0, 1);
+Color.clear = new Color(0, 0, 0, 0);</code>
+</pre>
+<p>After adding the utility classes, I rewrote the math from yesterday to use the
+vector operators. It was pretty straightforward, so I will just provide an
+example:</p>
+<pre>
+  <code class="language-en">function calculateGridPosition() {
+  let gridCenter = screenSize.divide(2);
+
+  let margin = Math.max(screenSize.width * startingMargin, screenSize.height * startingMargin);
+  let maxWidth = screenSize.width - margin;
+  let maxHeight = screenSize.height - margin;
+
+  &#x2F;&#x2F; Try Horizontal
+  let gridDimensions = new Vector(maxWidth, maxWidth * 2);
+
+  if (gridDimensions.y &gt; maxHeight) {
+    &#x2F;&#x2F; Fallback to vertical
+    gridDimensions = new Vector(maxHeight &#x2F; 2, maxHeight);
+  }
+
+  return { gridCenter, gridDimensions };
+}</code>
+</pre>
+<p>Similarly to the benefits in 8Bomb, the code is not really smaller, but to my
+eyes it is much easier to verify that I haven't made any particular errors.</p>
+<h2 id="touch">Touch</h2>
+<p>To add touch support I decided to use the Javascript PointerEvents which unify
+the various input modes into one API which will respond to pen, touch, and mouse
+in the same way. Unfortunately all of the browsers except Safari support the
+events, so I had to use a <a href="https://github.com/jquery/PEP">polyfill</a> to use them.</p>
+<p>This was as simple as adding a script tag to the index.html file.</p>
+<pre>
+  <code class="language-en">&lt;html&gt;
+  &lt;head&gt;
+    &lt;style&gt;
+      body {
+        margin: 0;
+        padding: 0;
+        overflow:hidden;
+        background: black;
+      }
+
+      canvas, img {
+        display: block;
+      }
+    &lt;&#x2F;style&gt;
+    &lt;script src=&quot;https:&#x2F;&#x2F;code.jquery.com&#x2F;pep&#x2F;0.4.3&#x2F;pep.js&quot;&gt;&lt;&#x2F;script&gt;
+  &lt;&#x2F;head&gt;
+  &lt;body&gt;
+    &lt;script src=&quot;.&#x2F;index.js&quot;&gt;&lt;&#x2F;script&gt;
+  &lt;&#x2F;body&gt;
+&lt;&#x2F;html&gt;</code>
+</pre>
+<p>I then subscribed to the <code>touchdown</code>, <code>touchup</code>, and <code>touchmove</code> events on the canvas
+element and stored the extracted data into module variables.</p>
+<pre>
+  <code class="language-en">import { Vector } from &quot;.&#x2F;math&quot;;
+import { Update } from &quot;.&#x2F;events&quot;;
+import { canvas, screenSize } from &quot;.&#x2F;graphics&quot;;
+
+export let touchPosition = Vector.zero;
+
+export let touchDown = false;
+export let touchStarted = false;
+export let touchReleased = false;
+
+function handlePointerEvent(e) {
+  touchPosition = new Vector(e.clientX, screenSize.height - e.clientY);
+  touchDown = e.pressure &gt; 0.1;
+}
+
+let previousDown = false;
+Update.Subscribe(() =&gt; {
+  touchStarted = touchDown &amp;&amp; !previousDown;
+  touchReleased = !touchDown &amp;&amp; previousDown;
+  previousDown = touchDown;
+});
+
+canvas.addEventListener(&quot;pointerdown&quot;, handlePointerEvent);
+canvas.addEventListener(&quot;pointerup&quot;, handlePointerEvent);
+canvas.addEventListener(&quot;pointermove&quot;, handlePointerEvent);</code>
+</pre>
+<p>Then using the extracted information was pretty easy. I added an update function
+to the block class which checks if the pointer is down inside it's bounds and
+picks a random new block type.</p>
+<pre>
+  <code class="language-en">calculateLocation(gridCenter, gridDimensions, blockWidth, blocksAdvancement) {
+  let blocksTopLeft = new Vector(
+    gridCenter.x - gridDimensions.width &#x2F; 2,
+    gridCenter.y - gridDimensions.height &#x2F; 2 + blocksAdvancement);
+
+  &#x2F;&#x2F; To get the actual position of a block, add the block position times the
+  &#x2F;&#x2F; block width with the y axis reversed.
+  let topLeft = blocksTopLeft.add(this.blockPosition.multiply(blockWidth).multiplyParts(new Vector(1, -1)));
+  let dimensions = new Vector(blockWidth, blockWidth);
+
+  return { topLeft, dimensions };
+}
+
+update(gridCenter, gridDimensions, blockWidth, blocksAdvancement) {
+  let { topLeft, dimensions } = this.calculateLocation(gridCenter, gridDimensions, blockWidth, blocksAdvancement);
+
+  if (touchDown) {
+    if (touchPosition.x &gt;= topLeft.x &amp;&amp; touchPosition.x &lt;= topLeft.x + dimensions.width &amp;&amp;
+        touchPosition.y &lt;= topLeft.y &amp;&amp; touchPosition.y &gt;= topLeft.y - dimensions.height) {
+      this.type = randomType();
+    }
+  }
+}</code>
+</pre>
+<p>And thats that! I plan on pulling the grid positioning variables out of
+arguments and into module level variables which get updated upon window resize
+instead of recalculated every frame, but for now the proof of concept for touch
+is complete.</p>
+<p><img src="https://kaylees.dev/trio/oak/day36-ta-utilities-and-touch/Touch.gif" alt="Touch" /></p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day35-implement-block-grid&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day37-advancing-rows-and-minor-cleanup&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

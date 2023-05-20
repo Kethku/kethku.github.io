@@ -1,0 +1,181 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day62 - New Blocks and Camera Shake
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Added new block art and added camera shake on garbage fall
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-09
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day62-new-blocks-and-camera-shake/./todo.svg" alt="Todo" /></p>
+<p>Today I swapped the pixel art standard blocks out for much better assets
+provided by my friend who has been working on the Robot game project with me.
+Longer term he is planning on working on some background assets and such, but as
+a first step he drew new assets for the standard blocks in order to change the
+art style to enable more interesting backgrounds etc later.</p>
+<p><img src="https://kaylees.dev/trio/oak/day62-new-blocks-and-camera-shake/StandardBlocks.png" alt="Standard Blocks" /></p>
+<p>Swapping out the textures only required changing the image names in the images
+file,</p>
+<pre>
+  <code class="language-en">export const blockImages = {
+  &quot;Bang&quot;: &quot;.&#x2F;images&#x2F;Bang.png&quot;,
+  &quot;Wood&quot;: &quot;.&#x2F;images&#x2F;Wood.png&quot;,
+  &quot;Ice&quot;: &quot;.&#x2F;images&#x2F;Ice.png&quot;,
+  &quot;Stone&quot;: &quot;.&#x2F;images&#x2F;Stone.png&quot;,
+  &quot;Leaf&quot;: &quot;.&#x2F;images&#x2F;Leaf.png&quot;,
+  &quot;Lava&quot;: &quot;.&#x2F;images&#x2F;Lava.png&quot;,
+  &quot;Gold&quot;: &quot;.&#x2F;images&#x2F;Gold.png&quot;
+};</code>
+</pre>
+<p>and the block types to match.</p>
+<pre>
+  <code class="language-en">export const type = {
+  WOOD: &quot;Wood&quot;,
+  ICE: &quot;Ice&quot;,
+  STONE: &quot;Stone&quot;,
+  LEAF: &quot;Leaf&quot;,
+  LAVA: &quot;Lava&quot;,
+  GOLD: &quot;Gold&quot;,
+  BANG: &quot;Bang&quot;,
+  GARBAGE: &quot;Garbage&quot;
+};
+
+export const standardBlocks = [
+  type.WOOD,
+  type.ICE,
+  type.STONE,
+  type.LEAF,
+  type.LAVA,
+  type.GOLD
+];</code>
+</pre>
+<h2 id="camera-shake">Camera Shake</h2>
+<p>New textures out of the way I decided implement camera shake whenever garbage
+blocks fall to add some visual interest and weight to the blocks. To make this
+change easier I pulled the WebGL specific parts out of <code>graphics.js</code> into
+<code>webgl.js</code> in order to separate out the graphics api functions from the webgl
+integration.</p>
+<pre>
+  <code class="language-en">import { imagesToDraw } from &quot;.&#x2F;webgl&quot;;
+import { Color, Vector } from &quot;.&#x2F;math&quot;;
+
+export function image({ imageUrl, position, dimensions, rotation = 0, tint = Color.white, center = Vector.half }) {
+  imagesToDraw.push({ imageUrl, position, dimensions, rotation, tint, center });
+}</code>
+</pre>
+<p>Then I added a shake function with associated delay and amount constants which
+gets reduced by a certain percentage each frame.</p>
+<pre>
+  <code class="language-en">const shakeDecay = 0.8;
+const shakeAmount = 50;
+
+let currentShake = 0;
+let cameraShake = 0;
+
+export function shake() {
+  cameraShake = shakeAmount;
+}
+
+Update.Subscribe(() =&gt; {
+  cameraShake *= shakeDecay;
+  currentShake = (Math.random() - 0.5) * cameraShake;
+});</code>
+</pre>
+<p>The idea here is to build a function which sets a shake level that determines
+how much to move the screen. I then store the camera offset in the
+<code>currentShake</code> variable which gets used in the image call to offset the texture
+positions vertically by a random amount.</p>
+<pre>
+  <code class="language-en">export function image({ imageUrl, position, dimensions, rotation = 0, tint = Color.white, center = Vector.half }) {
+  let shakenPosition = position.withY(position.y + currentShake);
+  imagesToDraw.push({ imageUrl, position: shakenPosition, dimensions, rotation, tint, center });
+}</code>
+</pre>
+<p>Now when run, any time a block falls, the screen shakes up and down before
+tapering to normal position again.</p>
+<p><img src="https://kaylees.dev/trio/oak/day62-new-blocks-and-camera-shake/CameraShake.gif" alt="Camera Shake" /></p>
+<p>Thats it for today. I may not get to post tomorrow because I am flying to a
+friend's wedding, but I will try to get a daily post finished on the plane. If I
+don't I have all of Thursday to work on personal projects, so I will get it done
+then instead.</p>
+<p>Till tomorrow (or day after),<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day61-building-ios-apps-in-vs&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day63-garbage-refactoring&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

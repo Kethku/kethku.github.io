@@ -1,0 +1,254 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day23 - Rocks and Explosions
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Adding graphical touches to 8bomb
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-01
+    
+    
+      <br>
+      <a href="../../hemlock/projects/8bomb/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day23-rocks-and-explosions/./todo.svg" alt="Todo" /></p>
+<p>Today I added graphical rocks and bomb explosions to 8bomb. These don't effect
+gameplay at all, but do a good job of making the game more visualy impactful and
+interesting. I'll jump right in.</p>
+<div id="gameContainer">
+<style>
+iframe {
+    position: relative;
+    left: 50%;
+    transform: translate(-50%,0%);
+    min-width: 7in;
+    min-height: 7in;
+}
+<p>@media (max-width: 8.5in) {
+iframe {
+min-width: 80vw;
+min-height: 80vw;
+}
+}
+</style></p>
+<iframe src="https://kethku.github.io/8Bomb/"></iframe>
+</div>
+<h2 id="rocks">Rocks</h2>
+<p>The basic idea here is to add visual rocks to the terrain panels. These won't
+effect gameplay in any, but give a sense of motion that can be missing if the
+terrain is all one color. </p>
+<p>First step was to randomly place stones in each panel. I give each panel 10
+chances, each with 40% chance to spawn a stone. Then each stone is given a
+random x and y value within the panel and a random radius from 0 to 5. Lastly
+they are each given a color which is random from 4 to 7;</p>
+<pre>
+  <code class="language-en">function createPanel() {
+  let panel = [];
+  let stones = [];
+  for (let y = 0; y &lt; 100; y++) {
+    let row = [];
+    for (let x = 0; x &lt; 128; x++) {
+      row.push(true);
+    }
+    panel.push(row);
+  }
+
+  for (let i = 0; i &lt; 10; i++) {
+    if (Math.random() * 100 &lt; 40) {
+      stones.push({
+        x: Math.random() * 128,
+        y: Math.random() * panelHeight,
+        r: Math.random() * 5,
+        c: Math.floor(Math.random() * 3) + 4
+      });
+    }
+  }
+  panel.stones = stones;
+  return panel;
+}</code>
+</pre>
+<p>Note that since javascript objects are dynamic, I can add a stones property to
+the panel even though it is nominally an array. This is a little weird, but
+works well for my purposes so I'm leaving it.</p>
+<p>I draw the stones by pulling the color calculation functionality out of the
+<code>drawTerrain</code> function and into a centralized <code>colorAt(x, y)</code> function which
+checks if a rock is near enough and returns a random rock color instead of the
+expected ground color.</p>
+<pre>
+  <code class="language-en">export function colorAt(x, y) {
+  let panelNumber = Math.floor(y &#x2F; panelHeight);
+  let panel = terrain[panelNumber];
+  let panelY = y - (panelNumber * panelHeight);
+
+  if (!panel) return 7;
+
+  for (let stone of panel.stones) {
+    let dx = stone.x - x;
+    let dy = stone.y - panelY;
+    let distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance &lt; stone.r) {
+      return stone.c;
+    }
+  }
+
+  let color = 1;
+  if (!terrainAt(x, y - 1)) {
+    color -= 1;
+  } else if (!terrainAt(x, y + 1)) {
+    color += 1;
+  }
+  return color;
+}</code>
+</pre>
+<p><img src="https://kaylees.dev/trio/oak/day23-rocks-and-explosions/./Rocks.PNG" alt="Rocks" /></p>
+<p>Since the stones can be at any floating point from 0 to the panel width and 0 to
+the panel height, the rocks tend to have slightly irregular shapes which
+improves the effect.</p>
+<h2 id="explosions">Explosions</h2>
+<p>The explosions were pretty simple as well. I created <code>newExplosion</code> function
+which takes an x and y and creates a new explosion object which contains the x
+and y passed in as well as a standard explosion radius r, color c initialized at
+0 and a delay initialized to the animation speed. The new explosion gets added
+to a list managing the active explosions.</p>
+<pre>
+  <code class="language-en">const startingRadius = 30;
+const animationSpeed = 3;
+
+let explosions = [];
+
+export function newExplosion(x, y) {
+  explosions.push({
+    x,
+    y,
+    r: startingRadius,
+    c: 0,
+    delay: animationSpeed
+  });
+}</code>
+</pre>
+<p>Then each frame I run a new <code>updateExplosions</code> function which loops over every
+active explosion, decriments the delay if it is greater than zero, or resets the
+delay and increments the color.</p>
+<pre>
+  <code class="language-en">export function updateExplosions() {
+  let remainingExplosions = [];
+
+  for (let explosion of explosions) {
+    if (explosion.delay &gt; 0) {
+      explosion.delay--;
+      remainingExplosions.push(explosion)
+    } else {
+      if (explosion.c == 7) continue;
+      remainingExplosions.push(explosion);
+      explosion.c += 1;
+      explosion.r *= 0.8;
+      explosion.delay = animationSpeed;
+    }
+  }
+
+  explosions = remainingExplosions;
+}</code>
+</pre>
+<p>If the color is equal to 7, the explosion is dropped. Otherwise the remaining
+explosions become the active explosions.</p>
+<p>Finally drawing the explosions is as simple as setting the pixels that are
+within <code>r</code> distance from the explosion center to the color <code>c</code>.</p>
+<pre>
+  <code class="language-en">export function drawExplosions() {
+  for (let explosion of explosions) {
+    for (let x = explosion.x - explosion.r; x &lt; explosion.x + explosion.r; x++) {
+      for (let y = explosion.y - explosion.r; y &lt; explosion.y + explosion.r; y++) {
+        let dx = x - explosion.x;
+        let dy = y - explosion.y;
+        let dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist &lt;= explosion.r) {
+          setPixel(x, y, explosion.c);
+        }
+      }
+    }
+  }
+}</code>
+</pre>
+<p>And thats it!</p>
+<p><img src="https://kaylees.dev/trio/oak/day23-rocks-and-explosions/./Explosion.PNG" alt="Explosion" /></p>
+<p>These are very simple effects, but go a long way towards improving the feel of
+the game. Next up I will look into implementing a game over screen.</p>
+<p>Till tomorrow,
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day22-pando-vnext&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day24-8bomb-refactors&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

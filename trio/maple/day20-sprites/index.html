@@ -1,0 +1,208 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Maple
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;">Maple</a>
+
+Day20 - Sprites
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Adding sprites to the 2d renderer
+    </h2>
+    
+    
+    <p>
+    
+      2023-05-08
+    
+    
+    </p>
+    
+  </summary>
+  <p>I've been thinking about my match 3 game a bit more recently
+after seeing my close friend's game <a href="https://twitter.com/heavenscape?lang=en">Heavenscape</a> make more
+progress. Its motivated me to work on my own game ideas a
+bit more.</p>
+<p>Last I worked on my game, I was hitting some walls and
+frustration with typescript. I wrote it at the time because
+I knew that I could ship typescript wherever I might need
+it, but since then, both wgpu and rust have become
+significantly more cross platform, and I have written the
+majority of a 2d renderer that would work perfectly for a
+game like this.</p>
+<p>Up till now my renderer (which I'm now calling Bedrock) has
+been built with Neovide rendering in mind. Though that is
+still a project I would like to push forward, I would love
+it if Bedrock could be used for other projects such as 2d
+rendering in games. The goal is to make something simple
+enough to integrate wherever it might be needed using a
+simple scene format as the common interface. Eventually I
+expect Vello to fit into this usecase much better as they
+have been doing it for much longer, but in the short run I
+benefit from understanding the full stack.</p>
+<h2 id="sprite-rendering">Sprite Rendering</h2>
+<p>Luckily for me much of the work for rendering textures from
+the gpu is identical to rendering glyphs which I have
+already done. The main difference is that I need to parse
+and pull the binary data from a file rather than rasterizing 
+glyphs. To do so I parameterized the SpriteState struct (and
+by extension, the Renderer) by a type that implements the
+RustEmbed trait.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-meta z-struct z-rust"><span class="z-storage z-modifier z-rust">pub</span> <span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-generic z-rust"><span class="z-entity z-name z-struct z-rust">SpriteState</span><span class="z-meta z-generic z-rust"><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span>A<span class="z-punctuation z-separator z-rust">:</span> RustEmbed<span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span></span></span><span class="z-meta z-struct z-rust"> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-variable z-other z-member z-rust">buffer</span><span class="z-punctuation z-separator z-type z-rust">:</span> Buffer,
+    <span class="z-variable z-other z-member z-rust">atlas_texture</span><span class="z-punctuation z-separator z-type z-rust">:</span> Texture,
+    <span class="z-variable z-other z-member z-rust">bind_group</span><span class="z-punctuation z-separator z-type z-rust">:</span> BindGroup,
+    ...
+  </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>This way the end user of Bedrock can insert their own
+embedded files. Eventually I will make components of the
+renderer optional so that projects that don't need image
+rendering remove the extra compiled code. From here I
+followed the glyph code pretty closely using the Image crate
+to parse the texture paths taken from the scene, load them
+from the RustEmbed struct, and parse them into binary data.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-modifier z-rust">pub</span> <span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">upload_sprite</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-keyword z-operator z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> <span class="z-variable z-parameter z-rust">self</span>, <span class="z-variable z-parameter z-rust">queue</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>Queue, <span class="z-variable z-parameter z-rust">sprite</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>Sprite</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> InstancedSprite</span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-storage z-type z-rust">let</span> allocation_rectangle <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-keyword z-control z-rust">if</span> <span class="z-storage z-type z-rust">let</span> <span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>alloc_id</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>image_lookup<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">get</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>sprite<span class="z-punctuation z-accessor z-dot z-rust">.</span>texture</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>atlas_allocator<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">get</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-arithmetic z-rust">*</span>alloc_id</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span> <span class="z-keyword z-control z-rust">else</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        <span class="z-storage z-type z-rust">let</span> image_file <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">A<span class="z-punctuation z-accessor z-rust">::</span></span>get<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>sprite<span class="z-punctuation z-accessor z-dot z-rust">.</span>texture</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">unwrap</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-storage z-type z-rust">let</span> image <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">image<span class="z-punctuation z-accessor z-rust">::</span></span>load_from_memory<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>image_file<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">as_ref</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">unwrap</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-storage z-type z-rust">let</span> data <span class="z-keyword z-operator z-assignment z-rust">=</span> image<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">to_rgba8</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-storage z-type z-rust">let</span> <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>image_width<span class="z-punctuation z-separator z-rust">,</span> image_height</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-assignment z-rust">=</span> image<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">dimensions</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+        <span class="z-storage z-type z-rust">let</span> allocation <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-variable z-language z-rust">self</span>
+            <span class="z-punctuation z-accessor z-dot z-rust">.</span>atlas_allocator
+            <span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">allocate</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-support z-function z-rust">size2</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>image_width <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">i32</span><span class="z-punctuation z-separator z-rust">,</span> image_height <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">i32</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+            <span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">expect</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-string z-quoted z-double z-rust"><span class="z-punctuation z-definition z-string z-begin z-rust">&quot;</span>Could not allocate glyph to atlas<span class="z-punctuation z-definition z-string z-end z-rust">&quot;</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+        <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>image_lookup
+            <span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">insert</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>sprite<span class="z-punctuation z-accessor z-dot z-rust">.</span>texture<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">clone</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span> allocation<span class="z-punctuation z-accessor z-dot z-rust">.</span>id</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+        queue<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">write_texture</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>
+            ImageCopyTexture <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+                texture<span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>atlas_texture<span class="z-punctuation z-separator z-rust">,</span>
+                mip_level<span class="z-punctuation z-separator z-rust">:</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">0</span><span class="z-punctuation z-separator z-rust">,</span>
+                origin<span class="z-punctuation z-separator z-rust">:</span> Origin3d <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+                    x<span class="z-punctuation z-separator z-rust">:</span> allocation<span class="z-punctuation z-accessor z-dot z-rust">.</span>rectangle<span class="z-punctuation z-accessor z-dot z-rust">.</span>min<span class="z-punctuation z-accessor z-dot z-rust">.</span>x <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span><span class="z-punctuation z-separator z-rust">,</span>
+                    y<span class="z-punctuation z-separator z-rust">:</span> allocation<span class="z-punctuation z-accessor z-dot z-rust">.</span>rectangle<span class="z-punctuation z-accessor z-dot z-rust">.</span>min<span class="z-punctuation z-accessor z-dot z-rust">.</span>y <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span><span class="z-punctuation z-separator z-rust">,</span>
+                    z<span class="z-punctuation z-separator z-rust">:</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">0</span><span class="z-punctuation z-separator z-rust">,</span>
+                </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span><span class="z-punctuation z-separator z-rust">,</span>
+                aspect<span class="z-punctuation z-separator z-rust">:</span> <span class="z-meta z-path z-rust">TextureAspect<span class="z-punctuation z-accessor z-rust">::</span></span>All<span class="z-punctuation z-separator z-rust">,</span>
+            </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span><span class="z-punctuation z-separator z-rust">,</span>
+            <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>data<span class="z-punctuation z-separator z-rust">,</span>
+            ImageDataLayout <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+                offset<span class="z-punctuation z-separator z-rust">:</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">0</span><span class="z-punctuation z-separator z-rust">,</span>
+                bytes_per_row<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">4</span> <span class="z-keyword z-operator z-arithmetic z-rust">*</span> image_width <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+                rows_per_image<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>image_height <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+            </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span><span class="z-punctuation z-separator z-rust">,</span>
+            Extent3d <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+                width<span class="z-punctuation z-separator z-rust">:</span> image_width <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span><span class="z-punctuation z-separator z-rust">,</span>
+                height<span class="z-punctuation z-separator z-rust">:</span> image_height <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span><span class="z-punctuation z-separator z-rust">,</span>
+                depth_or_array_layers<span class="z-punctuation z-separator z-rust">:</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">1</span><span class="z-punctuation z-separator z-rust">,</span>
+            </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span><span class="z-punctuation z-separator z-rust">,</span>
+        </span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+        allocation<span class="z-punctuation z-accessor z-dot z-rust">.</span>rectangle
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+    InstancedSprite <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        top_left<span class="z-punctuation z-separator z-rust">:</span> sprite<span class="z-punctuation z-accessor z-dot z-rust">.</span>top_left<span class="z-punctuation z-separator z-rust">,</span>
+        size<span class="z-punctuation z-separator z-rust">:</span> sprite<span class="z-punctuation z-accessor z-dot z-rust">.</span>size<span class="z-punctuation z-separator z-rust">,</span>
+        atlas_top_left<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-function z-rust">vec2</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>
+            allocation_rectangle<span class="z-punctuation z-accessor z-dot z-rust">.</span>min<span class="z-punctuation z-accessor z-dot z-rust">.</span>x <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">,</span>
+            allocation_rectangle<span class="z-punctuation z-accessor z-dot z-rust">.</span>min<span class="z-punctuation z-accessor z-dot z-rust">.</span>y <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">,</span>
+        </span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+        atlas_size<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-function z-rust">vec2</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>
+            allocation_rectangle<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">width</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">,</span>
+            allocation_rectangle<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">height</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">,</span>
+        </span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+        color<span class="z-punctuation z-separator z-rust">:</span> sprite<span class="z-punctuation z-accessor z-dot z-rust">.</span>color<span class="z-punctuation z-separator z-rust">,</span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>Not much to it. With that out of the way, I wrote a simple
+shader again matching the glyph code to take the
+InstancedSprites and draw them to quads sampling from the
+atlas for the image data. I modified the scene to draw one
+of the sprites from my old attempt to the screen as a test.</p>
+<p><img src="https://kaylees.dev/trio/maple/day20-sprites/WorkingSprite.png" alt="Working Sprite" /></p>
+<p>In this image there's an issue I haven't figured out yet
+though. For some reason the blurred background from the test
+layer containing the path isn't being rendered. I didn't
+have time to track down why yet, but I need to address that.
+The other problem I haven't investigated fully is that the
+scene viewer crashes on my desktop machine which has an
+nvidia gpu. I think its possible it crashes due to a texture
+format mismatch, but I'm not positive yet and would like to
+address that as well.</p>
+<p>Once I figure out those two issues, I plan on porting the
+old TARemake code to Rust and Bedrock pretty directly. Once
+ported over, I can start thinking about where to take the
+project next.</p>
+<p>Till tomorrow,
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day19-two-columns-and-refactoring&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day21-jealousy&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

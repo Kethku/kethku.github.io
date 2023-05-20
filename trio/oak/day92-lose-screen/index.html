@@ -1,0 +1,133 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day92 - Lose Screen
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Danger animation and lose screen
+    </h2>
+    
+    
+    <p>
+    
+      2019-10-25
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day92-lose-screen/./todo.svg" alt="Todo" /></p>
+<p>Today I worked on the game over screen in my Tetris Attack clone. I built upon the work I layed out yesterday to enable
+multiple screens, and I created a danger animation for blocks about to move off the top of the screen. The screen
+management code was largely covered yesterday, so today I will talk about the danger animation I built.</p>
+<p><img src="https://kaylees.dev/trio/oak/day92-lose-screen/./DangerBlocks.gif" alt="Danger Blocks" /></p>
+<h2 id="the-flicker">The Flicker</h2>
+<p>The flickering block effect is simply a manipulation of the tint of each block in columns which are about to move off
+the screen. I build this effect by adding a Sin wave based on the current frame count to the tint color. By fiddling
+with the scale of the frame count value, I can effect the speed of the flicker, and by multiplying the result by some
+value, I can configure the brightness differenctial from the darkest level to the brightest.</p>
+<pre>
+  <code class="language-en">calculateColor(centerY: number, frame: number, dangerColumns: Set&lt;number&gt;) {
+    if (this.state === BlockState.Matched) {
+      return new Color(1.5, 1.5, 1.5, 1);
+      ...
+      ...
+      ...
+    } else if (isInLosingPosition() &amp;&amp; dangerColumns.has(this.gridSlot.x)) {
+      return Color.gray;
+    } else if (dangerColumns.has(this.gridSlot.x)) {
+      let gray = 1 + Math.sin(frame &#x2F; 5) &#x2F; 4;
+      return new Color(gray, gray, gray);
+    } else {
+      return Color.white;
+    }
+  }</code>
+</pre>
+<p>The added bits are the 3 last clauses of the if else statement in my calculate color function for blocks. I calculate
+the danger columns by looping over every block and checking the y position. This gets passed to every block render
+function and by extension every calculate color function.</p>
+<p>Since the frame value increments every frame (obviously) I can divide it by some constant value to get a smoother number
+which slowly increases. Also since the Sin function moves from negative one to positive one, I can tell that 
+<code>Sin(frame / 5) / 4</code> will go from -0.25 to 0.25 and adding 1 will result in 0.75 to 1.25 which is right where I want it. 
+This means the animation will move smoothly from slightly darker to slightly brighter than normal.</p>
+<p>If however any of the columns are in the losing position which means the final count down timer has started, I render
+all danger columns as darker than normal. This alerts the player that they are about to lose unless they do something
+quickly.</p>
+<h2 id="next-up">Next Up</h2>
+<p>Its very late (again :/) so I'm gonna leave it at that. I have mixed feelings about this strategy for game screens. I'm
+concidering introducing react to enable more UI first components and the like and ease interface design. I haven't
+decided though as normal web controls are pretty hard to theme to match the pixel art. We'll see.</p>
+<p>In any case the game is shaping up. The biggest feature next is to add multiplayer support. I have a bunch of
+interesting ideas kicking around, so I'm eager to get going.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day91-lose-screen-progress&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day93-express-server&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>
