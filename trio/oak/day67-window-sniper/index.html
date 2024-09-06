@@ -1,0 +1,311 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day67 - Window Sniper
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Simple utility for force killing windows
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-17
+    
+    
+    </p>
+    
+  </summary>
+  <p>Today I took a short detour in rust land to build a satisfying utility for
+killing windows processes by clicking on the associated window. For the
+impatient, the finished tool can be found
+<a href="https://github.com/Kethku/WindowSniper/releases">here</a>.</p>
+<h2 id="the-culprit">The Culprit</h2>
+<p>After coming home from work and logging into my machine I found a mysterious
+window floating on top of my desktop without a name, and not responding to any
+clicks of the close button. </p>
+<p><img src="https://kaylees.dev/trio/oak/day67-window-sniper/WeirdZombieWindow.PNG" alt="Weird Zombie Window" /></p>
+<p>This cannot be. Processes do what I want them to do, not what they decide seems
+reasonable to them. Punishment for such crimes will not be an instantaneous
+sweet release to oblivion that comes from a task termination in Task Manager.
+No, for such transgressions we need to set an example. For this we must fashion
+a weapon which will crush rebellious denizens of my computer into submission.</p>
+<p>My glorious method for process domination was be constructed from 3 parts:</p>
+<ul>
+<li>Aiming Device</li>
+<li>Termination Method</li>
+<li>Example Communicator</li>
+</ul>
+<p>Since my utility needed to manage the minions of my machine, I built it using
+Rust because it lets me safely access unmanaged code performantly and cleanly.</p>
+<h2 id="aiming">Aiming</h2>
+<p>I'm going to be honest. I don't know much about writing native code and about
+working with Windows APIs. Luckily much of the hard work has been done for me in
+the form of the <code>winapi-rs</code> project which wraps all of the Windows APIs in
+simple Rust functions.</p>
+<p>Some short Googling later, and I found the <code>GetKeyState</code> API for checking the
+mouse button status, and <code>GetCursorPos</code> for finding the position of the cursor.
+Unfortunately though, all of the winapi functions are <code>unsafe</code> because they may
+do crazy nasty things at any time. To keep myself sane I decided to write a
+slightly higher level wrapper around the functions I needed.</p>
+<pre>
+  <code class="language-en">fn mouse_down(button: c_int) -&gt; bool {
+    unsafe {
+        GetKeyState(button) &amp; 0x100 != 0
+    }
+}
+
+pub fn mouse_left_down() -&gt; bool {
+    mouse_down(VK_LBUTTON)
+}
+
+pub fn mouse_right_down() -&gt; bool {
+    mouse_down(VK_RBUTTON)
+}</code>
+</pre>
+<p><code>mouse_down</code> takes a button to query, and calls the <code>GetKeyState</code> Windows API
+which in turn returns a set of flags the third of which indicates if the button
+is currently held down. I then wrap <code>mouse_down</code> in <code>mouse_left_down</code> and
+<code>mouse_right_down</code> functions which pass the correct constant in for the left and
+right mouse buttons respectively.
+<pre>
+  <code class="language-en">use winapi_wrappers::{mouse_left_down, mouse_right_down};
+
+fn main() -&gt; () {
+    loop {
+        if mouse_right_down() {
+            break;
+        }
+
+        if mouse_left_down() {
+            println!(&quot;Sniper Shot!&quot;);
+            break;
+        }
+    }
+}</code>
+</pre>
+</p>
+<p>Since I only implemented polling functions for the mouse button state, the main
+function consists of a single loop which continuously checks the mouse status
+until either of the mouse buttons is pressed. Then once a button was pressed I
+needed to get the mouse position.</p>
+<pre>
+  <code class="language-en">pub struct Position {
+    pub x: i32,
+    pub y: i32
+}
+
+pub fn mouse_position() -&gt; Position {
+    let mut cursor_position = POINT { x: 0, y: 0 };
+
+    unsafe {
+        GetCursorPos(&amp;mut cursor_position);
+    }
+
+    Position {
+        x: cursor_position.x,
+        y: cursor_position.y
+    }
+}</code>
+</pre>
+<p><code>GetCursorPos</code> was slightly more complicated because instead of getting a return
+value directly, the Windows API sets values on the structure pointed at by a
+passed in pointer. To make matters slightly more complicated as well, the
+<code>winapi-rs</code> wrapper has a weird <code>POINT</code> struct with a bad name which I decided
+to replace with my own.</p>
+<h2 id="termination">Termination</h2>
+<p>With the aiming functionality finished, I then needed to actually kill a
+process. In windows this is done with the process identifier or PID.
+Conveniently the PID is retrievable from a given window by retrieving the window
+handle from a position, and retrieving the calling PID from the handle.</p>
+<pre>
+  <code class="language-en">pub fn pid_from_position(pos: Position) -&gt; u32 {
+    let mut pid: u32 = 0;
+
+    unsafe {
+        let handle = WindowFromPoint(POINT { x: pos.x, y: pos.y });
+        GetWindowThreadProcessId(handle, &amp;mut pid);
+    }
+
+    pid
+}</code>
+</pre>
+<p>Finally once we have a PID for the window we want to kill, we need a termination
+function. Again in Windows this must be done in two steps, first you have to get
+the process handle via <code>OpenProcess</code>, and then you have to kill the process by
+passing the handle to <code>TerminateProcess</code>.</p>
+<pre>
+  <code class="language-en">pub fn terminate_pid(pid: u32) {
+    unsafe {
+        let handle = OpenProcess(PROCESS_ALL_ACCESS, 1, pid);
+        TerminateProcess(handle, 0);
+    }
+}</code>
+</pre>
+<p>To integrate the kill functionality into the weapon I just modify the <code>main</code>
+function to retrieve the mouse position, get the process id under the mouse, and
+kill the process.</p>
+<pre>
+  <code class="language-en">fn main() -&gt; () {
+    loop {
+        if mouse_right_down() {
+            break;
+        }
+
+        if mouse_left_down() {
+            let cursor_pos = mouse_position();
+            let pid = pid_from_position(cursor_pos);
+            terminate_pid(pid);
+            println!(&quot;killed {}&quot;, pid);
+            break;
+        }
+    }
+}</code>
+</pre>
+<p>And thats it for the actual functionality. The state as is isn't nearly good
+enough of an effect to make an example of the unruly process in question. For
+that we need some sound.</p>
+<h2 id="example-communication">Example Communication</h2>
+<p>Sound has two parts: storing it, and playing it. For storing I would really like
+to embed the sounds directly in the final executable so that I can pass around
+(and store) just one file. Luckily there is a rust crate called <code>RustEmbed</code>
+which allows storing and retrieving embedded binary files exactly in the way
+that I needed.</p>
+<p>So I downloaded gun cocking and shooting sound effects and added them to a
+sounds folder in the root of the project. And then created an Assets type
+definition which gets filled in by the library with functions for retrieving
+binary resources.</p>
+<pre>
+  <code class="language-en">#[derive(RustEmbed)]
+#[folder = &quot;sounds&#x2F;&quot;]
+struct Asset;</code>
+</pre>
+<p>Once stored in this way I am able to retrieve the binary vector like so:
+<pre>
+  <code class="language-en">let bytes = Vec::from(Asset::get(path).unwrap());</code>
+</pre>
+</p>
+<p>For playing the stored sound effect, I turned to a crate called <code>Rodio</code> which
+allows parsing and playing of sound files in background threads. The process is
+to loaded the sound effect into a decoder and call <code>play_raw</code> passing the
+decoder object to start the sound. To make things cleaner I built a helper
+function that does all of the type fiddling to load the sound.</p>
+<pre>
+  <code class="language-en">fn load_sound(path: &amp;str) -&gt; Decoder&lt;Cursor&lt;Vec&lt;u8&gt;&gt;&gt; {
+    let bytes = Vec::from(Asset::get(path).unwrap());
+    let cursor = Cursor::new(bytes);
+    rodio::Decoder::new(cursor).unwrap()
+}</code>
+</pre>
+<p>Then I load the two sound effects, initialize the sound device and play the
+sound to cock the gun on startup and shoot when the mouse has been clicked and
+the process terminated.</p>
+<pre>
+  <code class="language-en">fn main() -&gt; () {
+    let cocking = load_sound(&quot;cocking.wav&quot;);
+    let shoot = load_sound(&quot;shoot.wav&quot;);
+
+    let device = rodio::default_output_device().unwrap();
+
+    rodio::play_raw(&amp;device, cocking.convert_samples());
+    loop {
+        if mouse_right_down() {
+            break;
+        }
+
+        if mouse_left_down() {
+            let cursor_pos = mouse_position();
+            let pid = pid_from_position(cursor_pos);
+            terminate_pid(pid);
+            println!(&quot;killed {}&quot;, pid);
+            rodio::play_raw(&amp;device, shoot.convert_samples());
+            sleep(Duration::from_millis(1000));
+            break;
+        }
+    }
+}</code>
+</pre>
+<p>Note: I also wait for a second after the shoot sound effect is triggered so that
+the process doesn't finish before the sound has a chance to play.</p>
+<p>And with that my weapon for process management is complete.</p>
+<h2 id="testing-it-out">Testing it Out</h2>
+<p>Running the app and clicking on our rebellious friend presented me with a
+satisfying firing sound and this image:</p>
+<p><img src="https://kaylees.dev/trio/oak/day67-window-sniper/MissionAccomplished.PNG" alt="Mission Accomplished" /></p>
+<p>And theres more where that came from. Let all who enter my digital domain know
+that I rule with an iron fist.</p>
+<h2 id="source-and-binaries">Source and Binaries</h2>
+<p>I uploaded the tool to github <a href="https://github.com/Kethku/WindowSniper">here</a> and
+the release executable can be found
+<a href="https://github.com/Kethku/WindowSniper/releases">here</a>. I don't know if I will
+work on this project further, but it was a fun one off that taught me a bunch
+about manipulating windows APIs and quelling rebellion. Fun all around.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day66-porting-tetris-attack-to-typescript&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day68-conditional-types-in-typescript&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

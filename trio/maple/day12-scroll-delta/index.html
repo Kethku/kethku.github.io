@@ -1,0 +1,122 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Maple
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;">Maple</a>
+
+Day12 - Scroll Delta
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Using the new scroll delta field in neovim 0.9
+    </h2>
+    
+    
+    <p>
+    
+      2023-04-07
+    
+    
+    </p>
+    
+  </summary>
+  <p>Today I tried to push forward on refactoring the
+scene_viewer to add a clap based argument for rendering the
+scene into an image. I ended up biting off more than I could
+chew and have rolled that work back.</p>
+<p>On the side though I took a look at the newly released
+Neovim 0.9 which includes <code>scroll_delta</code> data in the
+<code>viewport</code> events. This was a field introduced in part for
+Neovide to get better smooth scrolling.</p>
+<p>With the existing implementation, Neovide uses the top line
+of the rendered screen as reported by the viewport event to
+decide where to draw the new content. The hope being that if
+the user has scrolled the screen, the new content will be
+inserted into the correct place visually and can be animated
+into view.</p>
+<p>This works for simple buffers but falls apart when lines are
+soft wrapped or when there are folds because there will be
+larger jumps in the top line than the view should actually
+be scrolled. The <code>scroll_delta</code> field addresses this by including an
+amount to scroll the screen by irrespective of the actual
+top line and which takes into account the folds and soft
+wraps.</p>
+<p>To take advantage of this new data, I swapped the snapshots
+off of using the topline and instead stored a vertical
+position float. Any time a viewport event is recieved which
+has a <code>scroll_delta</code>, a snapshot is taken with a vertical
+position adjusted by the <code>scroll_delta</code> so that it can be
+rendered in the correct place.</p>
+<p>In my manual testing, this does fix the softwrap issues I
+encountered in the original approach, but when talking with
+contributors there are still problems with folds that I
+haven't tracked down yet.</p>
+<p>Tomorrow I may pull down another project from the shelf to
+work on to build some steam back up after my failure today,
+but we will see what I'm up for as the day is likely to be
+pretty busy.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day11-serializable-scene&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day13-neovide-release&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

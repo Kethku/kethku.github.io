@@ -1,0 +1,202 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day78 - Map Generation and iOS Debugging Improvements
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Refactored the map rendering and enabled some basic terrain generation
+    </h2>
+    
+    
+    <p>
+    
+      2019-05-08
+    
+    
+      <br>
+      <a href="../../hemlock/projects/robot/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day78-map-generation-and-ios-debugging-improvements/./todo.svg" alt="Todo" /></p>
+<p>Today I worked on cleaning up the isometric map rendering code, added some very
+basic terrain generation, and improved the iOS debugging experience from Visual
+Studio.</p>
+<h2 id="map-rendering">Map Rendering</h2>
+<p>Last time I left off with a manually created terrain and some simple animation
+across that terrain. To clean that code up I pulled most of the map management
+logic out into a <code>MapManager</code> class which contains the map array, entities, and a
+simple algorithm for randomly generating both.</p>
+<p>Because my current tileset is somewhat limited and the fact that isometric tiles
+cannot render all geometries properly, I had to be careful how I built the map.
+What I eventually landed on was to first generate a constrained monotonically
+downward sloping (I'll explain in a moment) height map, and then used a lookup
+table to pick which sprite to render at each map location.</p>
+<p>This two step approach lets me reason about the map outside of the particular
+tiles, and then abstract away picking which tile would make sense for a given
+geometry.</p>
+<pre>
+  <code class="language-en">public void RandomizeMap() {
+    int[][] heightMap = new int[Radius][];
+    for (int x = Radius - 1; x &gt;= 0; x--) {
+        heightMap[x] = new int[Radius];
+        for (int y = 0; y &lt; Radius; y++) {
+            if (y == 0 || x == Radius - 1) heightMap[x][y] = 0;
+            else {
+                int upParent = heightMap[x + 1][y - 1];
+                int leftParent = heightMap[x][y - 1];
+                int rightParent = heightMap[x + 1][y];
+
+                if (leftParent == upParent &amp;&amp; rightParent == upParent &amp;&amp; random.Next(30) == 1) {
+                    heightMap[x][y] = leftParent - 1;
+                } else {
+                    heightMap[x][y] = new[] { leftParent, upParent, rightParent }.Min();
+                }
+            }
+        }
+    }</code>
+</pre>
+<p>The first step was to layout the height of the terrain. The basic idea is that
+since I can't render slopes angling away from the camera, the slopes must all
+angle toward the camera. To achieve this I loop over each height index and
+randomly decrease the height if the indexes above are all the same. Otherwise I
+set the index to the minimum of the above indexes so as to prevent the slopes
+from getting too steep.</p>
+<p>With the heightmap out of the way I use a lookup table in a similar way to
+drawing marching squares terrains. I normalize 4 values by subtracting the
+smallest one from each and set the indexed Tiles value into the map array.</p>
+<pre>
+  <code class="language-en">Dictionary&lt;(int left, int up, int right, int down), Tiles&gt; SlopeLookup = new Dictionary&lt;(int, int, int, int), Tiles&gt; {
+    [(0, 0, 0, 0)] = Tiles.Dirt,
+    [(1, 1, 0, 0)] = Tiles.SlopeLeft,
+    [(1, 1, 1, 0)] = Tiles.SlopeDown,
+    [(0, 1, 1, 0)] = Tiles.SlopeRight,
+    [(0, 1, 0, 0)] = Tiles.SlopeUp
+};
+
+TileMap = new (Tiles, int)[heightMap.Length - 1][];
+for (int x = 0; x &lt; TileMap.Length; x++) {
+    TileMap[x] = new (Tiles, int)[heightMap[x].Length - 1];
+    for (int y = 0; y &lt; TileMap[x].Length; y++) {
+        int left = heightMap[x][y];
+        int up = heightMap[x + 1][y];
+        int right = heightMap[x + 1][y + 1];
+        int down = heightMap[x][y + 1];
+
+        int lowest = new[] { left, up, right, down }.Min();
+        Tiles tile = SlopeLookup[(left - lowest, up - lowest, right - lowest, down - lowest)];
+        TileMap[x][y] = (tile, lowest);
+    }
+}</code>
+</pre>
+<p>Finally I use the height map calculated above to randomly place tree entities.
+Since the entities look weird on a non-flat tile, I also lookup the map array to
+make sure I'm not placing trees on slopes.</p>
+<pre>
+  <code class="language-en">Entities.Clear();
+for (int i = 0; i &lt; 10; i++) {
+    int x = random.Next(Width - 1);
+    int y = random.Next(Height - 1);
+
+    if (TileMap[x][y].tile == Tiles.Dirt) {
+        var tile = Tiles.Tree;
+        var position = new Vector2(x, y);
+
+        Entities.Add((tile, position));
+    }
+}</code>
+</pre>
+<p>Finally to test out the random generation, I added a simple update method to the
+Map Manager which checks the touch controls to see if a touch point is present,
+and regenerates the whole thing. The resulting app looks like this:</p>
+<p><img src="https://kaylees.dev/trio/oak/day78-map-generation-and-ios-debugging-improvements/RandomIsometricMap.gif" alt="Random Isometric Map" /></p>
+<h2 id="ios-debugging">iOS Debugging</h2>
+<p>The rest of my time the past couple of days was spent stumbling around trying to
+improve the debugging experience on my actual iOS device. My previous strategy
+of using the plugged in iPhone made things much to difficult because some
+combination of the cord and usb ports I was using caused things to be extra
+spotty.</p>
+<p>Eventually I discovered that xCode, the Mac dev environment allows for debugging
+iOS devices remotely. I don't have the device close, so I don't have screen caps
+of the actual UI. However I got it working by opening xCode, using the windows
+menu to open the devices window, connecting my iPhone to the computer using a
+usb cord, and then checking the debug this device over the network button.</p>
+<p>With that setting set, I was able to disconnect the iPhone, and Visual Studio
+would continue to debug over the network to the Mac, which would then turn
+around and send the app to my iPhone over the network. The combined hops do slow
+the actual deployment down, but I found it to be much more reliable.</p>
+<p>Thats it for today. I had a 2 day gap between last post and this one, which is
+pretty disappointing, but I'm hopeful to get back on track. Next up is to build
+some kind of path finding or entity movement paying attention to the actual
+tiles. I'm running into design blocks however, so I might go back and work on
+the Tetris Attack clone a bit more. We'll see.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day77-isometric-renderer&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day79-nyx8-colors-and-wall-sprite&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

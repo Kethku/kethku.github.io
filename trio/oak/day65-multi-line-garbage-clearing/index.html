@@ -1,0 +1,245 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day65 - Multi Line Garbage Clearing
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Reworked multi line garbage clearing
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-15
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day65-multi-line-garbage-clearing/./todo.svg" alt="Todo" /></p>
+<p>Today I reworked the clear animation to allow for spawning garbage blocks when
+garbage is cleared that is more than a single row tall. To do this I needed to
+change how the spawned blocks are revealed and created.</p>
+<h2 id="grid-location-refactor">Grid Location Refactor</h2>
+<p>The first step was to pull the render location calculation out of the garbage
+and block classes into it's own helper. This code was already fairly repetitive
+so pulling it out was useful regardless.</p>
+<pre>
+  <code class="language-en">export function gridToScreen({ position, dimensions }) {
+  let result = {};
+
+  if (position) {
+    let blocksTopLeft = new Vector(
+      gridCenter.x - gridDimensions.width &#x2F; 2,
+      gridCenter.y - gridDimensions.height &#x2F; 2 + blockPixelAdvancement);
+
+    result.position = blocksTopLeft.add(
+      position.multiply(blockWidth)
+        .multiplyParts(new Vector(1, -1)));
+  }
+
+  if (dimensions) {
+    result.dimensions = dimensions.multiply(blockWidth);
+  }
+
+  return result;
+}</code>
+</pre>
+<p>I use a pattern here where the function takes as argument a single object and
+returns an object which may have optional properties. This allows me to group
+similar calculations together while still picking and choosing what parts I want
+for a given situation.</p>
+<h2 id="covered-slots">Covered Slots</h2>
+<p>Previous I rendered the block covers when breaking a garbage block by passing
+the cover texture to the spawned block render functions. This was a quick fix to
+reuse the block render logic, but now that I have factored that logic out into
+it's own helper, this isn't needed. That code also prevented me from drawing
+multiple cover textures over a single garbage block which is now necessary since
+breaking a garbage block may spawn other smaller garbage blocks.</p>
+<p>My change was to modify the <code>ClearAnimation</code> class to add every overlapping slot
+to a &quot;<code>Set</code>&quot; of overlapping slots to draw instead of using a specialized object
+with a visible parameter. Importantly I do not use the actual <code>Set</code> object here
+because it uses reference equality when adding and removing from the set.
+Instead I use a map where the key is the stringified version of the slot
+<code>Vector</code> and the value is the instance itself. This will approximate value
+equality which is what I actually want. I want to know if the given slot value
+is in the &quot;<code>Set</code>&quot;, not whether the particular instance of a slot <code>Vector</code> is
+contained in the set.</p>
+<pre>
+  <code class="language-en">class ClearAnimation {
+  constructor(triggeringBlocks, garbageBlocks) {
+    this.timer = 0;
+    this.triggeringBlocks = triggeringBlocks;
+    this.garbageBlocks = garbageBlocks;
+    this.coveredSlots = new Map();
+    this.spawnedBlocks = [];
+
+    for (let garbage of garbageBlocks) {
+      for (let slot of garbage.overlappingSlots()) {
+        this.coveredSlots.set(JSON.stringify(slot), slot);
+      }
+
+      createSpawnedBlocks(garbage);
+    }
+  }</code>
+</pre>
+<p>Then when updating the clear animation I remove each covered slot one by one
+from the <code>coveredSlots</code> &quot;<code>Set</code>&quot; rather than removing them by which is covered by
+a spawned block.</p>
+<pre>
+  <code class="language-en">update() {
+  if (this.timer &gt; clearDelay) {
+    if ((this.timer - clearDelay) % blockClearDelay == 0) {
+      let anyUncovered = false;
+      for (let coveredSlot of this.coveredSlots.values()) {
+        this.coveredSlots.delete(JSON.stringify(coveredSlot));
+        anyUncovered = true;
+        break;
+      }
+
+      if (!anyUncovered &amp;&amp; !this.breakTimeStarted) {
+        this.breakTimeStarted = this.timer;
+      }
+    }
+  }</code>
+</pre>
+<p>When rendering, I simply draw every spawned block and then draw each covered
+slot texture on top.</p>
+<pre>
+  <code class="language-en">render() {
+  for (let spawnedBlock of this.spawnedBlocks) {
+    spawnedBlock.render();
+  }
+
+  for (let coveredSlot of this.coveredSlots.values()) {
+    let renderInfo = gridToScreen({
+      position: coveredSlot,
+      dimensions: Vector.one
+    });
+
+    image({
+      imageUrl: garbageImages.Clear,
+      center: Vector.topLeft,
+      ...renderInfo
+    });
+  }
+}</code>
+</pre>
+<h2 id="spawning-garbage">Spawning Garbage</h2>
+<p>I also changed the way that blocks are spawned in from a broken garbage block.
+Before I added a new block for every covered slot of the broken garbage blocks,
+but now only the bottom row is broken into individual blocks while the rest of
+each garbage block is turned into a garbage block with one smaller height.</p>
+<pre>
+  <code class="language-en">createSpawnedBlocks(garbage) {
+  for (let x = garbage.gridSlot.x; x &lt; garbage.gridSlot.x + garbage.gridDimensions.x; x++) {
+    let slot = new Vector(x, garbage.gridSlot.y + garbage.gridDimensions.y - 1);
+    this.spawnedBlocks.push(new Block(slot));
+  }
+
+  if (garbage.gridDimensions.y &gt; 1) {
+    let dimensions = garbage.gridDimensions.withY(garbage.gridDimensions.height - 1);
+    this.spawnedBlocks.push(new Garbage(garbage.gridSlot, dimensions));
+  }
+}</code>
+</pre>
+<p>Since spawned blocks may now be garbage blocks I also had to add a check to the
+animation completion logic to add the spawned garbage block to the
+<code>garbageBlocks</code> set.</p>
+<pre>
+  <code class="language-en">if (this.breakTimeStarted &amp;&amp;
+    this.timer - this.breakTimeStarted &gt; breakDelay) {
+  clearAnimations.delete(this);
+  for (let spawnedBlock of this.spawnedBlocks) {
+    setBlock(spawnedBlock);
+    if (spawnedBlock.type === type.GARBAGE) {
+      garbageBlocks.add(spawnedBlock);
+    }
+    spawnedBlock.state = state.WAITING;
+  }
+  ClearAnimationFinished.Publish(this);
+}</code>
+</pre>
+<p>That about wraps it all up. The final animation with spawned garbage blocks
+looks like this:</p>
+<p><img src="https://kaylees.dev/trio/oak/day65-multi-line-garbage-clearing/MultiLineGarbage.gif" alt="MultiLineGarbage" /></p>
+<p>This change completes the necessary modifications to enable high resolution
+versions of the garbage block textures. I still need to build some form of
+linking texture between individual lines of a multi line tall garbage block, but
+I will wait to build this until I can confirm what needs to be done with my
+friend who did the high resolution block textures.</p>
+<p>I also noticed while working on this that the combo recognition doesn't actually
+work perfectly across block breaks so I will also have to go back and fix that
+at some point.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day64-spacemacs-chrome-debugging&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day66-porting-tetris-attack-to-typescript&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

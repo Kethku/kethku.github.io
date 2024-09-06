@@ -1,0 +1,344 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day74 - Debug Infrastructure and Text
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Added windows target and setup some general game infrastructure
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-30
+    
+    
+      <br>
+      <a href="../../hemlock/projects/robot/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day74-debug-infrastructure-and-text/./todo.svg" alt="Todo" /></p>
+<p>The past couple of days I have been pretty sick and had a very foggy brain. So I
+decided to take a short break from writing things up. During that time however I
+did get a bunch done, so today's post will be a summary of all of the different
+bits. As an overview I added a shared project and windows target Monogame
+project to improve debugging/testing, I added a simple retro style font and
+setup font rendering with testing on the iPhone, and I added AutoFac as a way to
+manage the different systems and objects and simplify moving state around.</p>
+<h2 id="debugging-improvements">Debugging Improvements</h2>
+<p>While my changes in the last post did improve the experience of building and
+debugging on an actual iOS device, they still left a lot to be desired. The
+build time is frustratingly slow when communicating over the network to my old
+Macbook Air, and it fails in frustrating ways requiring a restart of the mac,
+phone, pc or all of the above.</p>
+<h3 id="shared-projects">Shared Projects</h3>
+<p>To get around this project I decided to take advantage of a rarely used feature
+in Visual Studio: Shared Projects which are made for exactly this purpose. The
+basic idea is to have a special project type which just includes source files
+and other items you might want in a given C# project. Then you add a reference
+to the shared components in each of the differing platforms even if the projects
+are not compatible for whatever reason.</p>
+<p>In my case I wanted to have the core game logic be identical between the Windows
+and iOS builds of the game. But I needed the content to be compiled differently,
+and the startup logic be different. For this, a Shared Project is perfect as it
+has correct error checking depending on which project is currently set as the
+startup one.</p>
+<p>The process is pretty simple, I just create a new shared project:</p>
+<p><img src="https://kaylees.dev/trio/oak/day74-debug-infrastructure-and-text/SharedProject.PNG" alt="Shared Project" /></p>
+<p>And add it to the references of each of the project which need the shared content:</p>
+<p><img src="https://kaylees.dev/trio/oak/day74-debug-infrastructure-and-text/SharedProjectReferences.PNG" alt="Shared Project References" /></p>
+<p>Then I can write code in the shared project and it will get compiled for each
+individually.</p>
+<h3 id="content">Content</h3>
+<p>Shared this pattern also allows me to do platform specific changes. Since
+Monogame preprocesses it's content files I need to compile them differently for
+each platform. To do this I add the images themselves into the shared folder,
+and add a Monogame Content Pipeline project with platform specific settings for
+each platform and link to them in the actual projects instead of the shared one.</p>
+<p>This same pattern will be useful if I ever want to build an android or actual
+desktop version of the game as I can just add the platform specific code in each
+project and keep the shared code in one location.</p>
+<h2 id="text-rendering">Text Rendering</h2>
+<p>With the content pipeline and debugging out of the way, I was then able to look
+into getting the text rendering working. Monogame uses Spritefonts created from
+font files to do text rendering. The SpriteBatch (which is the basic 2d
+Rendering system in Monogame) has a function called DrawText which takes a
+loaded SpriteFont, a string, and location information and renders text to the
+screen.</p>
+<p>Doing so requires a font to compile. For this purpose I chose the <a href="https://fonts.google.com/specimen/Gugi">Gugi
+Font</a> from Google Fonts as it evoked a
+retro futuristic computer vibe to me which I liked. Google Fonts is a pretty
+good source for such fonts as it has a pretty permissive license and a wide
+selection.</p>
+<p>Adding the SpriteFont to the pipeline just required copying the TTF file to the
+content directory, and creating a SpriteFont specification file with these
+contents:</p>
+<pre>
+  <code class="language-en">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;!--
+This file contains an xml description of a font, and will be read by the XNA
+Framework Content Pipeline. Follow the comments to customize the appearance
+of the font in your game, and to change the characters which are available to draw
+with.
+--&gt;
+&lt;XnaContent xmlns:Graphics=&quot;Microsoft.Xna.Framework.Content.Pipeline.Graphics&quot;&gt;
+  &lt;Asset Type=&quot;Graphics:FontDescription&quot;&gt;
+
+    &lt;!--
+    Modify this string to change the font that will be imported.
+    --&gt;
+    &lt;FontName&gt;Gugi-Regular.ttf&lt;&#x2F;FontName&gt;
+
+    &lt;!--
+    Size is a float value, measured in points. Modify this value to change
+    the size of the font.
+    --&gt;
+    &lt;Size&gt;24&lt;&#x2F;Size&gt;
+
+    &lt;!--
+    Spacing is a float value, measured in pixels. Modify this value to change
+    the amount of spacing in between characters.
+    --&gt;
+    &lt;Spacing&gt;0&lt;&#x2F;Spacing&gt;
+
+    &lt;!--
+    UseKerning controls the layout of the font. If this value is true, kerning information
+    will be used when placing characters.
+    --&gt;
+    &lt;UseKerning&gt;true&lt;&#x2F;UseKerning&gt;
+
+    &lt;!--
+    Style controls the style of the font. Valid entries are &quot;Regular&quot;, &quot;Bold&quot;, &quot;Italic&quot;,
+    and &quot;Bold, Italic&quot;, and are case sensitive.
+    --&gt;
+    &lt;Style&gt;Regular&lt;&#x2F;Style&gt;
+
+    &lt;!--
+    If you uncomment this line, the default character will be substituted if you draw
+    or measure text that contains characters which were not included in the font.
+    --&gt;
+    &lt;!-- &lt;DefaultCharacter&gt;*&lt;&#x2F;DefaultCharacter&gt; --&gt;
+
+    &lt;!--
+    CharacterRegions control what letters are available in the font. Every
+    character from Start to End will be built and made available for drawing. The
+    default range is from 32, (ASCII space), to 126, (&#x27;~&#x27;), covering the basic Latin
+    character set. The characters are ordered according to the Unicode standard.
+    See the documentation for more information.
+    --&gt;
+    &lt;CharacterRegions&gt;
+      &lt;CharacterRegion&gt;
+        &lt;Start&gt;&amp;#32;&lt;&#x2F;Start&gt;
+        &lt;End&gt;&amp;#126;&lt;&#x2F;End&gt;
+      &lt;&#x2F;CharacterRegion&gt;
+    &lt;&#x2F;CharacterRegions&gt;
+  &lt;&#x2F;Asset&gt;
+&lt;&#x2F;XnaContent&gt;</code>
+</pre>
+<p>Frustratingly, the loaded font requires specifying the font size and will only
+render at that particular sizing at any scale. So in the future I may look into
+automating text flowing and sizing, but for now this is good enough as a proof
+of concept.</p>
+<h2 id="autofac">AutoFac</h2>
+<p>Finally during my short break from writing I integrated Dependency Injection via
+the AutoFac project. As some background, Dependency Injection is a design
+pattern which allows automatic hookup of the dependencies of an object when you
+construct one. The basic idea is to build a system which can automatically
+provide the arguments for a constructed object by either building them or
+looking them up in some sort of state storage.</p>
+<p>I decided to use this pattern as a more principled form of state management than
+I have been using for the Tetris Attack remake or my 8Bomb game. In those I
+relied upon modern JavaScript's module pattern to have state at the module
+level. In C# the recommended pattern is instead to have objects which get built
+and passed around containing the necessary state. In big enough applications
+this can get tedious as you have to thread a given object through a potentially
+large dependency hierarchy if a leaf in the tree needs some state.</p>
+<p>Dependency Injection gets around this by passing in the objects for you. You
+only have to request the object in the constructor and all of the arguments will
+be passed to the object directly instead of managing them yourself.</p>
+<h3 id="setup">Setup</h3>
+<p>To get started with AutoFac, I created a Factory helper class which setup the
+initial type bindings and allowed registering singleton objects at setup time.
+AutoFac builds the container object with all of the state via a Builder type
+with which you setup all of the type configuration.</p>
+<pre>
+  <code class="language-en">public static class Factory {
+    private static IContainer container;
+    private static ContainerBuilder builder;
+
+    public static void BeginRegistration() {
+        builder = new ContainerBuilder();
+        builder.RegisterAssemblyTypes(Assembly.GetExecutingAssembly())
+            .AsImplementedInterfaces()
+            .AsSelf()
+            .InstancePerLifetimeScope();
+    }
+
+    public static void RegisterSingleton&lt;T&gt;(T singleton) where T : class {
+        builder.RegisterInstance(singleton).AsSelf();
+    }
+
+    public static void EndRegistration() {
+        container = builder.Build();
+        builder = null;
+    }
+
+    public static T Resolve&lt;T&gt;() {
+        return container.Resolve&lt;T&gt;();
+    }
+}</code>
+</pre>
+<p>Here I use begin and end functions to start and complete the configuration. On
+begin I register every class in the current assembly to itself and any
+interfaces it may implement. This allows me to play some tricks to request every
+type with a given interface as well as a particular class. Then I created a
+<code>RegisterSingleton</code> function which allows registering singleton objects such as
+the <code>SpriteBatch</code> and the <code>GraphicsDevice</code>. I use this function in the
+LoadContent function of the main Game. Then I complete the registration process
+by calling <code>EndRegistration</code> and use the <code>Resolve</code> function to request some
+lists of types implementing various lifetime function interfaces.</p>
+<pre>
+  <code class="language-en">protected override void LoadContent() {
+    spriteBatch = new SpriteBatch(GraphicsDevice);
+
+    Factory.BeginRegistration();
+    Factory.RegisterSingleton(GraphicsDevice);
+    Factory.RegisterSingleton(spriteBatch);
+    Factory.EndRegistration();
+
+    contentLoadables = Factory.Resolve&lt;IList&lt;IContentLoadable&gt;&gt;();
+    updateables = Factory.Resolve&lt;IList&lt;IUpdateable&gt;&gt;();
+    drawables = Factory.Resolve&lt;IList&lt;IDrawable&gt;&gt;();
+    colorManager = Factory.Resolve&lt;Colors&gt;();
+
+    foreach (IContentLoadable contentLoadable in contentLoadables) {
+        contentLoadable.LoadContent(Content);
+    }
+}</code>
+</pre>
+<p>AutoFac allows resolving more complicated types via
+<a href="https://autofaccn.readthedocs.io/en/latest/resolve/relationships.html">RelationshipTypes</a>.
+These allow the user to modify the types returned. There are many such implicit
+types, but in my cause I wanted a list of all the types implementing the
+IContentLoadable, IUpdateable, and IDrawable interfaces for future use. AutoFac
+special cases <code>IList</code> in the Resolve code and will return all available
+instances.</p>
+<p>I then use these <code>IList</code>s in each of the lifetime functions. This way any time I
+add a new module, I just have to implement the correct interfaces and the type
+will automatically get picked up.</p>
+<h3 id="example">Example</h3>
+<p>A super simple example of this pattern (which doesn't really take advantage of
+the benefits, but whatever) is my <code>Colors</code> object which contains some simple
+colors I found on
+<a href="https://superuser.com/questions/361297/what-colour-is-the-dark-green-on-old-fashioned-green-screen-computer-displays">StackOverflow</a>
+which provide a retro feel.</p>
+<pre>
+  <code class="language-en">public class Colors {
+  public readonly Color Foreground = new Color(255, 176, 0);
+  public readonly Color Background = new Color(40, 40, 40);
+}</code>
+</pre>
+<p>Then in a module for testing out rendering, I can refer to the <code>Colors</code> object
+by including it as a parameter to the constructor.</p>
+<pre>
+  <code class="language-en">public class RoutineTicker : IContentLoadable, IDrawable {
+    Colors colors;
+    SpriteBatch spriteBatch;
+
+    SpriteFont font;
+
+    public RoutineTicker(Colors colors, SpriteBatch spriteBatch) {
+        this.colors = colors;
+        this.spriteBatch = spriteBatch;
+    }
+
+    public void LoadContent(ContentManager content) {
+        font = content.Load&lt;SpriteFont&gt;(&quot;Gugi&quot;);
+    }
+
+    public void Draw(GameTime gameTime) {
+        spriteBatch.DrawString(font, &quot;Hello World!&quot;, new Vector2(100, 100), colors.Foreground);
+    }
+}</code>
+</pre>
+<p>The <code>Colors</code> object gets automatically created and inserted into the constructor
+and this RoutineTicker class is automatically constructed since it implements
+the <code>IContentLoadable</code> and <code>IDrawable</code> interfaces. So now to get this working I
+just build and run and the text gets rendered properly.</p>
+<p><img src="https://kaylees.dev/trio/oak/day74-debug-infrastructure-and-text/WorkingTextRendering.PNG" alt="Working Text Rendering" /></p>
+<p>This is a bunch of boilerplate, but will allow easier testing by replacing
+actual types with full interfaces, and faster iteration since I won't have to
+wire state through everywhere. I use this pattern a bunch in WPF apps to great
+effect and am in general very pleased with AutoFac. Its fast and pretty
+bulletproof.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day73-visual-studio-ios-debug-debugging&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day75-poor-man-s-animation-curves&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

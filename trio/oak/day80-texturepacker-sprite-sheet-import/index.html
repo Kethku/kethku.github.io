@@ -1,0 +1,201 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day80 - TexturePacker Sprite Sheet Import
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Do initial work for integrating texture mapper sprite sheets
+    </h2>
+    
+    
+    <p>
+    
+      2019-05-12
+    
+    
+      <br>
+      <a href="../../hemlock/projects/robot/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day80-texturepacker-sprite-sheet-import/./todo.svg" alt="Todo" /></p>
+<p>Today and yesterday I did the initial work and investigation to use spritesheets
+for my Monogame engine. The is necessary for my eventual plan to build a sprite
+renderer from scratch which will give me more precise control over the rendering
+logic and hopefully give me a way to fix the weird pixels between tiles problem.
+As an added benefit, this should let me do better z ordering instead of hacking
+it together with the layer order.</p>
+<p>The tool I decided to use was a cheap sprite backer utility which lets you
+specify a list of textures and it will pack all of them into a single
+spritesheet with a data file holding all of the positions of each sprite. There
+is a bunch of really great documentation online for how to get it working with
+many different game engines.</p>
+<p>Unfortunately since my game needs to run on windows and iOS, and since the Nuget
+package is a bit old, I was unable to figure out how to get the Monogame
+specific spritesheet importer working. Luckily TexturePacker lets you export to
+a generic format such as xml or json. I picked the json export because the
+wonderful Newtonsoft Json library is pretty easy to use and fast enough. I spent
+some time fiddling with the settings in TexturePacker and eventually came up
+with this packed sheet:</p>
+<p><img src="https://kaylees.dev/trio/oak/day80-texturepacker-sprite-sheet-import/TileSheet.png" alt="Tile Sheet" /></p>
+<p>With the sheet generated, my first step to importing it was to take a look at
+the json that gets output and create a datastructure which matches that output
+format so that I can have a deserialization target.</p>
+<pre>
+  <code class="language-en">{&quot;frames&quot;: {
+
+&quot;Ball.png&quot;:
+{
+	&quot;frame&quot;: {&quot;x&quot;:1,&quot;y&quot;:182,&quot;w&quot;:32,&quot;h&quot;:24},
+	&quot;rotated&quot;: false,
+	&quot;trimmed&quot;: false,
+	&quot;spriteSourceSize&quot;: {&quot;x&quot;:0,&quot;y&quot;:0,&quot;w&quot;:32,&quot;h&quot;:24},
+	&quot;sourceSize&quot;: {&quot;w&quot;:32,&quot;h&quot;:24},
+	&quot;pivot&quot;: {&quot;x&quot;:0.5,&quot;y&quot;:0.583333}
+},
+... } }</code>
+</pre>
+<p>Given the basic example, I picked the data I cared about such as the actual
+frames object, the frame position, and the pivot location and omitted the rest
+as they are extra information not necessary for the particular settings I used
+to create the spreadsheet.</p>
+<pre>
+  <code class="language-en">public class Frame {
+    public int X { get; }
+    public int Y { get; }
+    public int Width { get; }
+    public int Height { get; }
+
+    public Frame(int x, int y, int width, int height) {
+        X = x;
+        Y = y;
+        Width = width;
+        Height = height;
+    }
+}
+
+public class Pivot {
+    public float X { get; }
+    public float Y { get; }
+
+    public Pivot(float x, float y) {
+        X = x;
+        Y = y;
+    }
+}
+
+public class SheetElement {
+    public Frame Frame { get; }
+    public Pivot Pivot { get; }
+
+    public SheetElement(Frame frame, bool rotated, Pivot pivot) {
+        Frame = frame;
+        Pivot = pivot;
+    }
+}
+public class SheetSpecification {
+    public IReadOnlyDictionary&lt;string, SheetElement&gt; Frames { get; }
+
+    public SheetSpecification(Dictionary&lt;string, SheetElement&gt; frames) {
+        Frames = frames;
+    }
+}</code>
+</pre>
+<p>Theres a fair amount of goo going on here to get the core data types, but the
+basic idea is to create a class for each level of the data structure with a
+constructor for each property. After these are defined, I can use Newtonsoft
+Json's JsonConvert class to deserialize a file into an instance of the above
+type.</p>
+<pre>
+  <code class="language-en">public void LoadContent(ContentManager content) {
+    string sheetSpecJson = File.ReadAllText(&quot;.&#x2F;Content&#x2F;TileSheet.json&quot;);
+    SheetSpecification = JsonConvert.DeserializeObject&lt;SheetSpecification&gt;(sheetSpecJson);
+
+    Sheet = content.Load&lt;Texture2D&gt;(&quot;TileSheet&quot;);
+}</code>
+</pre>
+<p>And thats it for deserializing. I now how a class with the positions of each of
+the tiles in the spritesheet which I can then use to determine the source
+position of each sprite I want to draw.</p>
+<p>Using spritesheets in this way is not only an efficient way to save video
+memory, but also lets me draw any type of sprite in a single draw call. If the
+scene is simple enough and the sprites I need can be loaded into one texture,
+then I can draw everything with one list of triangles all referring to different
+parts of that one texture. Since draw calls are handled sequentially unless you
+use a depth buffer, this can be the best way to handle drawing sprites in a
+particular order by z value.</p>
+<p>There are arguably better ways to draw many different sprites on top of
+each other, but this is the way I understand so I'm going for it! Thats it for
+today. Much of my time was spent fumbling around trying to get the TexturePacker
+Monogame nuget package working before falling back to the generic method. It was
+a bunch of time wasted, but I think things are working now.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day79-nyx8-colors-and-wall-sprite&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day81-sprite-rendering-and-gap-fix&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

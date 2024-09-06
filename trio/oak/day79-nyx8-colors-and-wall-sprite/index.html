@@ -1,0 +1,134 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day79 - Nyx8 Colors and Wall Sprite
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Swapped colors out for a different color scheme and made a new wall texture
+    </h2>
+    
+    
+    <p>
+    
+      2019-05-10
+    
+    
+      <br>
+      <a href="../../hemlock/projects/robot/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day79-nyx8-colors-and-wall-sprite/./todo.svg" alt="Todo" /></p>
+<p>Super quick day today. I spent it swapping the colors that I had been using for
+dev art out for the palette used by SCRIPT-8 called Nyx8. I found the old
+palette to be pretty, but caused me problems because it didn't have enough
+shades to play with in a single gradient. Nyx8 on the other hand is just one big
+gradient, and as an added benefit, I have used it before, so I'm pretty familiar
+with how it works.</p>
+<p>The updated tiles are as follows:</p>
+<p><img src="https://kaylees.dev/trio/oak/day79-nyx8-colors-and-wall-sprite/Ball.png" alt="Ball" />
+<img src="https://kaylees.dev/trio/oak/day79-nyx8-colors-and-wall-sprite/Tree.png" alt="Tree" />
+<img src="https://kaylees.dev/trio/oak/day79-nyx8-colors-and-wall-sprite/U0R0D0L0.png" alt="U0R0D0L0" />
+<img src="https://kaylees.dev/trio/oak/day79-nyx8-colors-and-wall-sprite/U1R0D0L0.png" alt="U1R0D0L0" />
+<img src="https://kaylees.dev/trio/oak/day79-nyx8-colors-and-wall-sprite/U1R0D0L1.png" alt="U1R0D0L1" /></p>
+<p><img src="https://kaylees.dev/trio/oak/day79-nyx8-colors-and-wall-sprite/U1R1D0L0.png" alt="U1R1D0L0" />
+<img src="https://kaylees.dev/trio/oak/day79-nyx8-colors-and-wall-sprite/U1R1D0L1.png" alt="U1R1D0L1" />
+<img src="https://kaylees.dev/trio/oak/day79-nyx8-colors-and-wall-sprite/U1R1D1L1.png" alt="U1R1D1L1" />
+<img src="https://kaylees.dev/trio/oak/day79-nyx8-colors-and-wall-sprite/Wall.png" alt="Wall" /></p>
+<p>I created a new texture for use as a wall to enable some visual barriers when I
+get to implementing pathfinding. I also updated the colors utility class to have
+a single array lookup with each of the palette colors for easy programatic use.</p>
+<pre>
+  <code class="language-en">public class Colors {
+    public readonly IReadOnlyList&lt;Color&gt; Lookup = new[] {
+        new Color(8, 20, 30),
+        new Color(15, 42, 63),
+        new Color(32, 57, 63),
+        new Color(78, 73, 95),
+        new Color(129, 98, 113),
+        new Color(153, 117, 119),
+        new Color(195, 163, 138),
+        new Color(246, 214, 189)
+    };
+}</code>
+</pre>
+<p>Here is a full render with all the textures and such:</p>
+<p><img src="https://kaylees.dev/trio/oak/day79-nyx8-colors-and-wall-sprite/TextureGaps.PNG" alt="Texture Gaps" /></p>
+<p>Frustratingly my current method for rendering sprites into the isometric grid
+occasionally has small artifacts around the edges because the texture doesn't
+line up perfectly. I have yet to come up with a solution for this but I suspect
+it may require me to implement my own sprite rendering system instead of reusing
+the SpriteBatch. Unclear for now. </p>
+<p>Small post today as I am super slow when it comes to doing dev art. Hopefully I
+have finished the necessary blockers at this point though so that I can move on
+to pathfinding for real next time.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day78-map-generation-and-ios-debugging-improvements&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day80-texturepacker-sprite-sheet-import&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

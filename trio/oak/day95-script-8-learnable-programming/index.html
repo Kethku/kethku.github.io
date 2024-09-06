@@ -1,0 +1,232 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day95 - Script-8 Learnable Programming
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Adding code hover functionality to script-8
+    </h2>
+    
+    
+    <p>
+    
+      2019-10-29
+    
+    
+    </p>
+    
+  </summary>
+  <p>The past two days I have been working on a feature for Script-8 that I've been super excited about for a couple of
+months now. I got really close yesterday, and decided to push the code further rather than right a blog post for the
+day, so today's post counts for two. Some background first, <a href="https://script-8.github.io/">Script-8</a> is a fantasy console
+in the same vein as Pico-8 but uses Javascipt as the programming language and with a strong focus on dynamic and
+interactive programming.  All changes are live as you write them, and there are existing features in the app for easily
+interacting with your source code and visualizing your program easily through sliders and time travel. I highly
+recommend checking it out, and <a href="../day7-bomb-survival-demake/">I</a> <a href="../day11-marching-squares/">have</a>
+<a href="../day16-script8-pull-requests/">witten</a> <a href="../day20-script-8-crisis/">about</a>
+<a href="../day26-script-8-performance-improvements/">it</a> <a href="../day30-script-8-framebuffer-renderer/">before</a>.</p>
+<p>The particular feature I have been working on allows for even more powerful visualization of what a given peice of code
+actually does. I added code injection which hooks into any function under the mouse and highlights any graphics that
+function is responsible for.</p>
+<p><img src="https://kaylees.dev/trio/oak/day95-script-8-learnable-programming/./ArbitraryHighlight.gif" alt="Arbitrary Highlighting" /></p>
+<p>As you can see, the graphics brightens visibly for each draw call under the mouse. This makes reading through someone's
+code much easier, and allows for simpler debugging of your own code. The above gif highlights this well. The awesome
+graphics in Thykka's Supplies game look as though they are just rendered as a single map call, but hovering over the
+draw calls individually shows that the sky coloring is actually a mixture of transparent pixels in the map and the
+clear color. This wouldn't be obvious without puzzling through the code.</p>
+<p>The idea for the feature (as well as much of the coolest features in SCRIPT-8) comes from the brilliant Bret Victor and
+his presentations on <a href="https://vimeo.com/36579366">Inventing on Principle</a> and <a href="http://worrydream.com/LearnableProgramming/">Learnable
+Programming</a>. Both are awesome, and I plan on dipping back into their ideas
+for future Script-8 features.</p>
+<h2 id="how">How</h2>
+<p>I've created a PR with the change which is open and waiting on review and I have tried my best to comment the code as
+well as possible. So I will attempt to summarize the comments into a linear story here.</p>
+<p>The high level system parses the code in the current tab, looks for CallExpressions which overlap the mouse position,
+picks the smallest one under the mouse, and rewrites the expression to set a highlight flag to true before the call, and
+reset the highlight flag back to false after the call is finished. This highlight flag is then inspected during the draw
+code and the pixel colors are modified accordingly.</p>
+<h2 id="parse">Parse</h2>
+<p>To do the parsing I lean heavily on the fantastic <a href="https://github.com/acornjs/acorn">Acorn.js</a> which is a Javascript
+parser written in Javascript. It supports modern JS flawlessly and provides a concise and convenient API for selecting a
+given type of abstract syntax tree node.</p>
+<pre data-lang="JavaScript" class="language-JavaScript z-code"><code class="language-JavaScript" data-lang="JavaScript"><span class="z-source z-js"><span class="z-storage z-type z-js">let</span> <span class="z-meta z-binding z-name z-js"><span class="z-variable z-other z-readwrite z-js">smallestNode</span></span> <span class="z-keyword z-operator z-assignment z-js">=</span> <span class="z-constant z-language z-null z-js">null</span>
+<span class="z-storage z-type z-js">let</span> <span class="z-meta z-binding z-name z-js"><span class="z-variable z-other z-readwrite z-js">smallestSize</span></span> <span class="z-keyword z-operator z-assignment z-js">=</span> <span class="z-constant z-language z-infinity z-js">Infinity</span>
+<span class="z-meta z-try z-js"><span class="z-keyword z-control z-exception z-try z-js">try</span> <span class="z-meta z-block z-js"><span class="z-punctuation z-section z-block z-begin z-js">{</span>
+  <span class="z-comment z-line z-double-slash z-js"><span class="z-punctuation z-definition z-comment z-js">//</span> Use Acorn to walk over the parsed code looking for each call expression. If the mouse is currently inside
+</span>  <span class="z-comment z-line z-double-slash z-js"><span class="z-punctuation z-definition z-comment z-js">//</span> the call expression text bounds, and is smaller than the previously smallest node, then store it away
+</span>  <span class="z-meta z-function-call z-js"><span class="z-variable z-function z-js">walk</span><span class="z-meta z-group z-js"><span class="z-punctuation z-section z-group z-begin z-js">(</span><span class="z-meta z-function-call z-js"><span class="z-variable z-function z-js">parse</span><span class="z-meta z-group z-js"><span class="z-punctuation z-section z-group z-begin z-js">(</span><span class="z-variable z-other z-readwrite z-js">tab</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">text</span><span class="z-punctuation z-separator z-comma z-js">,</span> <span class="z-meta z-mapping z-js"><span class="z-punctuation z-section z-block z-begin z-js">{</span><span class="z-meta z-mapping z-key z-js">locations</span><span class="z-punctuation z-separator z-key-value z-js">:</span> <span class="z-constant z-language z-boolean z-true z-js">true</span><span class="z-punctuation z-section z-block z-end z-js">}</span></span><span class="z-punctuation z-section z-group z-end z-js">)</span></span></span><span class="z-punctuation z-separator z-comma z-js">,</span> <span class="z-meta z-mapping z-js"><span class="z-punctuation z-section z-block z-begin z-js">{</span>
+    <span class="z-comment z-line z-double-slash z-js"><span class="z-punctuation z-definition z-comment z-js">//</span> Call expression is used because it is pretty consistent.
+</span>    <span class="z-comment z-line z-double-slash z-js"><span class="z-punctuation z-definition z-comment z-js">//</span> https://github.com/estree/estree/blob/master/es5.md#callexpression
+</span>    <span class="z-meta z-function z-js"></span><span class="z-meta z-function z-declaration z-js"><span class="z-entity z-name z-function z-js">CallExpression</span><span class="z-punctuation z-section z-group z-begin z-js">(</span><span class="z-meta z-binding z-name z-js"><span class="z-variable z-parameter z-function z-js">node</span></span><span class="z-punctuation z-section z-group z-end z-js">)</span></span><span class="z-meta z-function z-js"> <span class="z-meta z-block z-js"><span class="z-punctuation z-section z-block z-begin z-js">{</span>
+      <span class="z-comment z-line z-double-slash z-js"><span class="z-punctuation z-definition z-comment z-js">//</span> If the mouse is in bounds, then continue to checking node size
+</span>      <span class="z-meta z-conditional z-js"><span class="z-keyword z-control z-conditional z-if z-js">if</span> <span class="z-meta z-group z-js"><span class="z-punctuation z-section z-group z-begin z-js">(</span><span class="z-keyword z-operator z-logical z-js">!</span><span class="z-variable z-other z-readwrite z-js">mousePos</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">outside</span> <span class="z-keyword z-operator z-logical z-js">&amp;&amp;</span>
+          <span class="z-variable z-other z-readwrite z-js">mousePos</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">line</span> <span class="z-keyword z-operator z-arithmetic z-js">+</span> <span class="z-constant z-numeric z-integer z-decimal z-js">1</span> <span class="z-keyword z-operator z-relational z-js">&gt;=</span> <span class="z-variable z-other z-readwrite z-js">node</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">loc</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">start</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">line</span> <span class="z-keyword z-operator z-logical z-js">&amp;&amp;</span>
+          <span class="z-variable z-other z-readwrite z-js">mousePos</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">line</span> <span class="z-keyword z-operator z-arithmetic z-js">+</span> <span class="z-constant z-numeric z-integer z-decimal z-js">1</span> <span class="z-keyword z-operator z-relational z-js">&lt;=</span> <span class="z-variable z-other z-readwrite z-js">node</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">loc</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">end</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">line</span> <span class="z-keyword z-operator z-logical z-js">&amp;&amp;</span>
+          <span class="z-variable z-other z-readwrite z-js">mousePos</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">ch</span> <span class="z-keyword z-operator z-relational z-js">&gt;=</span> <span class="z-variable z-other z-readwrite z-js">node</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">loc</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">start</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">column</span> <span class="z-keyword z-operator z-logical z-js">&amp;&amp;</span>
+          <span class="z-variable z-other z-readwrite z-js">mousePos</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">ch</span> <span class="z-keyword z-operator z-relational z-js">&lt;=</span> <span class="z-variable z-other z-readwrite z-js">node</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">loc</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">end</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">column</span><span class="z-punctuation z-section z-group z-end z-js">)</span></span> <span class="z-meta z-block z-js"><span class="z-punctuation z-section z-block z-begin z-js">{</span>
+        <span class="z-storage z-type z-js">let</span> <span class="z-meta z-binding z-name z-js"><span class="z-variable z-other z-readwrite z-js">nodeSize</span></span> <span class="z-keyword z-operator z-assignment z-js">=</span> <span class="z-variable z-other z-readwrite z-js">node</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">end</span> <span class="z-keyword z-operator z-arithmetic z-js">-</span> <span class="z-variable z-other z-readwrite z-js">node</span><span class="z-punctuation z-accessor z-js">.</span><span class="z-meta z-property z-object z-js">start</span>
+        <span class="z-meta z-conditional z-js"><span class="z-keyword z-control z-conditional z-if z-js">if</span> <span class="z-meta z-group z-js"><span class="z-punctuation z-section z-group z-begin z-js">(</span><span class="z-keyword z-operator z-logical z-js">!</span><span class="z-variable z-other z-readwrite z-js">smallestNode</span> <span class="z-keyword z-operator z-logical z-js">||</span> <span class="z-variable z-other z-readwrite z-js">nodeSize</span> <span class="z-keyword z-operator z-relational z-js">&lt;</span> <span class="z-variable z-other z-readwrite z-js">smallestSize</span><span class="z-punctuation z-section z-group z-end z-js">)</span></span> <span class="z-meta z-block z-js"><span class="z-punctuation z-section z-block z-begin z-js">{</span>
+          <span class="z-variable z-other z-readwrite z-js">smallestNode</span> <span class="z-keyword z-operator z-assignment z-js">=</span> <span class="z-variable z-other z-readwrite z-js">node</span>
+          <span class="z-variable z-other z-readwrite z-js">smallestSize</span> <span class="z-keyword z-operator z-assignment z-js">=</span> <span class="z-variable z-other z-readwrite z-js">nodeSize</span>
+        <span class="z-punctuation z-section z-block z-end z-js">}</span></span></span>
+      <span class="z-punctuation z-section z-block z-end z-js">}</span></span></span>
+    <span class="z-punctuation z-section z-block z-end z-js">}</span></span></span>
+  <span class="z-punctuation z-section z-block z-end z-js">}</span></span><span class="z-punctuation z-section z-group z-end z-js">)</span></span>
+</span><span class="z-punctuation z-section z-block z-end z-js">}</span></span></span> <span class="z-meta z-catch z-js"><span class="z-keyword z-control z-exception z-catch z-js">catch</span> <span class="z-meta z-block z-js"><span class="z-punctuation z-section z-block z-begin z-js">{</span> <span class="z-punctuation z-section z-block z-end z-js">}</span></span></span>
+</span></code></pre>
+<p>I pass the current code tab text into the parse command to get back a root node, and then I use Acorn's walk
+functionality to loop over all of the CallExpressions. I then check the current mouse text position to see if it is
+inside the bounds of the given node, and keep the smallest one that I find. This node is then stored in redux for use
+elsewhere.</p>
+<h2 id="rewrite">Rewrite</h2>
+<p>Then before sending the code to the game engine to run, I rewrite the CallExpression under the mouse by wrapping it in a
+closure, and passing the closure to a helper function which manages the highlight flag. The code here is pretty well
+commented, so I will let it do the talking.</p>
+<pre data-lang="js" class="language-js z-code"><code class="language-js" data-lang="js"><span class="z-source z-ts"><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> This takes a tab and returns the code from that tab. It also looks at the call expression under the mouse (if one</span>
+<span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> exists) and wraps it in the `_script8.injectHighlight` function to setup higlighting. Decorate is taken as an</span>
+<span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> argument so that places which do not need decorated code can preserve the code as written by the user.</span>
+<span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">const</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-constant z-ts"><span class="z-entity z-name z-function z-ts">decorateTabCode</span></span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span><span class="z-meta z-arrow z-ts"> <span class="z-meta z-parameters z-ts"><span class="z-punctuation z-definition z-parameters z-begin z-ts">(</span><span class="z-variable z-parameter z-ts">tab</span><span class="z-punctuation z-separator z-parameter z-ts">,</span> <span class="z-variable z-parameter z-ts">decorate</span><span class="z-punctuation z-definition z-parameters z-end z-ts">)</span></span> </span><span class="z-meta z-arrow z-ts"><span class="z-storage z-type z-function z-arrow z-ts">=&gt;</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+  <span class="z-keyword z-control z-conditional z-ts">if</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-object z-ts">tab</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">callUnderMouse</span> <span class="z-keyword z-operator z-logical z-ts">&amp;&amp;</span> <span class="z-variable z-other z-object z-ts">tab</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-dom z-ts">text</span> <span class="z-keyword z-operator z-logical z-ts">&amp;&amp;</span> <span class="z-variable z-other z-readwrite z-ts">decorate</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> Say the user has written the following code:</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts">     drawTitle = () =&gt; {</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts">       print(64, 64, &quot;Crazy Awesome Game!&quot;)</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts">       return true</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts">     }</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts">     if (drawTitle()) { ... do something ... }</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts">         ^^^^^^^^^^^</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> With the mouse hovering over the drawTitle call. In this case, the `callUnderMouse` for the current tab would be</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> a callExpression node with a `callee` of the drawTitle Identifier, and an empty arguments list. We can hook into</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> this call by wrapping it in a lambda and passing it to a function which sets the highlight flag before and after</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> making the drawTitle call. In our case we have stored a special `injectHighlight` function in the _script8</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> global variable which is unaccessible by the user. The resulting code for that line looks like this:</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts">     if (_script8.injectHighlight(() =&gt; drawTitle())) { ... do something ... }</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> Since `injectHighlight` stores and passes on the return value fom the lambda, the wrapped expression can be used</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> in any place the original expression was used. But we get the added benefit of knowing when the command started</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">    </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> and when it ended</span>
+    <span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">node</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-variable z-other z-object z-ts">tab</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">callUnderMouse</span></span>
+    <span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">before</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">tab</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-dom z-ts">text</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-ts">slice</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-constant z-numeric z-decimal z-ts">0</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-variable z-other z-object z-ts">node</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-dom z-ts">start</span><span class="z-meta z-brace z-round z-ts">)</span></span>
+    <span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">nodeCode</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">tab</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-dom z-ts">text</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-ts">slice</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-object z-ts">node</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-dom z-ts">start</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-variable z-other z-object z-ts">node</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">end</span><span class="z-meta z-brace z-round z-ts">)</span></span>
+    <span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">after</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">tab</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-dom z-ts">text</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-ts">slice</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-object z-ts">node</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">end</span><span class="z-meta z-brace z-round z-ts">)</span></span>
+    <span class="z-keyword z-control z-flow z-ts">return</span> <span class="z-string z-template z-ts"><span class="z-punctuation z-definition z-string z-template z-begin z-ts">`</span><span class="z-meta z-template z-expression z-ts"><span class="z-punctuation z-definition z-template-expression z-begin z-ts">${</span></span><span class="z-meta z-template z-expression z-ts"><span class="z-meta z-embedded z-line z-ts"><span class="z-variable z-other z-readwrite z-ts">before</span></span><span class="z-punctuation z-definition z-template-expression z-end z-ts">}</span></span>_script8.injectHighlight(() =&gt; <span class="z-meta z-template z-expression z-ts"><span class="z-punctuation z-definition z-template-expression z-begin z-ts">${</span></span><span class="z-meta z-template z-expression z-ts"><span class="z-meta z-embedded z-line z-ts"><span class="z-variable z-other z-readwrite z-ts">nodeCode</span></span><span class="z-punctuation z-definition z-template-expression z-end z-ts">}</span></span>)<span class="z-meta z-template z-expression z-ts"><span class="z-punctuation z-definition z-template-expression z-begin z-ts">${</span></span><span class="z-meta z-template z-expression z-ts"><span class="z-meta z-embedded z-line z-ts"><span class="z-variable z-other z-readwrite z-ts">after</span></span><span class="z-punctuation z-definition z-template-expression z-end z-ts">}</span></span><span class="z-punctuation z-definition z-string z-template z-end z-ts">`</span></span>
+  <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+  <span class="z-keyword z-control z-flow z-ts">return</span> <span class="z-variable z-other z-object z-ts">tab</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-dom z-ts">text</span>
+<span class="z-punctuation z-definition z-block z-ts">}</span></span></span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+</span></code></pre>
+<p>The injectHighlight function exists in a special global function which is available to the engine, but banned for user
+consumption. This makes it the perfect place to place the internal engine specifics. The function itself, sets the
+global highlight flag, runs the passed function storing the result in a variable, unsets the global highlight flag, and
+returns the stored result. This means that the wrapped expression can be used in the same places as the original
+expression as it returns the same values and exists on the same line (which is important to preseve error line numbers).</p>
+<pre data-lang="js" class="language-js z-code"><code class="language-js" data-lang="js"><span class="z-source z-ts"><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> This function is used in the hover highlight functionality. It is stored on the user inaccessible _script8 global</span>
+<span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> variable and takes as argument a lambda wrapping some user expression. The flag `shouldHighlight` is then set to true</span>
+<span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> while the passed in code is running and returned to false when it finishes. `shouldHighlight` is used to modify</span>
+<span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> colors while true to indicate to the user how a given function call effects the drawing on the screen</span>
+<span class="z-meta z-var z-expr z-ts"><span class="z-keyword z-control z-export z-ts">export</span> <span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">shouldHighlight</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-constant z-language z-boolean z-false z-ts">false</span></span>
+<span class="z-meta z-var z-expr z-ts"><span class="z-keyword z-control z-export z-ts">export</span> <span class="z-storage z-type z-ts">const</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-constant z-ts"><span class="z-entity z-name z-function z-ts">injectHighlight</span></span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span><span class="z-meta z-arrow z-ts"> <span class="z-meta z-parameters z-ts"><span class="z-punctuation z-definition z-parameters z-begin z-ts">(</span><span class="z-variable z-parameter z-ts">code</span><span class="z-punctuation z-definition z-parameters z-end z-ts">)</span></span> </span><span class="z-meta z-arrow z-ts"><span class="z-storage z-type z-function z-arrow z-ts">=&gt;</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+  <span class="z-variable z-other z-readwrite z-ts">shouldHighlight</span>  <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-constant z-language z-boolean z-true z-ts">true</span>
+  <span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">result</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-meta z-function-call z-ts"><span class="z-entity z-name z-function z-ts">code</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-brace z-round z-ts">)</span></span>
+  <span class="z-variable z-other z-readwrite z-ts">shouldHighlight</span> <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-constant z-language z-boolean z-false z-ts">false</span>
+  <span class="z-keyword z-control z-flow z-ts">return</span> <span class="z-variable z-other z-readwrite z-ts">result</span>
+<span class="z-punctuation z-definition z-block z-ts">}</span></span></span></span>
+</span></code></pre>
+<h2 id="highlighting">Highlighting</h2>
+<p>From here I just modified the color lookup code to take the <code>shouldHighlight</code> flag into account and brighten/darken
+colors accordingly. Since every draw call depends on the color lookup functions to draw the correct color, I only needed
+to hook in in this one place, and everything worked properly.</p>
+<pre data-lang="js" class="language-js z-code"><code class="language-js" data-lang="js"><span class="z-source z-ts"><span class="z-meta z-function-call z-ts"><span class="z-entity z-name z-function z-ts">int</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">i</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+  <span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">index</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-variable z-other z-readwrite z-ts">i</span> <span class="z-keyword z-operator z-arithmetic z-ts">%</span> <span class="z-variable z-other z-object z-ts">intLookup</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-ts">length</span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">  </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> `shouldHighlight` is injected in the use code when the current call is under the mouse. If it is true, all colors</span>
+<span class="z-punctuation z-whitespace z-comment z-leading z-ts">  </span><span class="z-comment z-line z-double-slash z-ts"><span class="z-punctuation z-definition z-comment z-ts">//</span></span><span class="z-comment z-line z-double-slash z-ts"> drawn are brightened by 2 steps if they can be, or darkened by two steps if they are already too bright</span>
+  <span class="z-keyword z-control z-conditional z-ts">if</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">shouldHighlight</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+    <span class="z-keyword z-control z-conditional z-ts">if</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">index</span> <span class="z-keyword z-operator z-relational z-ts">&gt;</span> <span class="z-constant z-numeric z-decimal z-ts">2</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-variable z-other z-readwrite z-ts">index</span> <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-meta z-function-call z-ts"><span class="z-entity z-name z-function z-ts">clamp</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-keyword z-operator z-arithmetic z-ts">+</span><span class="z-variable z-other z-readwrite z-ts">index</span> <span class="z-keyword z-operator z-arithmetic z-ts">-</span> <span class="z-constant z-numeric z-decimal z-ts">2</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-constant z-numeric z-decimal z-ts">0</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-constant z-numeric z-decimal z-ts">7</span><span class="z-meta z-brace z-round z-ts">)</span>
+    <span class="z-keyword z-control z-conditional z-ts">else</span> <span class="z-variable z-other z-readwrite z-ts">index</span> <span class="z-keyword z-operator z-assignment z-compound z-ts">+=</span> <span class="z-constant z-numeric z-decimal z-ts">2</span>
+  <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+  <span class="z-keyword z-control z-flow z-ts">return</span> <span class="z-variable z-other z-readwrite z-ts">intLookup</span><span class="z-meta z-array z-literal z-ts"><span class="z-meta z-brace z-square z-ts">[</span><span class="z-variable z-other z-readwrite z-ts">index</span><span class="z-meta z-brace z-square z-ts">]</span></span>
+<span class="z-punctuation z-definition z-block z-ts">}</span></span>
+</span></code></pre>
+<p>Thats it! For a relatively complicated feature, I think the overall solution is pretty elegant! Acorn does all the hard
+work, and hints at some ways I could add more interesting features in the future. Some I am concidering are:</p>
+<ol>
+<li>Storing the draw function text coordinates with the draw call itself so that the user could click on the game screen
+and jump to the location of the draw call that last drew in that pixel.</li>
+<li>Recording argument index under the mouse and exposing it as an API to allow users to build their own specialized
+debug code and to allow the draw calls to render what each parameter does.</li>
+<li>Sample variable state over the course of runtime to inform the slider feature what bounds to set the slider at.
+Currently it just uses integer values, but it would be cool to enable the feature in more circumstances for more
+precise values</li>
+</ol>
+<p>I've enjoyed working on the Script-8 projects, and am excited about how useable and unique the editor experience has
+become. Hopefully the trend continues.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day94-webgl-react-component&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day96-neovide-smooth-scrolling&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,195 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Maple
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;">Maple</a>
+
+Day3 - Rust Gpu
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Reviving an old project to experiment with a new Neovide renderer
+    </h2>
+    
+    
+    <p>
+    
+      2023-03-25
+    
+    
+    </p>
+    
+  </summary>
+  <blockquote>
+<p>A branch splits off the main trunk of the Maple and stops
+abruptly at a stump. A rough bench is carved into the
+space for climbers to rest at before climbing on. Sitting
+on the bench is a pile of papers containing research on
+the nature of the trio and speculation about their
+origins. Although maybe plausible, the ideas are likely
+unfounded.</p>
+</blockquote>
+<p>Today I looked into reviving an old project of mine to start
+playing with Rust-GPU for a Neovide front end replacement.</p>
+<h2 id="skia">Skia</h2>
+<p>When I first started working on Neovide, I did a survey of
+the available 2d renderers in Rust. At the time, the only
+options really were druid, pathfinder, and skia. Druid was
+interesting because the Piet renderer worked in so many
+places and the promise of Xi editor meant that it seemed
+like it had some legs. I ended up leaving druid because I
+was unable to get the window events I needed to make a good
+neovim front end. Pathfinder was also very exciting as a
+next gen, rust first solution, but I struggled to get it
+building on my machine and gave up.</p>
+<p>That left Skia which is a 2d renderer maintained by Google
+and used heavily in parts of Android and Chrome. Its pretty
+fast, very cross platform, and tested very well on many
+platforms and in tons of apps including Sublime Text. Right
+around when I started working on Neovide, a crate was
+released called Skulpin which wrapped Skia-Safe and handled
+the creation of the window and vulkan boilerplate making it
+easy to get something on the screen. This worked great to
+get things going.</p>
+<p>Fast forward a couple years and I think the benefits of Skia
+are not outweighing the drawbacks. Although the api is
+relatively simple, the actual performance is hard to
+predict. The build process for skia is also less than ideal
+because it isn't well integrated into Cargo. Some platforms
+struggle to build it because a prebuilt binary isn't
+available. Even when it builds correctly, the compile time
+isn't ideal. All of the above issues have lead me to look
+for another solution.</p>
+<h2 id="rust-gpu">Rust-gpu</h2>
+<p>During my time at Zed I grew to appreciate the fact that we
+owned the entire stack from windowing library to renderer.
+When something wasn't working, it was always tractable
+because it was written in relatively understandable rust.
+Rather than having to dig down a layer or create a PR to
+some other codebase with unknown constraints, all the moving
+parts were available for us to look at and consider.</p>
+<p>I also discovered that a relatively simple architecture
+doing pretty basic graphics programming could get you a long
+way before hitting some performance limit. Until working at
+Zed I assumed that the advanced techniques described by
+folks like <a href="https://raphlinus.github.io/rust/graphics/gpu/2020/06/13/fast-2d-rendering.html">Raph Levien</a>
+were necessary to achieve good 2d graphics performance. In
+reality though nice, if you are smart about how you select
+what to render and don't rerender unnecessarily, you can get
+more than good enough performance without that complexity.
+And then if you need more of those techniques, they are
+available after the fact.</p>
+<p>Enter <a href="https://github.com/EmbarkStudios/rust-gpu">rust-gpu</a>
+the successor to an earlier project called rlsl which works
+to compile rust code directly to a target called spirv. In
+turn, spirv is a binary compile target for higher level
+shader languages like glsl and hlsl. By compiling to it, the
+shaders can be run on many platforms.</p>
+<p>I like rust-gpu not only because writing shaders in rust is
+super cool, but because it enables sharing code between the
+shader and the application. Rather than writing a type on
+the app side and an equivalent type in the shader which must
+be kept in sync, we can write a single type on the shader
+side and <em>reference</em> that same type in the application.
+Because the source code for the referenced type is literally
+the same in both places, we don't have to worry about them
+getting out of sync. Write once, use on cpu <em>and</em> gpu.</p>
+<p>A couple years ago I wrote a ray marcher that explored this
+idea further. The scene was a complex combination of signed
+distance fields which described the world and was relatively
+easily rendered in a full screen pixel shader. The player
+controller then sampled <em>the exact same code</em> on the cpu in
+order to let the player walk around the scene and bump into
+objects in it without phasing through them. The code for the
+basic game version of that can be found <a href="https://github.com/Kethku/rusty-marcher/commit/1d9f11eb962929614d6de6cf94c962dc91eb24f5">here</a>.
+I later took that system and tried to create a simple
+modeling application based on that idea and marching squares
+to 3d print the sdfs, but I eventually abandoned that effort
+due to accuracy issues.</p>
+<h2 id="where-i-m-at-so-far">Where I'm At So Far</h2>
+<p>So I spent today working on updating the dependencies of my
+rust-gpu demo and investigating what it would take to make a
+simple renderer that was suitable for Neovide to replace
+Skia with. My conclusion was that we could use the struct
+replication strategy but instead of using PushConstants like
+my demo does for the uniforms, use a Uniform Buffer filled
+with a flat array of instance structs. That Buffer is then
+bound in the shader and indexed into using the instance id.
+This way we define the shape of the instance in one place
+and use it both in the shader and the app code.</p>
+<p>The next step with this effort is to create a simple scene
+object containing the list of quads and potentially layers.
+As the scene is built up, new quads are pushed into the list
+and when the scene is complete, they can all be marshalled
+over to the uniform buffer together and rendered with a
+single draw call. This pattern can then be extended with
+glyph atlases to render text, and layers to handle blurs or
+shadows as necessary. The goal here is simplicity. We aren't
+going for the fastest possible solution. Just something that
+can get us off Skia. Then we can profile to figure out what
+needs more attention from there.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day2-blog-planning&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day4-einstein-tiles&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

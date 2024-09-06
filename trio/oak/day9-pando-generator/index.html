@@ -1,0 +1,236 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day9 - Pando Generator
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Generating DOT files
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-15
+    
+    
+      <br>
+      <a href="../../hemlock/projects/pando/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day9-pando-generator/./todo.svg" alt="Todo" /></p>
+<p>Todo I finished the generator code in Pando for the DOT files. Don't have a lot
+of time today, so I will just jump right into the changes.</p>
+<p>Code generation is much simpler than parsing, but in general a similar approach
+works well. I build up generators for the individual components of the file
+format and compose them into larger and larger parts.</p>
+<h2 id="node-definitions">Node Definitions</h2>
+<p>The smallest portion of the file DOT file format is the formatting information
+for each node in the graph. In our case I have 3 formats, one for each of the
+task statuses I support.</p>
+<pre>
+  <code class="language-en">pub fn generate_task_formatting(task: &amp;Todo) -&gt; String {
+    match task.status {
+        TaskStatus::Completed =&gt;
+            format!(&quot;&lt;&lt;font color=&#x27;gray&#x27;&gt;{} &lt;br&#x2F;&gt; &lt;i&gt;Complete&lt;&#x2F;i&gt;&lt;&#x2F;font&gt;&gt;, color=\&quot;gray\&quot;&quot;, task.identifier),
+        TaskStatus::InProgress =&gt;
+            format!(&quot;&lt;{} &lt;br&#x2F;&gt; &lt;i&gt;In Progress&lt;&#x2F;i&gt;&gt;&quot;, task.identifier),
+        TaskStatus::Waiting =&gt;
+            format!(&quot;&lt;{}&gt;&quot;, task.identifier)
+    }
+}</code>
+</pre>
+<p>I use the <code>format!</code> macro to provide the unchanging structure, and fill in the
+name for each of the status options. I then wrap the formatting into a full
+statement like so:</p>
+<pre>
+  <code class="language-en">pub fn generate_task_definition(task: &amp;Todo) -&gt; String {
+    format!(&quot;{}[label={}];&quot;, generate_identifier_variable(&amp;task.identifier), generate_task_formatting(task))
+}</code>
+</pre>
+<p>Each node definition has an identifier and the formatting. I create the
+identifier by removing the spaces from the task name.</p>
+<pre>
+  <code class="language-en">pub fn generate_identifier_variable(identifier: &amp;String) -&gt; String {
+    identifier.replace(&quot; &quot;, &quot;&quot;)
+}</code>
+</pre>
+<p>Note even though this is a very small method, I still pulled it out in case the
+identifier variable needed to change for whatever reason. By pulling this code
+into it's own section I am able to change all of the instances in one place.</p>
+<p>Finally we can build the entire definition list like so:</p>
+<pre>
+  <code class="language-en">pub fn generate_definitions(tasks: &amp;Vec&lt;Todo&gt;) -&gt; String {
+    let definition_entries: Vec&lt;String&gt; = tasks
+        .iter()
+        .map(generate_task_definition)
+        .collect();
+    definition_entries.join(&quot;\n  &quot;)
+}</code>
+</pre>
+<p>I needed to use an intermediate variable with a type declaration so that
+<code>collect</code> would know what type to collect into. Then the job becomes joining the
+lines together and adding some indentation for cleanliness.</p>
+<h2 id="dependencies">Dependencies</h2>
+<p>Most of the hard work was finished yesterday with the abbreviation resolution.
+All that is left is to simply render the data structure out. I start with a
+utility for rendering a list of dependencies with optional braces if there are
+more than one.</p>
+<pre>
+  <code class="language-en">pub fn generate_dependency_list(deps: Vec&lt;String&gt;) -&gt; Option&lt;String&gt; {
+    let dep_variables: Vec&lt;String&gt; = deps
+        .iter()
+        .map(generate_identifier_variable)
+        .collect();
+
+    match dep_variables.len() {
+        0 =&gt; None,
+        1 =&gt; Some(dep_variables.first().unwrap().to_string()),
+        _ =&gt; Some(format!(&quot;{{ {} }}&quot;, dep_variables.join(&quot; &quot;)))
+    }
+}</code>
+</pre>
+<p>Again, I had to use an intermediate variable to help <code>collect</code> along. I also
+convert each of the identifier strings in the input list to variable formats. A
+simple match on the length of the input list does the trick and I use an option
+to communicate back up the call stack when to write the line or not.</p>
+<pre>
+  <code class="language-en">pub fn generate_dependencies(tasks: &amp;Vec&lt;Todo&gt;) -&gt; Option&lt;String&gt; {
+    let dependent_task_lookup = resolve_dependent_tasks(&amp;tasks)?;
+    let entries: Vec&lt;String&gt; = tasks.iter().filter_map(|task| {
+        let dependent_tasks = dependent_task_lookup[&amp;task.identifier].clone();
+        let task_variable = generate_identifier_variable(&amp;task.identifier);
+        generate_dependency_list(dependent_tasks)
+            .map(|deps| format!(&quot;{} -&gt; {};&quot;, task_variable, deps))
+    }).collect();
+
+    Some(entries.join(&quot;\n  &quot;))
+}</code>
+</pre>
+<p>To wrap up the dependencies I build the dependent task lookup from the
+abbreviation resolver, and use <code>filter_map</code> to only output the entries with have
+dependent tasks. Finally I join the lines similar to the definition generator.</p>
+<p>An option is still returned at this point in case the abbreviation resolver
+finds an error.</p>
+<h2 id="putting-it-all-together">Putting it All Together</h2>
+<p>Connecting each of the pieces is just a matter of writing the surrounding goo
+for the DOT format, and filling in the definitions and dependencies.</p>
+<pre>
+  <code class="language-en">pub fn generate_dot_file(tasks: Vec&lt;Todo&gt;) -&gt; Option&lt;String&gt; {
+    let definitions = generate_definitions(&amp;tasks);
+    let dependencies = generate_dependencies(&amp;tasks)?;
+
+    Some(format!(
+&quot;digraph {{
+  node [shape=record, splines=\&quot;curve\&quot;];
+  {}
+
+  {}
+}}&quot;, definitions, dependencies))
+}</code>
+</pre>
+<p>As shown by the test, the code works as expected and generate the DOT format
+outlined in <a href="../day4-pando/">day4</a>.</p>
+<pre>
+  <code class="language-en">#[test]
+fn generator_dot_file_works() {
+    let generated = generate_dot_file(vec![
+        Todo::new(TaskStatus::Completed, &quot;Brainstorm&quot;, vec![]),
+        Todo::new(TaskStatus::InProgress, &quot;Specify Format&quot;, vec![&quot;B&quot;]),
+        Todo::new(TaskStatus::Waiting, &quot;Implement Parser&quot;, vec![&quot;SF&quot;]),
+        Todo::new(TaskStatus::Waiting, &quot;DOT Generator&quot;, vec![&quot;B&quot;]),
+        Todo::new(TaskStatus::Waiting, &quot;Command Line&quot;, vec![&quot;IP&quot;, &quot;DG&quot;])
+    ]);
+
+    let expected = Some(&quot;digraph {
+  node [shape=record, splines=\&quot;curve\&quot;];
+  Brainstorm[label=&lt;&lt;font color=&#x27;gray&#x27;&gt;Brainstorm &lt;br&#x2F;&gt; &lt;i&gt;Complete&lt;&#x2F;i&gt;&lt;&#x2F;font&gt;&gt;, color=\&quot;gray\&quot;];
+  SpecifyFormat[label=&lt;Specify Format &lt;br&#x2F;&gt; &lt;i&gt;In Progress&lt;&#x2F;i&gt;&gt;];
+  ImplementParser[label=&lt;Implement Parser&gt;];
+  DOTGenerator[label=&lt;DOT Generator&gt;];
+  CommandLine[label=&lt;Command Line&gt;];
+
+  Brainstorm -&gt; { SpecifyFormat DOTGenerator };
+  SpecifyFormat -&gt; ImplementParser;
+  ImplementParser -&gt; CommandLine;
+  DOTGenerator -&gt; CommandLine;
+}&quot;.to_string());
+
+    assert_eq!(generated, expected);
+}</code>
+</pre>
+<p>Using <code>format!</code> for code generation greatly simplifies things and makes the code
+structure very intuitive. I did find myself wishing for a more full featured
+string interpolation feature, but this worked in a pinch.</p>
+<p>All that's left for Pando V1 is to connect all of the pieces and build a
+command line interface. Almost there!</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day8-pando-abbreviations&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day10-pando-cli&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,209 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day18 - 8Bomb Camera Fixes
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      SCRIPT-8 bug fixes to enable better 8Bomb physics
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-24
+    
+    
+      <br>
+      <a href="../../hemlock/projects/8bomb/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day18-8bomb-camera-fixes/./todo.svg" alt="Todo" /></p>
+<p>Another busy day today. I mostly made some bug fixes in SCRIPT-8 to clean up
+yesterday's camera code. If you had tried the demo yesterday, you may have
+noticed that the ball was a little bouncy whenever the camera moved. I tried to
+hide some of this by using a stationary camera zone, but the effect was still
+visible. This was mostly due to the fact that I had to work around the <code>getPixel</code>
+and built in camera translation features in SCRIPT-8 since they had some bugs.
+Today's daily will be about the bugs and how they made the 8Bomb physics better.</p>
+<p>When attempting to use <code>camera</code> and <code>getPixel</code> together I ran into two problems: An
+issue with GetPixel's coordinate space and anti aliasing problems in <code>camera</code>.</p>
+<h2 id="getpixel-bug">GetPixel Bug</h2>
+<p>In the PICO-8 version I didn't bother with translating the graphics manually
+because I could simply use the <code>camera</code> function to do the work for me. This
+worked great because the <code>getPixel</code> and <code>setPixel</code> commands in PICO-8 were both in
+camera coordinates.</p>
+<p>Unfortunately when I added <code>getPixel</code> and <code>setPixel</code> to SCRIPT-8 I forgot to pay
+attention to the <code>camera</code> translation. So <code>setPixel</code> worked fine, but <code>getPixel</code> was
+in screen coordinates, so setting a pixel to some coordinates and reading from
+those same coordinates would not give the same reading if the camera was
+translated.</p>
+<p>The first step was to write a test to see what was going on.</p>
+<pre>
+  <code class="language-en">draw = () =&gt; {
+  clear();
+  camera(5, 0);
+  setPixel(5, 5, 5);
+  print(15, 3, getPixel(5, 5));
+}</code>
+</pre>
+<p>Initially when running this code, I expected the read value to be 5, as I just
+set the pixel. In practice though the reported value was 7 which is the
+background or default color.</p>
+<p><img src="https://kaylees.dev/trio/oak/day18-8bomb-camera-fixes/./SadGetPixel.PNG" alt="SadGetPixel" /></p>
+<p>The fix was pretty simple since the CanvasAPI already had variables representing
+the <code>cameraX</code> and <code>cameraY</code> values.</p>
+<pre>
+  <code class="language-en">getPixel(x, y) {
+  return getPixel({
+    x: Math.floor(x - _cameraX),
+    y: Math.floor(y - _cameraY),
+    ctx
+  })
+},</code>
+</pre>
+<p>Rerunning my test yielded:</p>
+<p><img src="https://kaylees.dev/trio/oak/day18-8bomb-camera-fixes/./HappyGetPixel.PNG" alt="HappyGetPixel" /></p>
+<h2 id="camera-bug">Camera Bug</h2>
+<p>The camera bug was slightly more complicated. Initially I thought everything
+worked fine since simple tests gave correct results. However when I tried using
+<code>camera</code> in 8Bomb the screen would flicker and the ball would fall through the
+screen. Very frustrating.</p>
+<p>To diagnose I created a small demo which moved a target graphic back and forth
+across the screen in a simple smooth animation.</p>
+<pre>
+  <code class="language-en">let x = 0;
+let targetX = 0;
+let t = 0;
+
+let frequency = 150;
+
+draw = () =&gt; {
+  clear();
+  camera();
+  print(0, 0, &quot;x: &quot; + x);
+  print(0, 8, &quot;t: &quot; + t);
+  
+  if (t % frequency == 0) {
+    targetX = ((t &#x2F; frequency) + 1) % 2 * 100;
+  }
+  
+  x += (targetX - x) * 0.1;
+  camera(-x, 1);
+  sprite(0, 50, 0);
+  
+  t += 1;
+}</code>
+</pre>
+<p>The sprite I used looked like:</p>
+<p><img src="https://kaylees.dev/trio/oak/day18-8bomb-camera-fixes/./TestTile.PNG" alt="TestTile" /></p>
+<p>The exact calculation isn't important, but basically the target position is
+changed every 150 frames to bounce back and forth between 0 and 100. Luckily
+this animation captures the problem. When the camera position is between integer
+multiples, the canvas will draw the image partially in one position in partially
+in another as a form of anti aliasing.</p>
+<p>When caught between frames the tile looks somewhat transparent.</p>
+<p><img src="https://kaylees.dev/trio/oak/day18-8bomb-camera-fixes/./BlurredTile.PNG" alt="BlurredTile" /></p>
+<p>This would cause <code>getPixel</code> to report the default value since it didn't exist in
+the pallet, which would cause the ball to fall through the floor in 8Bomb. The
+fix was to floor the values passed to camera so that they are always a whole
+number which would prevent any anti-aliasing from happening.</p>
+<pre>
+  <code class="language-en">camera(x = 0, y = 0) {
+  _cameraX = Math.floor(x)
+  _cameraY = Math.floor(y)
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
+  ctx.translate(-_cameraX, -_cameraY)
+},</code>
+</pre>
+<p>This fixed the problem leaving everything nice and crisp.</p>
+<h2 id="pull-requests">Pull Requests</h2>
+<p>I made two pull requests with these fixes which got merged an hour or two ago.
+With the fixes in place, I updated 8Bomb to take out the <code>cameraY</code> translation I
+built yesterday and to set the camera position in the draw function.</p>
+<pre>
+  <code class="language-en">draw = state =&gt; {
+  clear();
+  camera(0, state.cameraY);
+  drawTerrain(state);
+  handleTerrainCollisions(state.player);
+  drawPlayer(state);
+  camera();
+  drawInstructions(state);
+}</code>
+</pre>
+<p>With those changes in place, the physics no longer jumps on camera move. I like
+the camera changes made yesterday, so I left them in, but it feels much better
+to know that the physics is actually correct. The current version of the game
+can be played
+<a href="https://script-8.github.io/?id=2a24d4038406b2ea5f648c9ebb8d3a6b">here</a>.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day17-8bomb-camera&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day19-automating-blogging&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

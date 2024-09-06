@@ -1,0 +1,314 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="714pt" height="556pt" viewBox="0.00 0.00 714.15 556.00">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 552)">
+<title>%0</title>
+<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-552 710.1487,-552 710.1487,4 -4,4"/>
+<!-- iOSDevelopment -->
+<g id="node1" class="node">
+<title>iOSDevelopment</title>
+<polygon fill="none" stroke="#c0c0c0" points="231.6462,-511.5 231.6462,-547.5 351.8482,-547.5 351.8482,-511.5 231.6462,-511.5"/>
+<text text-anchor="start" x="239.6462" y="-531.9" font-family="Times,serif" font-size="14.00" fill="#c0c0c0">iOS Development </text>
+<text text-anchor="start" x="262.7784" y="-517.9" font-family="Times,serif" font-size="14.00" fill="#c0c0c0"> </text>
+<text text-anchor="start" x="266.2784" y="-517.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#c0c0c0">Complete</text>
+</g>
+<!-- TextRendering -->
+<g id="node2" class="node">
+<title>TextRendering</title>
+<polygon fill="none" stroke="#c0c0c0" points="178.2598,-438.5 178.2598,-474.5 285.2346,-474.5 285.2346,-438.5 178.2598,-438.5"/>
+<text text-anchor="start" x="186.2598" y="-458.9" font-family="Times,serif" font-size="14.00" fill="#c0c0c0">Text Rendering </text>
+<text text-anchor="start" x="202.7784" y="-444.9" font-family="Times,serif" font-size="14.00" fill="#c0c0c0"> </text>
+<text text-anchor="start" x="206.2784" y="-444.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#c0c0c0">Complete</text>
+</g>
+<!-- iOSDevelopment&#45;&gt;TextRendering -->
+<g id="edge1" class="edge">
+<title>iOSDevelopment-&gt;TextRendering</title>
+<path fill="none" stroke="#000000" d="M276.9157,-511.4551C269.7041,-502.6809 260.9055,-491.9759 252.9962,-482.353"/>
+<polygon fill="#000000" stroke="#000000" points="255.6696,-480.0934 246.616,-474.5904 250.2618,-484.5382 255.6696,-480.0934"/>
+</g>
+<!-- TileRenderer -->
+<g id="node3" class="node">
+<title>TileRenderer</title>
+<polygon fill="none" stroke="#c0c0c0" points="305.3222,-438.5 305.3222,-474.5 402.1722,-474.5 402.1722,-438.5 305.3222,-438.5"/>
+<text text-anchor="start" x="313.3222" y="-458.9" font-family="Times,serif" font-size="14.00" fill="#c0c0c0">Tile Renderer </text>
+<text text-anchor="start" x="324.7784" y="-444.9" font-family="Times,serif" font-size="14.00" fill="#c0c0c0"> </text>
+<text text-anchor="start" x="328.2784" y="-444.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#c0c0c0">Complete</text>
+</g>
+<!-- iOSDevelopment&#45;&gt;TileRenderer -->
+<g id="edge2" class="edge">
+<title>iOSDevelopment-&gt;TileRenderer</title>
+<path fill="none" stroke="#000000" d="M307.073,-511.4551C314.5251,-502.6809 323.617,-491.9759 331.7899,-482.353"/>
+<polygon fill="#000000" stroke="#000000" points="334.577,-484.4781 338.3828,-474.5904 329.2416,-479.9466 334.577,-484.4781"/>
+</g>
+<!-- WindowInfrastructure -->
+<g id="node14" class="node">
+<title>WindowInfrastructure</title>
+<polygon fill="none" stroke="#000000" points="74.805,-292.5 74.805,-328.5 218.6894,-328.5 218.6894,-292.5 74.805,-292.5"/>
+<text text-anchor="start" x="82.805" y="-306.3" font-family="Times,serif" font-size="14.00" fill="#000000">Window Infrastructure</text>
+</g>
+<!-- TextRendering&#45;&gt;WindowInfrastructure -->
+<g id="edge3" class="edge">
+<title>TextRendering-&gt;WindowInfrastructure</title>
+<path fill="none" stroke="#000000" d="M221.1538,-438.3042C206.4562,-413.0589 179.7612,-367.2063 162.6615,-337.8351"/>
+<polygon fill="#000000" stroke="#000000" points="165.5303,-335.8062 157.4741,-328.9251 159.4808,-339.3282 165.5303,-335.8062"/>
+</g>
+<!-- Camera -->
+<g id="node4" class="node">
+<title>Camera</title>
+<polygon fill="none" stroke="#c0c0c0" points="341.7784,-365.5 341.7784,-401.5 415.716,-401.5 415.716,-365.5 341.7784,-365.5"/>
+<text text-anchor="start" x="355.2314" y="-385.9" font-family="Times,serif" font-size="14.00" fill="#c0c0c0">Camera </text>
+<text text-anchor="start" x="349.7784" y="-371.9" font-family="Times,serif" font-size="14.00" fill="#c0c0c0"> </text>
+<text text-anchor="start" x="353.2784" y="-371.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#c0c0c0">Complete</text>
+</g>
+<!-- TileRenderer&#45;&gt;Camera -->
+<g id="edge4" class="edge">
+<title>TileRenderer-&gt;Camera</title>
+<path fill="none" stroke="#000000" d="M359.927,-438.4551C362.7515,-430.2074 366.1604,-420.2536 369.2965,-411.0962"/>
+<polygon fill="#000000" stroke="#000000" points="372.6231,-412.185 372.5519,-401.5904 366.0007,-409.917 372.6231,-412.185"/>
+</g>
+<!-- Objects -->
+<g id="node5" class="node">
+<title>Objects</title>
+<polygon fill="none" stroke="#c0c0c0" points="284.7784,-292.5 284.7784,-328.5 358.716,-328.5 358.716,-292.5 284.7784,-292.5"/>
+<text text-anchor="start" x="298.6164" y="-312.9" font-family="Times,serif" font-size="14.00" fill="#c0c0c0">Objects </text>
+<text text-anchor="start" x="292.7784" y="-298.9" font-family="Times,serif" font-size="14.00" fill="#c0c0c0"> </text>
+<text text-anchor="start" x="296.2784" y="-298.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#c0c0c0">Complete</text>
+</g>
+<!-- Camera&#45;&gt;Objects -->
+<g id="edge5" class="edge">
+<title>Camera-&gt;Objects</title>
+<path fill="none" stroke="#000000" d="M364.6573,-365.4551C357.8748,-356.7686 349.6146,-346.1898 342.1595,-336.642"/>
+<polygon fill="#000000" stroke="#000000" points="344.7856,-334.3182 335.8725,-328.5904 339.2683,-338.6263 344.7856,-334.3182"/>
+</g>
+<!-- EntityAnimations -->
+<g id="node6" class="node">
+<title>EntityAnimations</title>
+<polygon fill="none" stroke="#000000" points="376.2209,-292.5 376.2209,-328.5 495.2735,-328.5 495.2735,-292.5 376.2209,-292.5"/>
+<text text-anchor="start" x="384.2209" y="-306.3" font-family="Times,serif" font-size="14.00" fill="#000000">Entity Animations</text>
+</g>
+<!-- Camera&#45;&gt;EntityAnimations -->
+<g id="edge6" class="edge">
+<title>Camera-&gt;EntityAnimations</title>
+<path fill="none" stroke="#000000" d="M392.8371,-365.4551C399.6196,-356.7686 407.8798,-346.1898 415.3349,-336.642"/>
+<polygon fill="#000000" stroke="#000000" points="418.2261,-338.6263 421.6219,-328.5904 412.7088,-334.3182 418.2261,-338.6263"/>
+</g>
+<!-- InputPicking -->
+<g id="node20" class="node">
+<title>InputPicking</title>
+<polygon fill="none" stroke="#000000" points="489.0824,-219.5 489.0824,-255.5 584.412,-255.5 584.412,-219.5 489.0824,-219.5"/>
+<text text-anchor="start" x="497.0824" y="-239.9" font-family="Times,serif" font-size="14.00" fill="#000000">Input Picking </text>
+<text text-anchor="start" x="503.3131" y="-225.9" font-family="Times,serif" font-size="14.00" fill="#000000"> </text>
+<text text-anchor="start" x="506.8131" y="-225.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">In Progress</text>
+</g>
+<!-- Camera&#45;&gt;InputPicking -->
+<g id="edge7" class="edge">
+<title>Camera-&gt;InputPicking</title>
+<path fill="none" stroke="#000000" d="M415.9913,-375.9152C443.9075,-368.4227 481.2034,-354.2982 504.7472,-329 520.9769,-311.561 529.0423,-285.4304 533.01,-265.5528"/>
+<polygon fill="#000000" stroke="#000000" points="536.4879,-265.9837 534.7758,-255.5281 529.5941,-264.7693 536.4879,-265.9837"/>
+</g>
+<!-- TileProperties -->
+<g id="node7" class="node">
+<title>TileProperties</title>
+<polygon fill="none" stroke="#000000" points="283.3436,-219.5 283.3436,-255.5 382.1508,-255.5 382.1508,-219.5 283.3436,-219.5"/>
+<text text-anchor="start" x="291.3436" y="-233.3" font-family="Times,serif" font-size="14.00" fill="#000000">Tile Properties</text>
+</g>
+<!-- Objects&#45;&gt;TileProperties -->
+<g id="edge8" class="edge">
+<title>Objects-&gt;TileProperties</title>
+<path fill="none" stroke="#000000" d="M324.4663,-292.4551C325.6827,-284.3828 327.1453,-274.6764 328.5006,-265.6817"/>
+<polygon fill="#000000" stroke="#000000" points="331.9921,-266.0003 330.0213,-255.5904 325.0702,-264.9572 331.9921,-266.0003"/>
+</g>
+<!-- Character -->
+<g id="node8" class="node">
+<title>Character</title>
+<polygon fill="none" stroke="#000000" points="400.5438,-219.5 400.5438,-255.5 470.9506,-255.5 470.9506,-219.5 400.5438,-219.5"/>
+<text text-anchor="middle" x="435.7472" y="-233.3" font-family="Times,serif" font-size="14.00" fill="#000000">Character</text>
+</g>
+<!-- EntityAnimations&#45;&gt;Character -->
+<g id="edge9" class="edge">
+<title>EntityAnimations-&gt;Character</title>
+<path fill="none" stroke="#000000" d="M435.7472,-292.4551C435.7472,-284.3828 435.7472,-274.6764 435.7472,-265.6817"/>
+<polygon fill="#000000" stroke="#000000" points="439.2473,-265.5903 435.7472,-255.5904 432.2473,-265.5904 439.2473,-265.5903"/>
+</g>
+<!-- PathFinding -->
+<g id="node9" class="node">
+<title>PathFinding</title>
+<polygon fill="none" stroke="#000000" points="383.7714,-146.5 383.7714,-182.5 471.723,-182.5 471.723,-146.5 383.7714,-146.5"/>
+<text text-anchor="start" x="391.7714" y="-160.3" font-family="Times,serif" font-size="14.00" fill="#000000">Path Finding</text>
+</g>
+<!-- TileProperties&#45;&gt;PathFinding -->
+<g id="edge10" class="edge">
+<title>TileProperties-&gt;PathFinding</title>
+<path fill="none" stroke="#000000" d="M356.2304,-219.4551C368.2197,-210.2422 382.9793,-198.9006 395.9703,-188.918"/>
+<polygon fill="#000000" stroke="#000000" points="398.4082,-191.4587 404.205,-182.5904 394.143,-185.9082 398.4082,-191.4587"/>
+</g>
+<!-- Character&#45;&gt;PathFinding -->
+<g id="edge11" class="edge">
+<title>Character-&gt;PathFinding</title>
+<path fill="none" stroke="#000000" d="M433.7697,-219.4551C432.885,-211.3828 431.8213,-201.6764 430.8356,-192.6817"/>
+<polygon fill="#000000" stroke="#000000" points="434.2983,-192.1495 429.7297,-182.5904 427.34,-192.9122 434.2983,-192.1495"/>
+</g>
+<!-- Interaction -->
+<g id="node10" class="node">
+<title>Interaction</title>
+<polygon fill="none" stroke="#000000" points="389.4288,-73.5 389.4288,-109.5 466.0656,-109.5 466.0656,-73.5 389.4288,-73.5"/>
+<text text-anchor="middle" x="427.7472" y="-87.3" font-family="Times,serif" font-size="14.00" fill="#000000">Interaction</text>
+</g>
+<!-- PathFinding&#45;&gt;Interaction -->
+<g id="edge12" class="edge">
+<title>PathFinding-&gt;Interaction</title>
+<path fill="none" stroke="#000000" d="M427.7472,-146.4551C427.7472,-138.3828 427.7472,-128.6764 427.7472,-119.6817"/>
+<polygon fill="#000000" stroke="#000000" points="431.2473,-119.5903 427.7472,-109.5904 424.2473,-119.5904 431.2473,-119.5903"/>
+</g>
+<!-- TaptoMove -->
+<g id="node11" class="node">
+<title>TaptoMove</title>
+<polygon fill="none" stroke="#000000" points="269.5887,-73.5 269.5887,-109.5 357.9057,-109.5 357.9057,-73.5 269.5887,-73.5"/>
+<text text-anchor="start" x="277.5887" y="-87.3" font-family="Times,serif" font-size="14.00" fill="#000000">Tap to Move</text>
+</g>
+<!-- PathFinding&#45;&gt;TaptoMove -->
+<g id="edge13" class="edge">
+<title>PathFinding-&gt;TaptoMove</title>
+<path fill="none" stroke="#000000" d="M399.5674,-146.4551C384.7692,-136.979 366.4539,-125.2508 350.5486,-115.0658"/>
+<polygon fill="#000000" stroke="#000000" points="352.3067,-112.0356 341.9979,-109.5904 348.5318,-117.9305 352.3067,-112.0356"/>
+</g>
+<!-- TaptoUse -->
+<g id="node12" class="node">
+<title>TaptoUse</title>
+<polygon fill="none" stroke="#000000" points="181.0354,-.5 181.0354,-36.5 258.459,-36.5 258.459,-.5 181.0354,-.5"/>
+<text text-anchor="start" x="189.0354" y="-14.3" font-family="Times,serif" font-size="14.00" fill="#000000">Tap to Use</text>
+</g>
+<!-- Interaction&#45;&gt;TaptoUse -->
+<g id="edge14" class="edge">
+<title>Interaction-&gt;TaptoUse</title>
+<path fill="none" stroke="#000000" d="M389.1115,-77.9403C354.9239,-65.9418 304.8888,-48.3814 268.0635,-35.4572"/>
+<polygon fill="#000000" stroke="#000000" points="269.1232,-32.1198 258.5284,-32.1107 266.8051,-38.7249 269.1232,-32.1198"/>
+</g>
+<!-- TaptoMove&#45;&gt;TaptoUse -->
+<g id="edge15" class="edge">
+<title>TaptoMove-&gt;TaptoUse</title>
+<path fill="none" stroke="#000000" d="M290.5112,-73.4551C278.6481,-64.2422 264.0439,-52.9006 251.1896,-42.918"/>
+<polygon fill="#000000" stroke="#000000" points="253.0865,-39.9597 243.0416,-36.5904 248.7929,-45.4883 253.0865,-39.9597"/>
+</g>
+<!-- PopupWindow -->
+<g id="node13" class="node">
+<title>PopupWindow</title>
+<polygon fill="none" stroke="#000000" points="0,-146.5 0,-182.5 103.4944,-182.5 103.4944,-146.5 0,-146.5"/>
+<text text-anchor="start" x="8" y="-160.3" font-family="Times,serif" font-size="14.00" fill="#000000">Popup Window</text>
+</g>
+<!-- PopupWindow&#45;&gt;TaptoUse -->
+<g id="edge16" class="edge">
+<title>PopupWindow-&gt;TaptoUse</title>
+<path fill="none" stroke="#000000" d="M66.2672,-146.4344C82.3421,-127.0479 109.5874,-95.9514 136.7472,-73 150.0498,-61.7586 165.7799,-50.9017 179.9496,-41.8767"/>
+<polygon fill="#000000" stroke="#000000" points="181.9126,-44.7771 188.5349,-36.5069 178.2007,-38.8423 181.9126,-44.7771"/>
+</g>
+<!-- WindowInfrastructure&#45;&gt;PopupWindow -->
+<g id="edge17" class="edge">
+<title>WindowInfrastructure-&gt;PopupWindow</title>
+<path fill="none" stroke="#000000" d="M85.8652,-292.4692C68.5924,-284.2297 51.7726,-272.4991 41.7472,-256 30.2114,-237.0153 34.153,-211.6675 40.1643,-192.4655"/>
+<polygon fill="#000000" stroke="#000000" points="43.5533,-193.3753 43.5281,-182.7805 36.9408,-191.0786 43.5533,-193.3753"/>
+</g>
+<!-- ActionSearch -->
+<g id="node15" class="node">
+<title>ActionSearch</title>
+<polygon fill="none" stroke="#000000" points="50.9025,-219.5 50.9025,-255.5 146.5919,-255.5 146.5919,-219.5 50.9025,-219.5"/>
+<text text-anchor="start" x="58.9025" y="-233.3" font-family="Times,serif" font-size="14.00" fill="#000000">Action Search</text>
+</g>
+<!-- WindowInfrastructure&#45;&gt;ActionSearch -->
+<g id="edge18" class="edge">
+<title>WindowInfrastructure-&gt;ActionSearch</title>
+<path fill="none" stroke="#000000" d="M134.882,-292.4551C129.2858,-283.9441 122.495,-273.6165 116.3178,-264.2219"/>
+<polygon fill="#000000" stroke="#000000" points="119.0608,-262.023 110.6422,-255.5904 113.2119,-265.8689 119.0608,-262.023"/>
+</g>
+<!-- RoutineTicker -->
+<g id="node16" class="node">
+<title>RoutineTicker</title>
+<polygon fill="none" stroke="#000000" points="164.5645,-219.5 164.5645,-255.5 264.9299,-255.5 264.9299,-219.5 164.5645,-219.5"/>
+<text text-anchor="start" x="172.5645" y="-233.3" font-family="Times,serif" font-size="14.00" fill="#000000">Routine Ticker</text>
+</g>
+<!-- WindowInfrastructure&#45;&gt;RoutineTicker -->
+<g id="edge19" class="edge">
+<title>WindowInfrastructure-&gt;RoutineTicker</title>
+<path fill="none" stroke="#000000" d="M163.5562,-292.4551C171.8111,-283.5932 181.9007,-272.7616 190.9336,-263.0646"/>
+<polygon fill="#000000" stroke="#000000" points="193.6409,-265.2932 197.8959,-255.5904 188.5188,-260.522 193.6409,-265.2932"/>
+</g>
+<!-- ActionInsertion -->
+<g id="node18" class="node">
+<title>ActionInsertion</title>
+<polygon fill="none" stroke="#000000" points="135.0652,-146.5 135.0652,-182.5 242.4292,-182.5 242.4292,-146.5 135.0652,-146.5"/>
+<text text-anchor="start" x="143.0652" y="-160.3" font-family="Times,serif" font-size="14.00" fill="#000000">Action Insertion</text>
+</g>
+<!-- ActionSearch&#45;&gt;ActionInsertion -->
+<g id="edge20" class="edge">
+<title>ActionSearch-&gt;ActionInsertion</title>
+<path fill="none" stroke="#000000" d="M120.9944,-219.4551C132.3527,-210.2422 146.3355,-198.9006 158.6428,-188.918"/>
+<polygon fill="#000000" stroke="#000000" points="160.8824,-191.6081 166.444,-182.5904 156.4728,-186.1716 160.8824,-191.6081"/>
+</g>
+<!-- RoutineEditor -->
+<g id="node17" class="node">
+<title>RoutineEditor</title>
+<polygon fill="none" stroke="#000000" points="260.3338,-146.5 260.3338,-182.5 359.1606,-182.5 359.1606,-146.5 260.3338,-146.5"/>
+<text text-anchor="start" x="268.3338" y="-160.3" font-family="Times,serif" font-size="14.00" fill="#000000">Routine Editor</text>
+</g>
+<!-- RoutineTicker&#45;&gt;RoutineEditor -->
+<g id="edge21" class="edge">
+<title>RoutineTicker-&gt;RoutineEditor</title>
+<path fill="none" stroke="#000000" d="M238.2304,-219.4551C250.2197,-210.2422 264.9793,-198.9006 277.9703,-188.918"/>
+<polygon fill="#000000" stroke="#000000" points="280.4082,-191.4587 286.205,-182.5904 276.143,-185.9082 280.4082,-191.4587"/>
+</g>
+<!-- RoutineTicker&#45;&gt;ActionInsertion -->
+<g id="edge22" class="edge">
+<title>RoutineTicker-&gt;ActionInsertion</title>
+<path fill="none" stroke="#000000" d="M208.3202,-219.4551C205.3827,-211.2074 201.8375,-201.2536 198.576,-192.0962"/>
+<polygon fill="#000000" stroke="#000000" points="201.8427,-190.8364 195.1903,-182.5904 195.2485,-193.185 201.8427,-190.8364"/>
+</g>
+<!-- ActionInsertion&#45;&gt;TaptoMove -->
+<g id="edge23" class="edge">
+<title>ActionInsertion-&gt;TaptoMove</title>
+<path fill="none" stroke="#000000" d="M219.6461,-146.4551C236.0225,-136.8912 256.327,-125.0334 273.8785,-114.7833"/>
+<polygon fill="#000000" stroke="#000000" points="275.9003,-117.6558 282.7706,-109.5904 272.3702,-111.6111 275.9003,-117.6558"/>
+</g>
+<!-- ActionInsertion&#45;&gt;TaptoUse -->
+<g id="edge24" class="edge">
+<title>ActionInsertion-&gt;TaptoUse</title>
+<path fill="none" stroke="#000000" d="M168.8031,-146.3483C159.5799,-136.5943 149.6082,-123.7592 144.7472,-110 139.2694,-94.4947 137.2822,-87.6524 144.7472,-73 151.0971,-60.5363 161.7791,-50.254 173.1201,-42.1085"/>
+<polygon fill="#000000" stroke="#000000" points="175.0674,-45.0168 181.442,-36.5543 171.1814,-39.1945 175.0674,-45.0168"/>
+</g>
+<!-- PickandPlace -->
+<g id="node19" class="node">
+<title>PickandPlace</title>
+<polygon fill="none" stroke="#000000" points="153.5375,-73.5 153.5375,-109.5 251.9569,-109.5 251.9569,-73.5 153.5375,-73.5"/>
+<text text-anchor="start" x="161.5375" y="-87.3" font-family="Times,serif" font-size="14.00" fill="#000000">Pick and Place</text>
+</g>
+<!-- ActionInsertion&#45;&gt;PickandPlace -->
+<g id="edge25" class="edge">
+<title>ActionInsertion-&gt;PickandPlace</title>
+<path fill="none" stroke="#000000" d="M192.2079,-146.4551C193.756,-138.3828 195.6175,-128.6764 197.3425,-119.6817"/>
+<polygon fill="#000000" stroke="#000000" points="200.8316,-120.0706 199.2778,-109.5904 193.9569,-118.7521 200.8316,-120.0706"/>
+</g>
+<!-- InputPicking&#45;&gt;PathFinding -->
+<g id="edge26" class="edge">
+<title>InputPicking-&gt;PathFinding</title>
+<path fill="none" stroke="#000000" d="M509.8034,-219.4551C495.7852,-210.0667 478.4662,-198.4678 463.3575,-188.3491"/>
+<polygon fill="#000000" stroke="#000000" points="465.0152,-185.2469 454.7588,-182.5904 461.12,-191.0631 465.0152,-185.2469"/>
+</g>
+<!-- InputPicking&#45;&gt;Interaction -->
+<g id="edge27" class="edge">
+<title>InputPicking-&gt;Interaction</title>
+<path fill="none" stroke="#000000" d="M527.1266,-219.1882C516.7632,-200.1409 499.2537,-169.8292 480.7472,-146 472.9047,-135.902 463.4081,-125.6421 454.6323,-116.7889"/>
+<polygon fill="#000000" stroke="#000000" points="457.0536,-114.2609 447.4823,-109.7175 452.1312,-119.2379 457.0536,-114.2609"/>
+</g>
+<!-- CustomSpriteRenderer -->
+<g id="node21" class="node">
+<title>CustomSpriteRenderer</title>
+<polygon fill="none" stroke="#000000" points="551.3457,-292.5 551.3457,-328.5 706.1487,-328.5 706.1487,-292.5 551.3457,-292.5"/>
+<text text-anchor="start" x="559.3457" y="-312.9" font-family="Times,serif" font-size="14.00" fill="#000000">Custom Sprite Renderer </text>
+<text text-anchor="start" x="595.3131" y="-298.9" font-family="Times,serif" font-size="14.00" fill="#000000"> </text>
+<text text-anchor="start" x="598.8131" y="-298.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">In Progress</text>
+</g>
+<!-- CustomSpriteRenderer&#45;&gt;InputPicking -->
+<g id="edge28" class="edge">
+<title>CustomSpriteRenderer-&gt;InputPicking</title>
+<path fill="none" stroke="#000000" d="M606.0056,-292.4551C594.3949,-283.2422 580.1014,-271.9006 567.5206,-261.918"/>
+<polygon fill="#000000" stroke="#000000" points="569.5551,-259.0644 559.546,-255.5904 565.2041,-264.5479 569.5551,-259.0644"/>
+</g>
+</g>
+</svg>
