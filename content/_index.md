@@ -11,11 +11,12 @@ into isolated canopies.
 At the base of the trees is a wooden sign with the following
 written on it:
 
-> Hi! I'm Kaylee. I'm a women of trans experience and this
+> Hi! I'm Kaylee. I am a woman of trans experience and this
 > is my website. I am also a software developer who has
 > worked on a number of things including Formal
 > Verification, Program Synthesis, Developer Tooling, and
-> some light Game Development. This is a place where I
+> some light Game Development. I am also a farmer who grows
+> vegetables for my community. This is a place where I
 > express myself and document my projects. Please explore
 > and enjoy!
 
