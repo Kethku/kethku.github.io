@@ -1,0 +1,270 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day68 - Conditional Types in Typescript
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Using conditional types to port javascript code to typescript
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-18
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day68-conditional-types-in-typescript/./todo.svg" alt="Todo" /></p>
+<p>Today I finished porting all of the source files in my Tetris Attack remake to
+Typescript. Most of the work was similar to my last post on the topic, but I did
+run into an interesting type system issue which I figured would be interesting
+to talk about.</p>
+<h2 id="javascript-version">Javascript Version</h2>
+<p>The function in question was the gridToScreen function used for transforming
+block location information from grid space to screen space. The original
+function looked like this:</p>
+<pre>
+  <code class="language-en">export function gridToScreen(location) {
+  let result = {};
+
+  if (location.position) {
+    let blocksTopLeft = new Vector(
+      gridCenter.x - gridDimensions.width &#x2F; 2,
+      gridCenter.y - gridDimensions.height &#x2F; 2 + blockPixelAdvancement);
+
+    result.position = blocksTopLeft.add(
+      location.position.multiply(blockWidth)
+        .multiplyParts(new Vector(1, -1)));
+  }
+
+  if (location.dimensions) {
+    result.dimensions = location.dimensions.multiply(blockWidth);
+  }
+
+  return result;
+}</code>
+</pre>
+<p>Its a pretty simple function which creates a return object with transformed
+variables depending upon which properties exist on the incoming object. This
+pattern is somewhat common in dynamic programming languages because you can
+group a series of operations that are done sometimes together or sometimes
+separately into one unit. Unfortunately with traditional type systems this can
+be difficult to handle properly.</p>
+<h2 id="naive-approach">Naive Approach</h2>
+<p>Standard type annotations for the argument might look like this:</p>
+<pre>
+  <code class="language-en">interface Location {
+  position?: Vector,
+  dimensions?: Vector
+}
+
+export function gridToScreen(location: Location) {
+  let result = {} as Location;
+
+  if (location.position) {
+    let blocksTopLeft = new Vector(
+      gridCenter.x - gridDimensions.width &#x2F; 2,
+      gridCenter.y - gridDimensions.height &#x2F; 2 + blockPixelAdvancement);
+
+    result.position = blocksTopLeft.add(
+      location.position.multiply(blockWidth)
+        .multiplyParts(new Vector(1, -1)));
+  }
+
+  if (location.dimensions) {
+    result.dimensions = location.dimensions.multiply(blockWidth);
+  }
+
+  return result;
+}</code>
+</pre>
+<p>This compiles fine, but we run into problems if we want to use properties in the
+output of the function. </p>
+<pre>
+  <code class="language-en">for (let coveredSlot of this.coveredSlots.values()) {
+  let renderInfo = gridToScreen({
+    position: coveredSlot,
+    dimensions: Vector.one
+  });
+
+  image({
+    imageUrl: garbageImages.Clear,
+    center: Vector.topLeft,
+    ...renderInfo
+  });
+}</code>
+</pre>
+<p>For example in the render function on the <code>ClearAnimation</code> class we get a
+compiler error complaining that the image function argument does not contain the
+position and dimensions properties. The compiler has no way to guarantee that
+the properties on <code>renderInfo</code> are actually there.</p>
+<h2 id="set-ish-types">Set-ish Types</h2>
+<p>To fix this issue and help the type system along we need to take advantage of
+some more advanced type system features in the recent versions of Typescript.
+But first, some background terminology.</p>
+<p>Typescript contains two concepts that have names related to Set operations, but
+are a bit misleading: Union and Intersection types. The Union of two types in
+Typescript produces a new type containing <em>all</em> of the properties of each of the
+types combined. Similarly the intersection of two types produces a new type with
+either the properties of the first object or the properties of the second.</p>
+<p>The union type makes good sense since a union of two sets contains all of the
+elements that exist in one of either of the sets.</p>
+<pre>
+  <code class="language-en">(A, B, C) Union (C, D, E) Equals (A, B, C, D)</code>
+</pre>
+<p>The intersection type is weird though because a valid element inhabiting the
+intersection between two overlapping types has no guarantee about what
+properties exist on it. In normal set theory terms:</p>
+<pre>
+  <code class="language-en">(A, B, C) Intersection (C, D, E) Equals (C)</code>
+</pre>
+<p>But in typescript it means that the final object could be the first type or the
+second type. It could be me, but I find this somewhat confusing.</p>
+<h2 id="dependent-er-conditional-types-to-the-rescue">Dependent er... Conditional Types to the Rescue</h2>
+<p>Luckily modern Typescript gives a way to define our own versions of these ideas.
+In my case I need a type which truly is the &quot;intersection&quot; of two types which
+has the common properties between the two. To do this I use type conditions to
+specify the constrain I have in mind.</p>
+<pre>
+  <code class="language-en">export type Common&lt;A, B&gt; = {
+  [P in keyof A &amp; keyof B]: A[P] | B[P]
+};</code>
+</pre>
+<p>The syntax is a little bit weird, but in English this says the following:</p>
+<pre>
+  <code class="language-en">Define the Common of two types, A and B as
+A new type with 
+Keys such that every key P exists in both A and B,
+And values that are either the type of A[P] or B[P]</code>
+</pre>
+<p>In summary, do something closer to the Set union of two bags of properties. The
+last bit of useful information before I show the final solution is the existence
+of a <code>Partial</code> type which is another bit of fancy Typescript type shenanigans
+which just takes a type and creates a new type where each of the properties are
+optional. It is defined as such:</p>
+<pre>
+  <code class="language-en">export type Filter&lt;T&gt; = {
+  [P in keyof T]?: T[P]
+};</code>
+</pre>
+<p>In this form you can see the structure of a mapped type or conditional type a
+little easier. Its just a way to specify properties in terms of the properties
+on other types.</p>
+<h2 id="better-type-annotations">Better Type Annotations</h2>
+<p>With our new found fancy types in hand, the more expressive version of
+<code>gridToScreen</code> type annotations is pretty simple:</p>
+<pre>
+  <code class="language-en">interface Location {
+  position: Vector,
+  dimensions: Vector
+};
+export function gridToScreen&lt;T extends Partial&lt;Location&gt;&gt;(location: T) {
+  let result = {} as Common&lt;T, Location&gt;;
+
+  if (&quot;position&quot; in location) {
+    let blocksTopLeft = new Vector(
+      gridCenter.x - gridDimensions.width &#x2F; 2,
+      gridCenter.y - gridDimensions.height &#x2F; 2 + blockPixelAdvancement);
+
+    result.position = blocksTopLeft.add(
+      location.position.multiply(blockWidth)
+        .multiplyParts(new Vector(1, -1)));
+  }
+
+  if (&quot;dimensions&quot; in location) {
+    result.dimensions = location.dimensions.multiply(blockWidth);
+  }
+
+  return result;
+}</code>
+</pre>
+<p>First step was to specify that the properties on the input argument are optional
+using the <code>Partial</code> mapped type. Then the type of the result is simply the
+common properties from the passed in argument and the location type itself. So
+if the object passed in only contains the <code>Position</code> property, then the result
+type will only contain <code>Position</code> as well since the only common properties are
+<code>Position</code>.</p>
+<p>The only slightly confusing bit was that I had to modify the if statements to
+use the <code>in</code> operator to check for the existence of the properties so the type
+system can be confident that the <code>position</code> property actually exists on the
+argument at runtime.</p>
+<p>And thats really it! My <code>ClearAnimation</code> <code>render</code> function doesn't need changed
+at all because the Types provide <em>proof</em> that the correct arguments are
+available when I expect them to be. I'm incredibly pleased that the type system
+in Typescript continues to get more and more expressive. This is just the
+smallest baby step toward more complicated proofs in software, but any progress
+is commendable. Heres to hoping for full fledged Pi types in the future!</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day67-window-sniper&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day69-popup-tool-bar&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

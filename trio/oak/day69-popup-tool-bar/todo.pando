@@ -1,0 +1,8 @@
+- Port to Net Core
+- Global Plugin Config [ Port to Net Core ]
+- Completion API [ Global Plugin Config ]
+- Installer [ Port to Net Core ]
+- Auto Update [ Installer ]
+- Picture in Picture Browser [ Completion API ]
+- Screen Cap [ Completion API ]
+- Window Sniper [ Completion API ]

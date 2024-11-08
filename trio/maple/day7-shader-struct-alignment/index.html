@@ -1,0 +1,175 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Maple
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;">Maple</a>
+
+Day7 - Shader Struct Alignment
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Broke ground for glyph rendering
+    </h2>
+    
+    
+    <p>
+    
+      2023-04-01
+    
+    
+    </p>
+    
+  </summary>
+  <p>Today I pushed more on glyph rendering. I don't have it
+working quite yet but I made significant progress.</p>
+<h2 id="textures-on-the-gpu">Textures on the GPU</h2>
+<p>I started the work by copying the quad renderer. From there I
+initialized a sampler and texture that I added to the
+<code>bind_group</code>. That texture is then taken as an argument to
+the fragment portion of the glyph shader and sampled using
+the quad positioning logic from the existing shader. </p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">spirv</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">fragment</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-modifier z-rust">pub</span> <span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">glyph_fragment</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span>
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">storage_buffer</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">descriptor_set</span> = 0<span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">binding</span> = 0</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">glyphs</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>[InstancedGlyph],
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">descriptor_set</span> = 0<span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">binding</span> = 1</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">atlas</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>Image2d,
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">descriptor_set</span> = 0<span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">binding</span> = 2</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">atlas_sampler</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>Sampler,
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">flat</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">instance_index</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-type z-rust">i32</span>,
+    <span class="z-variable z-parameter z-rust">atlas_position</span><span class="z-punctuation z-separator z-rust">:</span> Vec2,
+    <span class="z-variable z-parameter z-rust">out_color</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> Vec4,
+</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-storage z-type z-rust">let</span> glyph <span class="z-keyword z-operator z-assignment z-rust">=</span> glyphs<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span>instance_index <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">usize</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> Here we have to sample specifically the 0 LOD. I don&#39;t
+</span>    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> fully understand why, but I think it has to do with how
+</span>    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> the spirv is generated.
+</span>    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> More details here: https://github.com/gfx-rs/wgpu-rs/issues/912
+</span>    <span class="z-storage z-type z-rust">let</span> atlas_color <span class="z-keyword z-operator z-assignment z-rust">=</span> atlas<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">sample</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-arithmetic z-rust">*</span>atlas_sampler<span class="z-punctuation z-separator z-rust">,</span> atlas_position</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+    <span class="z-keyword z-operator z-arithmetic z-rust">*</span>out_color <span class="z-keyword z-operator z-assignment z-rust">=</span> atlas_color <span class="z-keyword z-operator z-arithmetic z-rust">*</span> glyph<span class="z-punctuation z-accessor z-dot z-rust">.</span>color<span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>Most of this was smooth sailing other than a very strange
+error:
+<code>Required uniformity of control flow for IMPLICIT_LEVEL in [20] is not fulfilled because of Expression([1])</code>. I took
+this to google and found
+https://github.com/gfx-rs/wgpu-rs/issues/912 which explained
+the issue pretty clearly. Turns out for whatever reason the
+bytecode generated by rust-gpu introduces control flow in
+the above frament. For other reasons I don't fully
+understand, you also can't sample textures if the level of
+detail isn't deterministic. So <code>sample_by_lod</code> is required
+instead of <code>sample</code> so that we can specify that the first
+level of detail is fine.</p>
+<h2 id="struct-alignment">Struct Alignment</h2>
+<p>Once that was figured out, I modified the GlyphInstance
+struct to include glyph specific information such as the
+location in the atlas that a glyph should be located. </p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">derive</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">Copy<span class="z-punctuation z-separator z-rust">,</span> Clone<span class="z-punctuation z-separator z-rust">,</span> Default</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">cfg_attr</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-meta z-function-call z-rust"><span class="z-variable z-function z-rust">not</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-function-call z-rust">target_arch <span class="z-keyword z-operator z-rust">=</span> <span class="z-string z-quoted z-double z-rust"><span class="z-punctuation z-definition z-string z-begin z-rust">&quot;</span>spirv<span class="z-punctuation z-definition z-string z-end z-rust">&quot;</span></span></span><span class="z-meta z-function-call z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-meta z-function-call z-rust"><span class="z-variable z-function z-rust">derive</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-function-call z-rust">bytemuck::Pod<span class="z-punctuation z-separator z-rust">,</span> bytemuck::Zeroable</span><span class="z-meta z-function-call z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">repr</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">C</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-struct z-rust"><span class="z-storage z-modifier z-rust">pub</span> <span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-entity z-name z-struct z-rust">InstancedGlyph</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">top_left</span><span class="z-punctuation z-separator z-type z-rust">:</span> Vec2,
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">atlas_top_left</span><span class="z-punctuation z-separator z-type z-rust">:</span> Vec2,
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">atlas_size</span><span class="z-punctuation z-separator z-type z-rust">:</span> Vec2,
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">color</span><span class="z-punctuation z-separator z-type z-rust">:</span> Vec4,
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>Oddly when I added these extra fields, I started getting a
+strange error in the derived transmutation code complaining
+that a function added in the derive was trying to transmute
+the struct between two differently sized types.</p>
+<p>I still don't understand why this is related, but in my
+searching I learned about the strange way struct fields are
+aligned on the gpu. Turns out fields are aligned into chunks
+sized by the largest power of two size of the fields. So in
+the above struct, we can't access this data properly on the
+gpu because color has 16 bytes but starts at byte 24 which
+is not aligned.</p>
+<p>So to address the alignment issue, an unused <code>_padding</code>
+field needs to be introduced so that <code>color</code> can start on
+byte 32 matching the expected alignment... or at least I
+think.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">derive</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">Copy<span class="z-punctuation z-separator z-rust">,</span> Clone<span class="z-punctuation z-separator z-rust">,</span> Default</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">cfg_attr</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-meta z-function-call z-rust"><span class="z-variable z-function z-rust">not</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-function-call z-rust">target_arch <span class="z-keyword z-operator z-rust">=</span> <span class="z-string z-quoted z-double z-rust"><span class="z-punctuation z-definition z-string z-begin z-rust">&quot;</span>spirv<span class="z-punctuation z-definition z-string z-end z-rust">&quot;</span></span></span><span class="z-meta z-function-call z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-meta z-function-call z-rust"><span class="z-variable z-function z-rust">derive</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-function-call z-rust">bytemuck::Pod<span class="z-punctuation z-separator z-rust">,</span> bytemuck::Zeroable</span><span class="z-meta z-function-call z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">repr</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">C</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-struct z-rust"><span class="z-storage z-modifier z-rust">pub</span> <span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-entity z-name z-struct z-rust">InstancedGlyph</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">top_left</span><span class="z-punctuation z-separator z-type z-rust">:</span> Vec2,
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">atlas_top_left</span><span class="z-punctuation z-separator z-type z-rust">:</span> Vec2,
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">atlas_size</span><span class="z-punctuation z-separator z-type z-rust">:</span> Vec2,
+    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> Need a Vec2 of padding here so that the first 4 fields
+</span>    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> Are some multiple of 16 bytes in size.
+</span>    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> Vec2s are 8 bytes, Vec4s are 16 bytes.
+</span>    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">_padding</span><span class="z-punctuation z-separator z-type z-rust">:</span> Vec2,
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">color</span><span class="z-punctuation z-separator z-type z-rust">:</span> Vec4,
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>This compiles just fine so I believe the issue is resolved.
+I may work on a proc macro for automatically inserting this
+padding so that we don't have to worry about it, but that
+may be a job for another day. Next up tech wise is to add
+swash and shape individual glyphs into image binary data.
+Once that's in place I can then use etegere to keep track of
+atlas locations and write the data into the atlas itself.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day6-glyph-research&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day8-glyph-rendering&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,265 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day10 - Pando Command Line Interface
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Pulling it all together into a useful tool
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-16
+    
+    
+      <br>
+      <a href="../../hemlock/projects/pando/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day10-pando-cli/./todo.svg" alt="Todo" /></p>
+<p>Today I will tackle the final task for the initial version of Pando. As shown in
+the todo tree however, I have further plans for the project. I will tackle these
+in future posts, but finishing the command line interface marks the project
+ready for simple use.</p>
+<h2 id="command-line-argument-parsing">Command Line Argument Parsing</h2>
+<p>I opted for using <a href="https://github.com/clap-rs/clap">Clap</a> just like I did for
+<a href="../day3-okeydokey-cont/">okeydokey</a>. The yaml specification was similar, this
+time requiring an input file path, and two options for outputting the
+intermediate and final formats.</p>
+<pre>
+  <code class="language-en">name: Pando
+version: &quot;0.1&quot;
+author: Kaylee Simmons
+about: Todo Graph Renderer
+args:
+  - FILE:
+      help: The todo file to render
+      required: true
+  - dot:
+      short: d
+      long: dot
+      value_name: DOT
+      help: Tells Pando to output the dot format to the given file
+  - output:
+      short: o
+      long: output
+      value_name: OUTPUT
+      help: Tells Pando where to render the svg</code>
+</pre>
+<p>Then parsing the arguments and storing the results is simple:</p>
+<pre>
+  <code class="language-en">let yaml = load_yaml!(&quot;cli.yml&quot;);
+let matches = App::from_yaml(yaml).get_matches();</code>
+</pre>
+<h2 id="user-errors">User Errors</h2>
+<p>Implementing a command line interface requires a good argument parser, and a
+clean way to communicate failure back to the user. In Rust, the suggested method
+for communicating errors to the user is to create a custom error type which
+stores the information about what went wrong, or the results of a task, and then
+write a wrapper for all of the logic which checks for the error case of a result
+in order to print a useful message, or continue the calculation/recover etc.</p>
+<pre>
+  <code class="language-en">fn main() {
+    match do_something() {
+        Ok(value) =&gt; ...,
+        Err(error) =&gt; {
+            match error {
+                ParseError =&gt; ...,
+                AbbreviationError =&gt; ...,
+                ...
+            }
+        }
+    }
+}</code>
+</pre>
+<p>My problem with this pattern is that any time a new error needs created, you
+have to go to the location of the error type, add the value, and then add the
+print statement for that particular error. Lots of effort for a quick tool. So
+instead I decided to co-opt the <code>panic!</code> functionality.</p>
+<p>Rust doesn't have error types in the way most programming languages do. In C# or
+Java it is common to throw and catch custom exceptions anywhere in an
+application. This functionality is often slow however since the runtime must
+unwind the current state of the program and undo any work that is in progress.
+Rust doesn't have much robust handling of those style of exceptions instead
+opting for <code>Result</code> and <code>Option</code> as ways to communicate error, and as a last
+result providing a less flexible <code>panic!</code> macro which will do unwinding similar
+to above. The goal is that <code>panic!</code> would only be used when everything has gone
+wrong, so it outputs data meant for a programmer to interpret.</p>
+<p>Luckily there is a simple way to hook into the <code>panic!</code> functionality and
+prevent the programming oriented information from being printed and instead just
+printing the contained message to the user.</p>
+<pre>
+  <code class="language-en">panic::set_hook(Box::new(|info| {
+    match info.payload().downcast_ref::&lt;String&gt;() {
+        Some(text) =&gt; println!(&quot;{}&quot;, text),
+        None =&gt; println!(&quot;Unknown error&quot;)
+    }
+}));</code>
+</pre>
+<p><code>panic::set_hook</code> takes a boxed callback function taking a <code>PanicInfo</code> object.
+This gives us access to the panic payload which is the dynamically typed object
+passed to <code>panic!</code>. Until this function I had no idea that dynamic typing was
+possible, but down_casting to a string was pretty simple, and for my purposes
+good enough.</p>
+<p>Now instead of having a centralized Error type I am able to throw an error with
+<code>expect</code> on <code>Result</code> or <code>Option</code>, or <code>panic!</code> and the message will be passed to
+the user directly.</p>
+<p>WARNING: This is an exceedingly not recommended strategy. I've never seen this
+recommended anywhere other than in the
+<a href="https://crates.io/crates/human-panic">human-panic</a> crate, but even there the
+assumption is that the panic is only used when something really went wrong, not
+when the user caused the error and needs feedback. Proceed with caution.</p>
+<h2 id="path-correction">Path Correction</h2>
+<p>With those parts out of the way, all that is left is to parse the input paths,
+and do the compilation/rendering. <a href="https://github.com/clap-rs/clap">Clap</a> is
+great for verifying the numbers of arguments are correct, but it doesn't do any
+data-type detection or correction. For Pando I don't need much, just a way to
+resolve a path into an absolute path instead of a relative one. At first I
+reached for the <code>io::canonicalize</code> function. Unfortunately it requires that the
+file already exists. So instead I settled for concatenating the current working
+directory with the relative path.</p>
+<pre>
+  <code class="language-en">fn resolve_path(relative_path: &amp;str) -&gt; PathBuf {
+    let mut absolute_path = std::env::current_dir().expect(&quot;Could not resolve current directory&quot;);
+    absolute_path.push(relative_path);
+    absolute_path
+}</code>
+</pre>
+<p>Then I provide default values for the options if the user doesn't provide them.</p>
+<pre>
+  <code class="language-en">let todo_path = canonicalize(matches.value_of(&quot;FILE&quot;).expect(&quot;Need a todo file path&quot;)).expect(&quot;Todo file does not exist&quot;);
+let dot_path = matches.value_of(&quot;dot&quot;).map(resolve_path).unwrap_or_else(|| {
+    let mut temp_path = env::temp_dir();
+    temp_path.push(todo_path.with_extension(&quot;dot&quot;).file_name().expect(&quot;Could not get temp path file name&quot;));
+    temp_path
+});
+
+let output_path = matches.value_of(&quot;output&quot;).map(resolve_path).unwrap_or_else(|| {
+    todo_path.with_extension(&quot;svg&quot;)
+});</code>
+</pre>
+<p>The input file must be provided, and I can use <code>canonicalize</code> because the file
+must exist. <code>expect</code> is used to provide an appropriate error message. For the
+intermediate path, if the user doesn't provide one, I use a path in the temp
+directory with the input file name as a basis. Similarly with the output path,
+if the user doesn't provide one I default to the input file name with the
+extension changed to svg.</p>
+<h2 id="file-data-flow">File Data Flow</h2>
+<p>Reading files in Rust is very clean. Resource management is identically to memory
+management, so as long as a handle to the file is still held, the file will be
+open, but the moment the handle goes out of scope, the lifetime management
+functionality will kick in and drop the file access.</p>
+<p>For Pando the general flow is: Input File -&gt; Compile -&gt; Dot Temp File -&gt;
+GraphViz -&gt; Output File. The Dot file has to be written to the disk since I use
+the GraphViz command line tool to compile it to the final image.</p>
+<pre>
+  <code class="language-en">let mut todo_file = File::open(&amp;todo_path).expect(&quot;Could not open todo file&quot;);
+let mut todo_text = String::new();
+todo_file.read_to_string(&amp;mut todo_text).expect(&quot;Could not read todo file&quot;);
+
+let dot_text = compile(&amp;todo_text);
+let mut dot_file = File::create(&amp;dot_path).expect(&quot;Could not create dot file&quot;);
+dot_file.write_all(dot_text.as_bytes()).expect(&quot;Could not write dot file&quot;);</code>
+</pre>
+<p>Very simple read the input file to a string, compile it to the <code>dot_text</code>
+variable, then write that string to the intermediate path. Next I call the <code>dot</code>
+command installed by GraphViz using the <code>Command</code> api in the standard library.</p>
+<pre>
+  <code class="language-en">let render_output = Command::new(&quot;dot&quot;)
+    .arg(dot_path)
+    .arg(&quot;-Tsvg&quot;)
+    .output()
+    .expect(&quot;Could not execute graphviz command&quot;);
+let rendered_text = String::from_utf8(render_output.stdout).expect(&quot;Invalid graphviz output&quot;);</code>
+</pre>
+<p>The result from executing the <code>dot</code> command is a binary array, so parsing as a
+string is pretty simple. Lastly I check if GraphViz returned an error, right the
+output to a file, and print success.</p>
+<pre>
+  <code class="language-en">if rendered_text.starts_with(&quot;Error&quot;) {
+    println!(&quot;Graphviz error: {}&quot;, rendered_text);
+} else {
+    let mut output_file = File::create(&amp;output_path).expect(&quot;Could not create output file&quot;);
+    output_file.write_all(rendered_text.as_bytes()).expect(&quot;Could not write output file&quot;);
+    println!(&quot;Successfully output to {:?}&quot;, output_path);
+}</code>
+</pre>
+<p>Done! At this point Pando will take an input file in the pando file format
+describing tasks and their dependencies and end to end render it to an svg
+depicting the dependency graph. Took some doing, but I learned a lot about what
+writing a parser and doing string manipulation looks like in Rust.</p>
+<p>I haven't decided what to do next. I have a number of projects I'm interested in
+introducing, as well as some progress planned for the <a href="../day7-bomb-survival-demake/">Script-8 Bomb Surival
+Demake</a>. Fun things ahead!</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day9-pando-generator&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day11-marching-squares&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

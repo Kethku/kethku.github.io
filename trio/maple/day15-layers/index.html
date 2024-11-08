@@ -1,0 +1,319 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Maple
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;">Maple</a>
+
+Day15 - Renderer Layers
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Added layered rendering to the new renderer and implemented blurred backgrounds
+    </h2>
+    
+    
+    <p>
+    
+      2023-04-17
+    
+    
+    </p>
+    
+  </summary>
+  <p>I got back from my vacation which was very relaxing! I
+didn't write any blog posts while I was away, but I did work
+some more on the new Neovide renderer. I added layers to the
+scene struct so that we can get windows working, added
+clipping for said layers, and added an optional naive blur
+to the background of the layers.</p>
+<p><img src="https://kaylees.dev/trio/maple/day15-layers/BlurredLayers.png" alt="Blurred Layers" /></p>
+<h2 id="scene-layers">Scene Layers</h2>
+<p>One of the goals I have for the new renderer is to make it
+easy to capture or record scene objects into a serialized
+form that can be written to disk. I have a dream of storing
+a rolling buffer of the rendered frames that can then be
+rendered to disc on a panic and then drawn back using a
+utility tool afterward.</p>
+<p>So with that goal in mind, the scene struct needs to be
+flexible enough to record everything necessary to draw the
+whole frame. A key part for Neovide in particular is to
+render each window as a layer on the screen.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">derive</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">Deserialize<span class="z-punctuation z-separator z-rust">,</span> Debug</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-struct z-rust"><span class="z-storage z-modifier z-rust">pub</span> <span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-entity z-name z-struct z-rust">Scene</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">layers</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-meta z-generic z-rust"><span class="z-support z-type z-rust">Vec</span><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span>Layer<span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span>,
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+
+<span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">derive</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">Deserialize<span class="z-punctuation z-separator z-rust">,</span> Debug</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-struct z-rust"><span class="z-storage z-modifier z-rust">pub</span> <span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-entity z-name z-struct z-rust">Layer</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">serde</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">default</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">clip</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-meta z-generic z-rust"><span class="z-support z-type z-rust">Option</span><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span>Vec4<span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span>,
+    <span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">serde</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">default</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">background_blur_radius</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-storage z-type z-rust">u32</span>,
+    <span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">serde</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">default</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">background_color</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-meta z-generic z-rust"><span class="z-support z-type z-rust">Option</span><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span>Vec4<span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span>,
+    <span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">serde</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">default <span class="z-keyword z-operator z-rust">=</span> <span class="z-string z-quoted z-double z-rust"><span class="z-punctuation z-definition z-string z-begin z-rust">&quot;</span>default_font<span class="z-punctuation z-definition z-string z-end z-rust">&quot;</span></span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">font_name</span><span class="z-punctuation z-separator z-type z-rust">:</span> String,
+    <span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">serde</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">default</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">quads</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-meta z-generic z-rust"><span class="z-support z-type z-rust">Vec</span><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span>Quad<span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span>,
+    <span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">serde</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">default</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+    <span class="z-storage z-modifier z-rust">pub</span> <span class="z-variable z-other z-member z-rust">texts</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-meta z-generic z-rust"><span class="z-support z-type z-rust">Vec</span><span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span>Text<span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span>,
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>So now rather than storing instances of each primitive at
+the root of the struct, a list of layers with clipping,
+background color, and blur details is stored in the scene.
+Then in the renderer, we loop over each layer calling each
+of the drawables in order. Here's the high level structure in
+the render function:</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-keyword z-control z-rust">if</span> <span class="z-storage z-type z-rust">let</span> <span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>surface</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>surface <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-storage z-type z-rust">let</span> frame <span class="z-keyword z-operator z-assignment z-rust">=</span> surface<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">get_current_texture</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-keyword z-operator z-rust">?</span><span class="z-punctuation z-terminator z-rust">;</span>
+    <span class="z-storage z-type z-rust">let</span> frame_view <span class="z-keyword z-operator z-assignment z-rust">=</span> frame<span class="z-punctuation z-accessor z-dot z-rust">.</span>texture<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">create_view</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-meta z-path z-rust">TextureViewDescriptor<span class="z-punctuation z-accessor z-rust">::</span></span>default<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+    <span class="z-storage z-type z-rust">let</span> <span class="z-storage z-modifier z-rust">mut</span> encoder <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-variable z-language z-rust">self</span>
+        <span class="z-punctuation z-accessor z-dot z-rust">.</span>device
+        <span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">create_command_encoder</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>CommandEncoderDescriptor <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+            label<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-string z-quoted z-double z-rust"><span class="z-punctuation z-definition z-string z-begin z-rust">&quot;</span>Render Encoder<span class="z-punctuation z-definition z-string z-end z-rust">&quot;</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+        </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+    <span class="z-storage z-type z-rust">let</span> constants <span class="z-keyword z-operator z-assignment z-rust">=</span> ShaderConstants <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        surface_size<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-function z-rust">vec2</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>
+            <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>surface_config<span class="z-punctuation z-accessor z-dot z-rust">.</span>width <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">,</span>
+            <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>surface_config<span class="z-punctuation z-accessor z-dot z-rust">.</span>height <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">,</span>
+        </span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+        atlas_size<span class="z-punctuation z-separator z-rust">:</span> <span class="z-constant z-other z-rust">ATLAS_SIZE</span><span class="z-punctuation z-separator z-rust">,</span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+    <span class="z-storage z-type z-rust">let</span> <span class="z-storage z-modifier z-rust">mut</span> first <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-constant z-language z-rust">true</span><span class="z-punctuation z-terminator z-rust">;</span>
+    <span class="z-keyword z-control z-rust">for</span> layer <span class="z-keyword z-operator z-rust">in</span> scene<span class="z-punctuation z-accessor z-dot z-rust">.</span>layers<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">iter</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        <span class="z-keyword z-control z-rust">for</span> drawable <span class="z-keyword z-operator z-rust">in</span> drawables<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">iter_mut</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+            <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">setup_offscreen_texture</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>first<span class="z-punctuation z-separator z-rust">,</span> encoder</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+            <span class="z-storage z-type z-rust">let</span> attachment_op <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">attachment_op</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>first<span class="z-punctuation z-separator z-rust">,</span> layer</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+            <span class="z-storage z-type z-rust">let</span> <span class="z-storage z-modifier z-rust">mut</span> render_pass <span class="z-keyword z-operator z-assignment z-rust">=</span> encoder<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">begin_render_pass</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>RenderPassDescriptor <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+                label<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-string z-quoted z-double z-rust"><span class="z-punctuation z-definition z-string z-begin z-rust">&quot;</span>Render Pass<span class="z-punctuation z-definition z-string z-end z-rust">&quot;</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+                color_attachments<span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>RenderPassColorAttachment <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+                    view<span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>frame_view<span class="z-punctuation z-separator z-rust">,</span>
+                    resolve_target<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">None</span><span class="z-punctuation z-separator z-rust">,</span>
+                    ops<span class="z-punctuation z-separator z-rust">:</span> attachment_op<span class="z-punctuation z-separator z-rust">,</span>
+                </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-separator z-rust">,</span>
+                depth_stencil_attachment<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">None</span><span class="z-punctuation z-separator z-rust">,</span>
+            </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+            <span class="z-keyword z-control z-rust">if</span> <span class="z-storage z-type z-rust">let</span> <span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>clip</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-assignment z-rust">=</span> layer<span class="z-punctuation z-accessor z-dot z-rust">.</span>clip <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+                render_pass<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">set_scissor_rect</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>
+                    clip<span class="z-punctuation z-accessor z-dot z-rust">.</span>x <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span><span class="z-punctuation z-separator z-rust">,</span>
+                    clip<span class="z-punctuation z-accessor z-dot z-rust">.</span>y <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span><span class="z-punctuation z-separator z-rust">,</span>
+                    clip<span class="z-punctuation z-accessor z-dot z-rust">.</span>z <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span><span class="z-punctuation z-separator z-rust">,</span>
+                    clip<span class="z-punctuation z-accessor z-dot z-rust">.</span>w <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span><span class="z-punctuation z-separator z-rust">,</span>
+                </span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+            </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+
+            drawable<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">draw</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>
+                <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>queue<span class="z-punctuation z-separator z-rust">,</span>
+                <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> render_pass<span class="z-punctuation z-separator z-rust">,</span>
+                constants<span class="z-punctuation z-separator z-rust">,</span>
+                <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>universal_bind_group<span class="z-punctuation z-separator z-rust">,</span>
+                <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>layer<span class="z-punctuation z-separator z-rust">,</span>
+            </span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+            first <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-constant z-language z-rust">false</span><span class="z-punctuation z-terminator z-rust">;</span>
+        </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+
+    <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>queue<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">submit</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-path z-rust">std<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">iter<span class="z-punctuation z-accessor z-rust">::</span></span>once<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>encoder<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">finish</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+    frame<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">present</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+</span></code></pre>
+<h2 id="clipping">Clipping</h2>
+<p>Clipping is particularly useful for rendering lists of
+elements that can be partially cut off. Luckily, scissor
+rects are a common feature of graphics apis and let you
+specify what should get rendered for a given render pass.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-storage z-type z-rust">let</span> <span class="z-storage z-modifier z-rust">mut</span> render_pass <span class="z-keyword z-operator z-assignment z-rust">=</span> encoder<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">begin_render_pass</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>RenderPassDescriptor <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    label<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-string z-quoted z-double z-rust"><span class="z-punctuation z-definition z-string z-begin z-rust">&quot;</span>Render Pass<span class="z-punctuation z-definition z-string z-end z-rust">&quot;</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    color_attachments<span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>RenderPassColorAttachment <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        view<span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>frame_view<span class="z-punctuation z-separator z-rust">,</span>
+        resolve_target<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">None</span><span class="z-punctuation z-separator z-rust">,</span>
+        ops<span class="z-punctuation z-separator z-rust">:</span> attachment_op<span class="z-punctuation z-separator z-rust">,</span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    depth_stencil_attachment<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">None</span><span class="z-punctuation z-separator z-rust">,</span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+<span class="z-keyword z-control z-rust">if</span> <span class="z-storage z-type z-rust">let</span> <span class="z-support z-type z-rust">Some</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>clip</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-assignment z-rust">=</span> layer<span class="z-punctuation z-accessor z-dot z-rust">.</span>clip <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    render_pass<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">set_scissor_rect</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>
+        clip<span class="z-punctuation z-accessor z-dot z-rust">.</span>x <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span><span class="z-punctuation z-separator z-rust">,</span>
+        clip<span class="z-punctuation z-accessor z-dot z-rust">.</span>y <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span><span class="z-punctuation z-separator z-rust">,</span>
+        clip<span class="z-punctuation z-accessor z-dot z-rust">.</span>z <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span><span class="z-punctuation z-separator z-rust">,</span>
+        clip<span class="z-punctuation z-accessor z-dot z-rust">.</span>w <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">u32</span><span class="z-punctuation z-separator z-rust">,</span>
+    </span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+
+drawable<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">draw</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>
+    <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>queue<span class="z-punctuation z-separator z-rust">,</span>
+    <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> render_pass<span class="z-punctuation z-separator z-rust">,</span>
+    constants<span class="z-punctuation z-separator z-rust">,</span>
+    <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>universal_bind_group<span class="z-punctuation z-separator z-rust">,</span>
+    <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>layer<span class="z-punctuation z-separator z-rust">,</span>
+</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span></code></pre>
+<h2 id="blurred-backgrounds">Blurred Backgrounds</h2>
+<p>With layers and clipping working, I now needed to setup the
+blurred backgrounds for Neovide. After some fiddling about,
+I decided to add a blur flag to the <code>InstancedQuad</code> struct.
+Due to bytemuck constraints, boolean values are not allowed
+because they cannot be initialized from any possible binary
+value. So I ended up going for a u32 as the alignment would
+cause issues anyway. If non zero, I would then use the
+offscreen texture I setup for the subpixel text rendering to
+compute a gaussian blur.</p>
+<p>I didn't know a ton about how gaussian blurs worked other
+than that they use something called a kernel to aggregate
+the values of surrounding pixels in the source texture to
+compute the blur. The trick is picking what factor to
+multiply each of the pixels by when doing the summation.</p>
+<p>After some quick googling I found some weights that I put in
+a constant table that seem to make a reasonable result. The
+shape of a gaussian blur's kernel weights have a number of
+symmetries. For my usecase, I took advantage of symmetry
+across both axes to reduce the number of weights I had to
+list.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-storage z-type z-rust">const</span> <span class="z-constant z-other z-rust">GUASSIAN_WEIGHT_FACTOR</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-type z-rust">f32</span> <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-constant z-numeric z-float z-rust">1.</span> <span class="z-keyword z-operator z-arithmetic z-rust">/</span> <span class="z-constant z-numeric z-float z-rust">1003.</span><span class="z-punctuation z-terminator z-rust">;</span>
+<span class="z-storage z-type z-rust">const</span> <span class="z-constant z-other z-rust">GUASSIAN_WEIGHTS</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">;</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">4</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-separator z-rust">;</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">4</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span> <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span>
+    <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-constant z-numeric z-float z-rust">0.</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">0.</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">1.</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">2.</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-constant z-numeric z-float z-rust">0.</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">3.</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">13.</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">22.</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-constant z-numeric z-float z-rust">1.</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">13.</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">59.</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">97.</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-constant z-numeric z-float z-rust">2.</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">22.</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">97.</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">159.</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-separator z-rust">,</span>
+<span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+<span class="z-storage z-type z-rust">const</span> <span class="z-constant z-other z-rust">GUASSIAN_RADIUS</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-type z-rust">i32</span> <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">3</span><span class="z-punctuation z-terminator z-rust">;</span>
+</span></code></pre>
+<p>Then in the fragment shader for the quad, I check the blur
+field and loop over a 9x9 patch of the surface texture
+looking up the weights in the table.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">spirv</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">fragment</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-modifier z-rust">pub</span> <span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">fragment</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span>
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">storage_buffer</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">descriptor_set</span> = 0<span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">binding</span> = 0</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">quads</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>[InstancedQuad],
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">descriptor_set</span> = 1<span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">binding</span> = 0</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">surface</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>Image2d,
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">descriptor_set</span> = 1<span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">binding</span> = 1</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">sampler</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>Sampler,
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">push_constant</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">constants</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>ShaderConstants,
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">flat</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">instance_index</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-type z-rust">i32</span>,
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">frag_coord</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">surface_position</span><span class="z-punctuation z-separator z-rust">:</span> Vec4,
+    <span class="z-variable z-parameter z-rust">out_color</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> Vec4,
+</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-storage z-type z-rust">let</span> quad <span class="z-keyword z-operator z-assignment z-rust">=</span> quads<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span>instance_index <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">usize</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+    <span class="z-keyword z-control z-rust">if</span> quad<span class="z-punctuation z-accessor z-dot z-rust">.</span>blur <span class="z-keyword z-operator z-comparison z-rust">!=</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">0</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> Blur the quad background by sampling surrounding pixels
+</span>        <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> and averaging them using the Gaussian blur kernel.
+</span>        <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> The weights are defined by the top left quadrant of the kernel
+</span>        <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> and then sampled using the symmetry of the kernel.
+</span>        <span class="z-keyword z-operator z-arithmetic z-rust">*</span>out_color <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">Vec4<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">ZERO</span><span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-keyword z-control z-rust">for</span> y <span class="z-keyword z-operator z-rust">in</span> <span class="z-keyword z-operator z-arithmetic z-rust">-</span><span class="z-constant z-other z-rust">GUASSIAN_RADIUS</span><span class="z-keyword z-operator z-range z-rust">..</span><span class="z-keyword z-operator z-assignment z-rust">=</span><span class="z-constant z-other z-rust">GUASSIAN_RADIUS</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+            <span class="z-keyword z-control z-rust">for</span> x <span class="z-keyword z-operator z-rust">in</span> <span class="z-keyword z-operator z-arithmetic z-rust">-</span><span class="z-constant z-other z-rust">GUASSIAN_RADIUS</span><span class="z-keyword z-operator z-range z-rust">..</span><span class="z-keyword z-operator z-assignment z-rust">=</span><span class="z-constant z-other z-rust">GUASSIAN_RADIUS</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+                <span class="z-storage z-type z-rust">let</span> weight <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-constant z-other z-rust">GUASSIAN_WEIGHT_FACTOR</span>
+                    <span class="z-keyword z-operator z-arithmetic z-rust">*</span> <span class="z-constant z-other z-rust">GUASSIAN_WEIGHTS</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-other z-rust">GUASSIAN_RADIUS</span> <span class="z-keyword z-operator z-arithmetic z-rust">-</span> x<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">abs</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">usize</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+                        <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-other z-rust">GUASSIAN_RADIUS</span> <span class="z-keyword z-operator z-arithmetic z-rust">-</span> y<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">abs</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">usize</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+                <span class="z-storage z-type z-rust">let</span> offset <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-support z-function z-rust">vec2</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>x <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">,</span> y <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+                <span class="z-storage z-type z-rust">let</span> sample_pos <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>surface_position<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">xy</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-arithmetic z-rust">+</span> offset</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-arithmetic z-rust">/</span> constants<span class="z-punctuation z-accessor z-dot z-rust">.</span>surface_size<span class="z-punctuation z-terminator z-rust">;</span>
+                <span class="z-storage z-type z-rust">let</span> sample <span class="z-keyword z-operator z-assignment z-rust">=</span> surface<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">sample_by_lod</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-arithmetic z-rust">*</span>sampler<span class="z-punctuation z-separator z-rust">,</span> sample_pos<span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">0.</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+                <span class="z-keyword z-operator z-arithmetic z-rust">*</span>out_color <span class="z-keyword z-operator z-assignment z-rust">+=</span> sample <span class="z-keyword z-operator z-arithmetic z-rust">*</span> weight<span class="z-punctuation z-terminator z-rust">;</span>
+            </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+        </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+
+        <span class="z-keyword z-operator z-arithmetic z-rust">*</span>out_color <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-keyword z-operator z-arithmetic z-rust">*</span>out_color <span class="z-keyword z-operator z-arithmetic z-rust">*</span> quad<span class="z-punctuation z-accessor z-dot z-rust">.</span>color<span class="z-punctuation z-terminator z-rust">;</span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span> <span class="z-keyword z-control z-rust">else</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        <span class="z-keyword z-operator z-arithmetic z-rust">*</span>out_color <span class="z-keyword z-operator z-assignment z-rust">=</span> quad<span class="z-punctuation z-accessor z-dot z-rust">.</span>color<span class="z-punctuation z-terminator z-rust">;</span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>I decided to modify the quad shader because much of the code
+is reused for a blurred rectangle. Some concerns I have
+about this approach though:</p>
+<ol>
+<li>Having a branch at the root of the fragment shader is a
+bad look. Since the instances might differ, I think there
+is performance being left on the table.</li>
+<li>The severity of the blur isn't configurable. Because the
+table is a lookup and changes with the blur size, I
+didn't really have a good way for making it dynamic. This
+likely requires just doing some more math, but I
+postponed this for now.</li>
+<li>Gaussian blurs are famously separable meaning you can do
+the vertical slice, and the horizontal slice of the patch
+separately and combine them which is much more efficient.
+I didn't implement this for now as performance isn't my
+highest priority right this moment, but this is something
+to come back to.</li>
+</ol>
+<p>With the blur completed, I wrote up a test scene to
+demonstrate the effect which is the image at the top of the
+post!</p>
+<p>From here, I think the majority of the features necessary to
+implement Neovide's renderer contract are complete!
+Remaining tasks are to add rendering of arbitrary paths (for
+drawing the cursor) and to add a higher level render api
+like the one exposed via DrawCommands in Neovide.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day14-text-rendering&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day16-paths&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

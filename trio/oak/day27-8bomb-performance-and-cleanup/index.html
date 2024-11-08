@@ -1,0 +1,297 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day27 - 8Bomb Performance and Cleanup
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Faster game over animation and general bug fixes
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-05
+    
+    
+      <br>
+      <a href="../../hemlock/projects/8bomb/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day27-8bomb-performance-and-cleanup/./todo.svg" alt="Todo" /></p>
+<p>Today since Gabriel was working on some things related to the IFrame code in
+SCRIPT-8, I decided to tie up some loose threads in 8Bomb that have been bugging
+me: I wanted to redo some of the game over animation code to use the faster
+circle function I built yesterday, and I wanted to fix some remaining bugs
+related to the screen wrap feature.</p>
+<h2 id="game-over-take-2">Game Over Take 2</h2>
+<p>Although the game over screen looked very close to what I wanted, the code was
+very slow. Drawing circles by checking the distance of each pixel to the center
+every frame is a very expensive operation. Luckily since I now have a faster
+method of circle drawing from the <code>CanvasAPI</code>, I can use it instead and only
+calculate which pixels are covered once.</p>
+<p>As a recap, the end screen animation is achieved by drawing circles which grow
+each frame in random locations of the screen until every pixel is covered by at
+least one circle.</p>
+<p><img src="https://kaylees.dev/trio/oak/day27-8bomb-performance-and-cleanup/GameOver.gif" alt="GameOver" /></p>
+<p>The way I did this previous was every frame, loop over every pixel on the
+screen, checking each circle to see if it overlaps, and recording the pixel as
+uncovered if not. Then I would pick a random uncovered pixel and add a new pixel
+to that location.</p>
+<p>My new algorithm is similar but has a couple differences. Instead of creating a
+list of uncovered pixels every frame, a master list is maintained for the whole
+animation.</p>
+<pre>
+  <code class="language-en">let clearCircles = [];
+let uncoveredPixels;
+
+Reset.Subscribe(() =&gt; {
+  uncoveredPixels = new Set();
+  for (let y = 0; y &lt; 128; y++) {
+    for (let x = 0; x &lt; 128; x++) {
+      uncoveredPixels.add(y * 128 + x);
+    }
+  }
+});</code>
+</pre>
+<p>This master list contains the <code>Set</code> of every pixel <em>index</em> which is not
+currently covered by a clear circle. The animation logic is then changed like
+so:</p>
+<pre>
+  <code class="language-en">function drawGameOverScreen() {
+  drawCircles();
+
+  if (player.dead) {
+    growCircles();
+    addAdditionalCircles();
+    printResults();
+  } else {
+    shrinkCircles();
+  }
+}</code>
+</pre>
+<p>I will describe each function in turn highlighting the changes.</p>
+<pre>
+  <code class="language-en">function drawCircles() {
+  for (let { center: { x, y }, radius, color } of clearCircles) {
+    circFill(x, y, radius, color);
+  }
+}</code>
+</pre>
+<p>The <code>drawCircles</code> function has been greatly simplified. Instead of the loop over
+every pixel, I loop over every circle calling the <code>CanvasAPI</code> <code>circFill</code>
+function to efficiently set the pixels inside of each circle.</p>
+<pre>
+  <code class="language-en">function growCircles()  {
+  for (let circle of clearCircles) {
+    if (circle.radius &lt; circle.targetRadius) {
+      let dr = circle.targetRadius - circle.radius;
+      circle.radius += dr * circleGrowthSpeed;
+    }
+  }
+}</code>
+</pre>
+<p><code>growCircles</code> remains fairly unchanged. The only difference is that I pulled the
+growth speed out into a constant.</p>
+<pre>
+  <code class="language-en">function addAdditionalCircles(emptyPixels) {
+  if (uncoveredPixels.size &gt; 0) {
+    let centerIndex = randomUncoveredPixel();
+    let center = new Vector(centerIndex % 128, Math.floor(centerIndex &#x2F; 128));
+    let targetRadius = Math.random() * 15 + 5;
+    markCoveredPixels(center, targetRadius);
+    let radius = 1;
+    let color = Math.floor(Math.random() * 3) + 4;
+    clearCircles.push({ center, radius, color, targetRadius });
+  }
+}
+
+function markCoveredPixels(center, targetRadius) {
+  let radiusVector = new Vector(targetRadius * circleUnderCoverage, targetRadius * circleUnderCoverage);
+  for (let pixel of Vector.InRectangle(center.subtract(radiusVector).floor(), center.add(radiusVector).ceil())) {
+    if (pixel.subtract(center).length &gt; targetRadius * circleUnderCoverage) continue;
+    if (pixel.x &lt; 0 || pixel.x &gt;= 128 || pixel.y &lt; 0 || pixel.y &gt;= 128) continue;
+
+    let index = pixel.y * 128 + pixel.x;
+    uncoveredPixels.delete(index);
+  }
+}
+
+function randomUncoveredPixel() {
+  let elementsRemaining = Math.floor(Math.random() * uncoveredPixels.size);
+  for (let index of uncoveredPixels) {
+    if (elementsRemaining == 0) {
+      return index;
+    }
+    elementsRemaining --;
+  }
+}</code>
+</pre>
+<p>The bulk of the algorithm is done in <code>addAdditionalCircles</code>. I first check if
+there are any uncovered pixels left. Assuming there are, I then pick a random
+pixel index using <code>randomUncoveredPixel</code> which picks a random index value and
+iterates over the set until it reaches that index number.</p>
+<p>Then <code>addAdditionalCircles</code> constructs the <code>center</code> <code>Vector</code> and random <code>radius</code>
+and passes them to <code>markCoveredPixels</code> which loops over every pixel within
+<code>radius</code> units of <code>center</code> and removes it from the <code>uncoveredPixels</code> set if it
+is closer than <code>radius</code> times <code>circleUnderCoverage</code> units away.</p>
+<p>I introduced the <code>circleUnderCoverage</code> constant because it allows me to control
+how many circles show up on the screen. Due to reasons I don't fully understand,
+without the under estimation of covered pixels, some pixels never get covered by
+the algorithm, so this is a bit of a hack to fix that.</p>
+<p>Finally the circle is constructed and added to the <code>clearCircles</code> array. The
+remaining <code>printResults</code> and <code>shrinkCircles</code> functions are unchanged. With these
+performance optimizations in place, the end screen moved from running at 30fps
+to well over 60fps. This doesn't really make a visible difference, but is good
+practice to save battery life and such on machines running the game.</p>
+<h2 id="screen-wrap-take-2">Screen Wrap Take 2</h2>
+<p>There was a subtle bug in the screen wrap feature that I missed when I first
+implemented it. Although I added drawing of the physics objects twice across the
+wrap boundary, I did not update the physics calculations to simulate two objects
+over the boundary.</p>
+<p>Most of the time this was not an issue, but every once in a while if an object
+bumped into another one over the boundary, it would rocket away once both go
+over since the objects would then rapidly correct for the intersection. The
+solution was pretty simple and involved doing the intersection check 3 times
+every frame. Once for the object translated left 128 pixels, once for the object
+not translated at all, and lastly once for the object translated right 128
+pixels.</p>
+<pre>
+  <code class="language-en">const wrappedOffsets = [
+  new Vector(0, 0),
+  new Vector(128, 0),
+  new Vector(-128, 0)
+];</code>
+</pre>
+<p>To simplify the logic, I created an array containing the offset vectors. I then
+added a loop to the <code>physicsObject</code> intersection code, and the explosion
+calculations to do them once for each offset.</p>
+<pre>
+  <code class="language-en">function resolveObjectCollisions(physicsObjects) {
+  for (const first of physicsObjects) {
+    for (const second of physicsObjects) {
+      if (first == second) continue;
+      for (let wrappedOffset of wrappedOffsets) {
+        let wrappedFirstPosition = first.position.add(wrappedOffset);
+        let offset = wrappedFirstPosition.subtract(second.position);
+        let distance = offset.length;
+
+        if (distance &lt; first.radius + second.radius) {
+          if (offset.y &gt; 0) second.grounded = true;
+          let amount = first.radius + second.radius - distance;
+          let direction = offset.divide(distance);
+          let correction = direction.multiply(amount &#x2F; 2);
+
+          first.position = first.position.add(correction);
+          second.position = second.position.subtract(correction);
+        }
+      }
+    }
+  }
+}</code>
+</pre>
+<p>Instead of using the position directly, I use the wrapped position which is
+modified by each offset. I then did a similar change to the bomb explosion code.</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F; Blow up bombs
+let physicsObjects = getPhysicsObjects();
+for (const bomb of bombsToExplode) {
+  cutTerrain(bomb.position.x, bomb.position.y, bombRadius);
+  newExplosion(bomb.position.x, bomb.position.y);
+
+  for (const object of physicsObjects) {
+    for (let wrappedOffset of wrappedOffsets) {
+      let wrappedPosition = bomb.position.add(wrappedOffset);
+      &#x2F;&#x2F; Find the distance to the object
+      let offset = object.position.subtract(wrappedPosition);
+      let length = offset.length;
+
+      &#x2F;&#x2F; If the object is the player, and the length is less than 3&#x2F;4 of the
+      &#x2F;&#x2F; bomb radius, the player has lost.
+      if (object == player &amp;&amp; length &lt; bombRadius * 0.75) player.dead = true;
+
+      &#x2F;&#x2F; Otherwise knockback the object by the distance * knockBack &#x2F; length^2;
+      let lengthSquared = length * length;
+      object.position = object.position.add(offset.multiply(knockBack&#x2F;lengthSquared));
+    }
+  }
+}</code>
+</pre>
+<p>Since the bomb explosion logic is in charge of adding an explosion impulse, and
+killing the player if they are too close, both are fixed with this change.</p>
+<p><img src="https://kaylees.dev/trio/oak/day27-8bomb-performance-and-cleanup/WrappedDeath.gif" alt="WrappedDeath" /></p>
+<p>As shown in this gif, both the player is killed, and the nearby bomb is pushed
+to the right away from the screen wrap like it should.</p>
+<p>Thats it for today, hopefully tomorrow I will work up the effort to actually
+make a pull request to SCRIPT-8 with the performance improvements which should
+let me do the finishing touches on 8Bomb and finish version 1.0.</p>
+<p>Till Tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day26-script-8-performance-improvements&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day28-script-8-performance-pr&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

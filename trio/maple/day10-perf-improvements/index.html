@@ -1,0 +1,165 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Maple
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;">Maple</a>
+
+Day10 - Perf Improvements
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Address some performance problems with glyph rendering
+    </h2>
+    
+    
+    <p>
+    
+      2023-04-04
+    
+    
+    </p>
+    
+  </summary>
+  <blockquote>
+<p>The notes scratched into the branches and burned into
+the sanded bark are becoming clearer and more confident.
+Where previous messages were written with a cautious and
+shaky hand, the characters here are more regular and
+efficient. Careful strokes that match all of the formal
+requirements for characters in the local script have given
+way to quick lines that gesture at the correct shape
+rather than emulate it perfectly. Rather than being
+difficult to read, this confidence and consistency makes
+the text much more enjoyable.</p>
+</blockquote>
+<p>Today I worked on cleaning up some of the loose ends I left
+last time around the glyph rendering. I ended up postponing
+the correctness problems in favor of some other issues I
+recognized.</p>
+<h2 id="down-with-the-ping-pong">Down with the Ping Pong</h2>
+<p>I have been using a tool called <a href="https://renderdoc.org/">RenderDoc</a>
+this week to debug and investigate what is actually
+happening under the covers with my gpu code. The tool gives
+step by step debugging of a given frame drawn to the screen
+including snapshots of the inputs and outputs for each
+shader pass. Its pretty incredible.</p>
+<p>When digging into the rendering for my glyph renderer I
+noticed a few interesting problems. First, the off screen
+textures aren't getting cleared between frames. This makes
+sense as only the first renderpass had the clear operation
+for it's attachment.</p>
+<p>The second issue was bigger though. The ping pong strategy
+which draws to one texture reading from the other and then
+swaps works great if the effect is full screen because every
+pixel in the texture gets written at each step. This has the
+great side effect of never copying the data and only writing
+to the textures as a side effect of each pass.</p>
+<p>For my glyph renderer however, this doesn't work so well as
+each frame only renders squares around the glyphs in
+question. So one pass might draw a rectangle, the following
+might draw glyphs in a different part of the screen and so
+not capture that rectangle for future passes. If a pass
+later on requires that uncovered portion of the screen to
+compute it's graphics, it will fail and either miss portions
+of the pass or be transparent all together.</p>
+<p>After some investigation and searching I eventually decided
+to drop the ping pong strategy all together in favor of
+copying the data from the output surface to the off screen
+texture before each render. I'm told this is a pretty common
+approach, so I'm not super worried about the performance
+implications especially since the data is being copied
+between textures already on the gpu.</p>
+<p>This has the added benefit of not requiring two color
+attachments for each shader (which required setting two
+values) and not requiring managing the tick tock of which
+texture to read and which to write to. Over all the code is
+simpler and more correct at the cost of some potential
+performance. I think this is a fair trade for now.</p>
+<h2 id="better-caching">Better Caching</h2>
+<p>With that problem out of the way I decided to look at the
+performance of the text rendering as it stands. Step one was
+to cache the shaping code so that strings already shaped
+aren't reshaped. I did this with a simple hashmap which
+contains an arc of the string being shaped, an ordered
+float, and a font cache key as the key to a vec of glyphs as
+the cached value.</p>
+<p>From there I was still getting pretty abysmal performance so
+I pulled out the Windows Performance Toolkit to dig in
+further. After recording some of the slow render code and
+waiting literally 5 minutes for the symbols to load, I was
+presented with this:</p>
+<p><img src="https://kaylees.dev/trio/maple/day10-perf-improvements/ShapingSlow.png" alt="Shaping Slow" /></p>
+<p>Which revealed a significant chunk of the render time went
+to shaping. Sure enough I was shaping every glyph regardless
+of whether it was already in the cache. Fixing this and
+trying my benchmark of drawing 10,000 <code>Hello world!</code> strings
+took the performance from one frame per second to a rock
+solid 60 fps or so. More than enough for the moment!</p>
+<p>Next up I want to dig a little more for some low hanging
+performance fruit if I can find any and then wrap back
+around to the correctness issues I highlighted yesterday.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day9-sketchy-text&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day11-serializable-scene&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,21 @@
+digraph {
+  node [shape=record, splines="curve"];
+  a[label=<Get Pixel <br/> <i>In Progress</i>>];
+  b[label=<Collisions>];
+  c[label=<Marching Squares Grid>];
+  d[label=<Character>];
+  e[label=<Panels>];
+  f[label=<Bombs>];
+  g[label=<Score>];
+  h[label=<Sound Effects>];
+  i[label=<Publish>];
+
+  a -> { b }
+  b -> { d f }
+  c -> e
+  d -> g
+  e -> { g f }
+  f -> g
+  g -> i
+  h -> i
+}

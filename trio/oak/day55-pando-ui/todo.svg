@@ -1,0 +1,156 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="557pt" height="264pt" viewBox="0.00 0.00 557.17 264.00">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 260)">
+<title>%0</title>
+<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-260 553.1708,-260 553.1708,4 -4,4"/>
+<!-- MakeUIPrettier -->
+<g id="node1" class="node">
+<title>MakeUIPrettier</title>
+<polygon fill="none" stroke="#000000" points="39.3138,-219.5 39.3138,-255.5 150.1596,-255.5 150.1596,-219.5 39.3138,-219.5"/>
+<text text-anchor="start" x="47.3138" y="-233.3" font-family="Times,serif" font-size="14.00" fill="#000000">Make UI Prettier</text>
+</g>
+<!-- AddInstructions -->
+<g id="node2" class="node">
+<title>AddInstructions</title>
+<polygon fill="none" stroke="#000000" points="167.885,-219.5 167.885,-255.5 277.5884,-255.5 277.5884,-219.5 167.885,-219.5"/>
+<text text-anchor="start" x="175.885" y="-233.3" font-family="Times,serif" font-size="14.00" fill="#000000">Add Instructions</text>
+</g>
+<!-- StyleSupport -->
+<g id="node3" class="node">
+<title>StyleSupport</title>
+<polygon fill="none" stroke="#000000" points="66.4306,-146.5 66.4306,-182.5 159.0428,-182.5 159.0428,-146.5 66.4306,-146.5"/>
+<text text-anchor="start" x="74.4306" y="-160.3" font-family="Times,serif" font-size="14.00" fill="#000000">Style Support</text>
+</g>
+<!-- Arcs -->
+<g id="node4" class="node">
+<title>Arcs</title>
+<polygon fill="none" stroke="#000000" points="18.7367,-73.5 18.7367,-109.5 72.7367,-109.5 72.7367,-73.5 18.7367,-73.5"/>
+<text text-anchor="middle" x="45.4499" y="-87.3" font-family="Times,serif" font-size="14.00" fill="#000000">Arcs</text>
+</g>
+<!-- StyleSupport&#45;&gt;Arcs -->
+<g id="edge1" class="edge">
+<title>StyleSupport-&gt;Arcs</title>
+<path fill="none" stroke="#000000" d="M96.1749,-146.4551C88.0414,-137.5932 78.1001,-126.7616 69.2001,-117.0646"/>
+<polygon fill="#000000" stroke="#000000" points="71.6806,-114.5911 62.3402,-109.5904 66.5234,-119.3244 71.6806,-114.5911"/>
+</g>
+<!-- ArcCollapse -->
+<g id="node5" class="node">
+<title>ArcCollapse</title>
+<polygon fill="none" stroke="#000000" points="0,-.5 0,-36.5 89.4734,-36.5 89.4734,-.5 0,-.5"/>
+<text text-anchor="start" x="8" y="-14.3" font-family="Times,serif" font-size="14.00" fill="#000000">Arc Collapse</text>
+</g>
+<!-- Arcs&#45;&gt;ArcCollapse -->
+<g id="edge2" class="edge">
+<title>Arcs-&gt;ArcCollapse</title>
+<path fill="none" stroke="#000000" d="M45.4895,-73.4551C45.3789,-65.3828 45.246,-55.6764 45.1228,-46.6817"/>
+<polygon fill="#000000" stroke="#000000" points="48.6213,-46.5414 44.9845,-36.5904 41.6219,-46.6374 48.6213,-46.5414"/>
+</g>
+<!-- InvestigateGraphLayout -->
+<g id="node6" class="node">
+<title>InvestigateGraphLayout</title>
+<polygon fill="none" stroke="#000000" points="91.2065,-73.5 91.2065,-109.5 250.2669,-109.5 250.2669,-73.5 91.2065,-73.5"/>
+<text text-anchor="start" x="99.2065" y="-87.3" font-family="Times,serif" font-size="14.00" fill="#000000">Investigate Graph Layout</text>
+</g>
+<!-- PositionConstraints -->
+<g id="node7" class="node">
+<title>PositionConstraints</title>
+<polygon fill="none" stroke="#000000" points="107.1508,-.5 107.1508,-36.5 236.3226,-36.5 236.3226,-.5 107.1508,-.5"/>
+<text text-anchor="start" x="115.1508" y="-14.3" font-family="Times,serif" font-size="14.00" fill="#000000">Position Constraints</text>
+</g>
+<!-- InvestigateGraphLayout&#45;&gt;PositionConstraints -->
+<g id="edge3" class="edge">
+<title>InvestigateGraphLayout-&gt;PositionConstraints</title>
+<path fill="none" stroke="#000000" d="M170.9839,-73.4551C171.0945,-65.3828 171.2274,-55.6764 171.3506,-46.6817"/>
+<polygon fill="#000000" stroke="#000000" points="174.8515,-46.6374 171.4889,-36.5904 167.8521,-46.5414 174.8515,-46.6374"/>
+</g>
+<!-- SVGEventHandlers -->
+<g id="node8" class="node">
+<title>SVGEventHandlers</title>
+<polygon fill="none" stroke="#000000" points="209.8941,-146.5 209.8941,-182.5 347.5793,-182.5 347.5793,-146.5 209.8941,-146.5"/>
+<text text-anchor="start" x="217.8941" y="-166.9" font-family="Times,serif" font-size="14.00" fill="#000000">SVG Event Handlers </text>
+<text text-anchor="start" x="245.3026" y="-152.9" font-family="Times,serif" font-size="14.00" fill="#000000"> </text>
+<text text-anchor="start" x="248.8026" y="-152.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">In Progress</text>
+</g>
+<!-- SVGEventHandlers&#45;&gt;InvestigateGraphLayout -->
+<g id="edge4" class="edge">
+<title>SVGEventHandlers-&gt;InvestigateGraphLayout</title>
+<path fill="none" stroke="#000000" d="M252.0401,-146.4551C238.1505,-137.0667 220.9904,-125.4678 206.0203,-115.3491"/>
+<polygon fill="#000000" stroke="#000000" points="207.7455,-112.2907 197.5005,-109.5904 203.8255,-118.0901 207.7455,-112.2907"/>
+</g>
+<!-- DeleteNode -->
+<g id="node9" class="node">
+<title>DeleteNode</title>
+<polygon fill="none" stroke="#000000" points="267.8103,-73.5 267.8103,-109.5 357.6631,-109.5 357.6631,-73.5 267.8103,-73.5"/>
+<text text-anchor="start" x="275.8103" y="-93.9" font-family="Times,serif" font-size="14.00" fill="#000000">Delete Node </text>
+<text text-anchor="start" x="279.3026" y="-79.9" font-family="Times,serif" font-size="14.00" fill="#000000"> </text>
+<text text-anchor="start" x="282.8026" y="-79.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">In Progress</text>
+</g>
+<!-- SVGEventHandlers&#45;&gt;DeleteNode -->
+<g id="edge5" class="edge">
+<title>SVGEventHandlers-&gt;DeleteNode</title>
+<path fill="none" stroke="#000000" d="M287.1412,-146.4551C291.0235,-138.1196 295.7173,-128.0416 300.0197,-118.8042"/>
+<polygon fill="#000000" stroke="#000000" points="303.2617,-120.1331 304.3111,-109.5904 296.9162,-117.1776 303.2617,-120.1331"/>
+</g>
+<!-- ToggleConnection -->
+<g id="node11" class="node">
+<title>ToggleConnection</title>
+<polygon fill="none" stroke="#000000" points="376.1343,-73.5 376.1343,-109.5 503.3391,-109.5 503.3391,-73.5 376.1343,-73.5"/>
+<text text-anchor="start" x="384.1343" y="-93.9" font-family="Times,serif" font-size="14.00" fill="#000000">Toggle Connection </text>
+<text text-anchor="start" x="406.3026" y="-79.9" font-family="Times,serif" font-size="14.00" fill="#000000"> </text>
+<text text-anchor="start" x="409.8026" y="-79.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">In Progress</text>
+</g>
+<!-- SVGEventHandlers&#45;&gt;ToggleConnection -->
+<g id="edge6" class="edge">
+<title>SVGEventHandlers-&gt;ToggleConnection</title>
+<path fill="none" stroke="#000000" d="M318.5345,-146.4551C340.3046,-136.5841 367.4642,-124.2695 390.5523,-113.801"/>
+<polygon fill="#000000" stroke="#000000" points="392.1766,-116.9076 399.8388,-109.5904 389.2859,-110.5323 392.1766,-116.9076"/>
+</g>
+<!-- NewNode -->
+<g id="node10" class="node">
+<title>NewNode</title>
+<polygon fill="none" stroke="#000000" points="365.3026,-146.5 365.3026,-182.5 448.1708,-182.5 448.1708,-146.5 365.3026,-146.5"/>
+<text text-anchor="start" x="374.8622" y="-166.9" font-family="Times,serif" font-size="14.00" fill="#000000">New Node </text>
+<text text-anchor="start" x="373.3026" y="-152.9" font-family="Times,serif" font-size="14.00" fill="#000000"> </text>
+<text text-anchor="start" x="376.8026" y="-152.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">In Progress</text>
+</g>
+<!-- PandoWasm -->
+<g id="node12" class="node">
+<title>PandoWasm</title>
+<polygon fill="none" stroke="#000000" points="295.8559,-219.5 295.8559,-255.5 389.6175,-255.5 389.6175,-219.5 295.8559,-219.5"/>
+<text text-anchor="start" x="303.8559" y="-239.9" font-family="Times,serif" font-size="14.00" fill="#000000">Pando Wasm </text>
+<text text-anchor="start" x="309.3026" y="-225.9" font-family="Times,serif" font-size="14.00" fill="#000000"> </text>
+<text text-anchor="start" x="312.8026" y="-225.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">In Progress</text>
+</g>
+<!-- PandoWasm&#45;&gt;StyleSupport -->
+<g id="edge7" class="edge">
+<title>PandoWasm-&gt;StyleSupport</title>
+<path fill="none" stroke="#000000" d="M295.7003,-221.9024C292.6685,-220.9153 289.6608,-219.9409 286.7367,-219 247.5167,-206.3803 203.2009,-192.5054 169.1084,-181.9136"/>
+<polygon fill="#000000" stroke="#000000" points="169.914,-178.499 159.3259,-178.8773 167.8389,-185.1844 169.914,-178.499"/>
+</g>
+<!-- PandoWasm&#45;&gt;SVGEventHandlers -->
+<g id="edge8" class="edge">
+<title>PandoWasm-&gt;SVGEventHandlers</title>
+<path fill="none" stroke="#000000" d="M326.9165,-219.4551C319.2241,-210.6809 309.8389,-199.9759 301.4023,-190.353"/>
+<polygon fill="#000000" stroke="#000000" points="303.8209,-187.8024 294.5967,-182.5904 298.5573,-192.4171 303.8209,-187.8024"/>
+</g>
+<!-- PandoWasm&#45;&gt;NewNode -->
+<g id="edge9" class="edge">
+<title>PandoWasm-&gt;NewNode</title>
+<path fill="none" stroke="#000000" d="M358.5569,-219.4551C366.2493,-210.6809 375.6345,-199.9759 384.0711,-190.353"/>
+<polygon fill="#000000" stroke="#000000" points="386.9161,-192.4171 390.8767,-182.5904 381.6525,-187.8024 386.9161,-192.4171"/>
+</g>
+<!-- SaveSVG -->
+<g id="node13" class="node">
+<title>SaveSVG</title>
+<polygon fill="none" stroke="#000000" points="466.3026,-146.5 466.3026,-182.5 549.1708,-182.5 549.1708,-146.5 466.3026,-146.5"/>
+<text text-anchor="start" x="476.6329" y="-166.9" font-family="Times,serif" font-size="14.00" fill="#000000">Save SVG </text>
+<text text-anchor="start" x="474.3026" y="-152.9" font-family="Times,serif" font-size="14.00" fill="#000000"> </text>
+<text text-anchor="start" x="477.8026" y="-152.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#000000">In Progress</text>
+</g>
+<!-- PandoWasm&#45;&gt;SaveSVG -->
+<g id="edge10" class="edge">
+<title>PandoWasm-&gt;SaveSVG</title>
+<path fill="none" stroke="#000000" d="M383.5232,-219.4551C405.9334,-209.5403 433.9161,-197.16 457.6456,-186.6615"/>
+<polygon fill="#000000" stroke="#000000" points="459.1187,-189.8371 466.8475,-182.5904 456.2865,-183.4356 459.1187,-189.8371"/>
+</g>
+</g>
+</svg>

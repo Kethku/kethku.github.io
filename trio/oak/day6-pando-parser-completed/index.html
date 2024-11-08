@@ -1,0 +1,180 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day6 - Pando Parser Completed
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Wraping up the parser
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-12
+    
+    
+      <br>
+      <a href="../../hemlock/projects/pando/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day6-pando-parser-completed/./output.svg" alt="Output" /></p>
+<p><a href="../day5-pando-parser/">Yesterday</a> we knocked out the difficult portions of the
+Pando file parser. We built parse functions for the status, the task identifier,
+and the dependencies list. Today we will tie the parsers together into a full task
+parser.</p>
+<h2 id="todo-entry">Todo Entry</h2>
+<pre>
+  <code class="language-en">- Command Line [ IP, DG ]</code>
+</pre>
+<pre>
+  <code class="language-en">do_parse!(
+    status: parse_status &gt;&gt;
+    identifier: parse_identifier &gt;&gt;
+    dependencies: parse_dependencies &gt;&gt;
+    (Todo::new(status, identifier, dependencies))
+),</code>
+</pre>
+<p>To combine the individual components of the line parser I used a new macro:
+<code>do_parse!</code> which threads a series of parsers together, allowing for naming
+individual results at each step, and finally combining the named results into a
+final result.</p>
+<p>This gets us most of the way there however given that the dependencies parser is
+optional, we still get an error if we try to parse <code>&gt; todo</code> without a
+dependencies list. We need to tell the parser what to expect to end the parsing
+of the task. We turn to the <code>terminated!</code> macro to do this, which takes a base
+parser, and a terminator parser.</p>
+<pre>
+  <code class="language-en">named!(todo&lt;CompleteStr, Todo&gt;, terminated!(
+    do_parse!(
+        status: parse_status &gt;&gt;
+        identifier: parse_identifier &gt;&gt;
+        dependencies: parse_dependencies &gt;&gt;
+        (Todo::new(status, identifier, dependencies))
+    ),
+alt!(eof!() | nom::eol)));</code>
+</pre>
+<p>The two things which will for sure finish a todo item are the end of stream, marked by the <code>eof!()</code> macro, and the new line, marked by the <code>eol</code> parser.</p>
+<h2 id="finishing-it-up">Finishing it up</h2>
+<p>Finally we introduce one last combinator: <code>many1!</code> which produces a parser that
+can be one or more iterations of another parser. The basic implementation
+matches our previous parsers:</p>
+<pre>
+  <code class="language-en">named!(pando&lt;CompleteStr, Vec&lt;Todo&gt;, many1!(todo));</code>
+</pre>
+<p>However we would prefer to pass the combined parser a <code>&amp;str</code>, so we can unwrap the
+<code>named!</code> macro into an equivalent function and construct a <code>CompleteStr</code> for the
+input to the <code>many1!</code> macro.</p>
+<pre>
+  <code class="language-en">fn parse_pando(input: &amp;str) -&gt; IResult&lt;CompleteStr, Vec&lt;Todo&gt;&gt; {
+    many1!(input, todo)
+}</code>
+</pre>
+<p>Similarly, instead of returning an <code>IResult</code>, which would require dependence and
+understanding of nom types, it would be better if our parser returned an
+<code>Option</code>. This isn't <em>really</em> how the types are meant to be used, but it
+simplifies things for us here so I'm going for it. Sue me.</p>
+<pre>
+  <code class="language-en">fn parse_pando(input: &amp;str) -&gt; Option&lt;Vec&lt;Todo&gt;&gt; {
+    match many1!(CompleteStr(input), todo) {
+        Ok((_, todos)) =&gt; Some(todos),
+        Err(_) =&gt; None
+    }
+}</code>
+</pre>
+<p>And voila! We have our file parser. I suspect there are some bugs with regards
+to line endings (the identifier looks for <code>\n</code> to finish for example), but it
+will do for now. Here is the test I used to verify things are working.</p>
+<pre>
+  <code class="language-en">#[test]
+fn pando_works() {
+    assert_eq!(
+        parse_pando(
+&quot;x Brainstorm
+&gt; Specify Format [ B ]
+- Implement Parser [ SF ]
+- DOT Generator [ B ]
+- Command Line [ IP, DG ]&quot;),
+        Ok((CompleteStr(&quot;&quot;), vec![
+            Todo::new(TaskStatus::Completed, &quot;Brainstorm&quot;, vec![]),
+            Todo::new(TaskStatus::InProgress, &quot;Specify Format&quot;, vec![&quot;B&quot;]),
+            Todo::new(TaskStatus::Waiting, &quot;Implement Parser&quot;, vec![&quot;SF&quot;]),
+            Todo::new(TaskStatus::Waiting, &quot;DOT Generator&quot;, vec![&quot;B&quot;]),
+            Todo::new(TaskStatus::Waiting, &quot;Command Line&quot;, vec![&quot;IP&quot;, &quot;DG&quot;])
+        ]))
+    );
+}</code>
+</pre>
+<p>Next on the docket is the second half of the translator; first we parsed the
+format into a data structure, now we have to convert that data structure into a
+DOT file. I will save this step for next time.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day5-pando-parser&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day7-bomb-survival-demake&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,207 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day37 - Advancing Rows and Minor Cleanup
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Refactored state management and added block spawning
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-15
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day37-advancing-rows-and-minor-cleanup/./todo.svg" alt="Todo" /></p>
+<p>Today I worked on adding block scrolling and a new block fade. Along the way I
+refactored the state management to clean up the existing math.</p>
+<h2 id="refactors">Refactors</h2>
+<p>Yesterday I mentioned wanting to move the grid size calculations out of the draw
+and update loops and into a subscription to the resize event. This would prevent
+the unnecessary calculations but more importantly simplify the Update and Draw
+calls so that they don't need to pass the state through method arguments.</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;
+&#x2F;&#x2F; Handle Resizing &#x2F;&#x2F;
+&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;
+export let gridCenter = Vector.zero;
+export let gridDimensions = Vector.one;
+export let blockWidth = 0;
+export let blockPixelAdvancement = 0;
+
+function calculateGridSizes() {
+  gridCenter = screenSize.divide(2);
+
+  let margin = Math.max(screenSize.width * startingMargin, screenSize.height * startingMargin);
+  let maxWidth = screenSize.width - margin;
+  let maxHeight = screenSize.height - margin;
+
+  &#x2F;&#x2F; Try Horizontal
+  gridDimensions = new Vector(maxWidth, maxWidth * 2);
+
+  if (gridDimensions.y &gt; maxHeight) {
+    &#x2F;&#x2F; Fallback to vertical
+    gridDimensions = new Vector(maxHeight &#x2F; 2, maxHeight);
+  }
+
+  blockWidth = gridDimensions.x &#x2F; gridBlockDimensions.x;
+}
+Resized.Subscribe(calculateGridSizes);
+calculateGridSizes();</code>
+</pre>
+<p>Although technically global state, I find this pattern of storing module level
+variables and accessing them directly simplifying and freeing. In practice this
+allows any other part of the codebase to access anything it requires easily.</p>
+<p>My only rule is that a module should be in charge of setting any of the state it
+owns. No other module accessing the state should modify it; only reading should
+be allowed. This cleans up race conditions and makes things slightly more
+manageable.</p>
+<h2 id="scrolling">Scrolling</h2>
+<p>To implement the scrolling I split the <code>blockAdvancement</code> variable out into
+<code>blockAdvancement</code> and <code>blockPixelAdvancement</code>. This is only a difference in
+units so that the <code>blockAdvancement</code> is in terms of blocks. I also track the
+last filled row so that I can determine when I should add new blocks to the
+grid.</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;
+&#x2F;&#x2F; Initialize Blocks &#x2F;&#x2F;
+&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;&#x2F;
+let blocks = [];
+let blockAdvancement = maxInitialStackHeight + 1;
+let previousFilledY = maxInitialStackHeight;
+let advanceSpeed = 0.001;
+for (let x = 0; x &lt; gridBlockDimensions.x; x++) {
+  let stackHeight = Math.floor(Math.random() * 4) + maxInitialStackHeight - 3;
+  for (let y = 0; y &lt; stackHeight; y++) {
+    blocks.push(new Block(new Vector(x, maxInitialStackHeight - y)));
+  }
+}</code>
+</pre>
+<p>Then in the update function I advance the grid and check if the block
+advancement is far enough along to warrant a new row of blocks.</p>
+<pre>
+  <code class="language-en">Update.Subscribe(() =&gt; {
+  for (let block of blocks) {
+    block.update();
+  }
+  blockAdvancement += advanceSpeed;
+  if (blockAdvancement - 1 &gt; previousFilledY) {
+    previousFilledY++;
+    for (let x = 0; x &lt; gridBlockDimensions.x; x++) {
+      blocks.push(new Block(new Vector(x, previousFilledY)));
+    }
+  }
+
+  blockPixelAdvancement = blockAdvancement * blockWidth;
+});</code>
+</pre>
+<p>Lastly I updated the block code to fade in if the block is below the bottom of
+the grid. I also track whether the block is ready to be swapped by setting a
+flag when the block is fully opaque.</p>
+<pre>
+  <code class="language-en">calculateOpacity(blockTop) {
+  let gridBottom = gridCenter.y - gridDimensions.height &#x2F; 2;
+  let amountBelow = (blockTop - blockWidth) - gridBottom;
+
+  if (amountBelow &gt;= 0) {
+    this.enabled = true;
+    return 1;
+  }
+  if (amountBelow &lt; -blockWidth) return 0;
+  return (amountBelow + blockWidth) &#x2F; (blockWidth * 2);
+}</code>
+</pre>
+<p>The blocks start at fully transparent, and move linearly toward half opacity
+over the course of moving up toward the bottom of the grid. Then once past the
+bottom, the block becomes fully opaque and I set the enabled flag to true.</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F; Blocks are positioned in a sliding grid up from the bottom starting at the
+&#x2F;&#x2F; bottom of the grid position. The y value of the blockPosition is actually
+&#x2F;&#x2F; reversed to prevent needing to increment all block positions as they move
+&#x2F;&#x2F; up the screen.
+render() {
+  let { topLeft, dimensions } = this.calculateLocation();
+
+  let opacity = this.calculateOpacity(topLeft.y);
+  let tint = new Color(1, 1, 1, opacity);
+  image(blockImages[this.type], topLeft, dimensions, 0, tint, Vector.topLeft);
+}</code>
+</pre>
+<p>Using the above code is as simple as applying the opacity to the tint. The combination of the advancement code above and this tinting animation makes the following gif:</p>
+<p><img src="https://kaylees.dev/trio/oak/day37-advancing-rows-and-minor-cleanup/Advancement.gif" alt="Advancement" /></p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day36-ta-utilities-and-touch&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day38-block-manipulation&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

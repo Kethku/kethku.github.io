@@ -1,0 +1,238 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day8 - Pando Abbreviations
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Resolving abbreviations in the Pando file format
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-14
+    
+    
+      <br>
+      <a href="../../hemlock/projects/pando/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day8-pando-abbreviations/./output.svg" alt="Output" /></p>
+<p>Short day today, so instead of completing the DOT generator as I had planned, I
+split the task into two parts; the Abbreviation Resolver and the Generator
+itself. Today I am tackling the Abbreviation Resolver.</p>
+<p>The Pando format <a href="../day4-pando/">specification</a> has a quality of life feature
+which allows the user to specify dependencies as abbreviations of the full
+dependency name. To make the problem tractable, I defined the abbreviation as a
+camel case concatenation of one or more prefixes of words in an identifier. Read
+further in the <a href="../day4-pando/">specification</a> post.</p>
+<p>Implementing the abbreviation resolution was an interesting tour of Rust's
+string and iterator functions. </p>
+<h2 id="splitting">Splitting</h2>
+<p>Since each of the identifiers and abbreviations are compared pairwise, we need
+functions to split both of them. Identifiers are split on spaces. Easy enough.</p>
+<pre>
+  <code class="language-en">pub fn split_identifier(identifier: &amp;str) -&gt; Vec&lt;String&gt; {
+    identifier.split(&quot; &quot;).map(|part| part.to_lowercase()).collect()
+}
+
+#[test]
+fn identifier_split_works() {
+    assert_eq!(split_identifier(&quot;Specify Format&quot;), vec![&quot;specify&quot;, &quot;format&quot;]);
+    assert_eq!(split_identifier(&quot;DOJ Appointment&quot;), vec![&quot;doj&quot;, &quot;appointment&quot;]);
+}</code>
+</pre>
+<p>Note: I force the identifier words to lowercase for easier comparison down the
+line.</p>
+<p>Splitting the abbreviations was somewhat more complicated. The idea is to split
+the abbreviation into sections that start with a capital letter. So <code>SF</code> would
+split into <code>s</code> and <code>f</code> and <code>DotA</code> would split into <code>dot</code> and <code>a</code>. Similar to the
+identifiers, I also lowercase the resulting components for easier matching.</p>
+<pre>
+  <code class="language-en">pub fn split_abbreviation(abbreviation: &amp;str) -&gt; Vec&lt;String&gt; {
+    let mut parts = Vec::new();
+
+    let remainder = abbreviation.chars()
+        .fold(String::new(), |mut current, character| {
+            if character.is_uppercase() &amp;&amp; current.len() != 0 {
+                parts.push(current);
+                character.to_string()
+            } else {
+                current.push(character);
+                current
+            }
+        });
+
+    if !remainder.is_empty() {
+        parts.push(remainder);
+    }
+
+    parts.iter().map(|part| part.to_lowercase()).collect()
+}
+
+#[test]
+fn abbreviation_split_works() {
+    assert_eq!(split_abbreviation(&quot;DotA&quot;), vec![&quot;dot&quot;, &quot;a&quot;]);
+}</code>
+</pre>
+<p>Not super complicated. The majority of the calculation can be done in a fold
+iteration where the accumulate is the current string being built up. When a new
+capital letter is found, we push it into the parts vector that gets captured in
+the iteration closure.</p>
+<p>Finally as cleanup, we add the remainder to the parts if it isn't empty, and
+return the lowercase versions of the parts.</p>
+<h2 id="matching">Matching</h2>
+<p>Once we have a clean way to split the identifiers and abbreviations, determining
+if a given abbreviation is a match for an identifier is fairly simple.</p>
+<pre>
+  <code class="language-en">pub fn abbreviation_matches(identifier: &amp;str, abbreviation: &amp;str) -&gt; bool {
+    let identifier_words = split_identifier(identifier);
+    let abbreviation_parts = split_abbreviation(abbreviation);
+
+    if identifier_words.len() != abbreviation_parts.len() {
+        return false
+    }
+
+    let mut pairs = abbreviation_parts.iter().zip(identifier_words.iter());
+    pairs.all(|(abbreviation_part, identifier_word)| identifier_word.starts_with(abbreviation_part))
+}
+
+#[test]
+fn abbreviation_matches_works() {
+    assert!(abbreviation_matches(&quot;Implement Parser&quot;, &quot;IP&quot;));
+    assert!(!abbreviation_matches(&quot;DOT Generator&quot;, &quot;IP&quot;));
+    assert!(abbreviation_matches(&quot;DOJ Appointment&quot;, &quot;DojA&quot;));
+    assert!(!abbreviation_matches(&quot;DOJ Appointment&quot;, &quot;Doj&quot;));
+}</code>
+</pre>
+<p>If there are different numbers of identifier words or abbreviation parts,
+clearly we don't have a match. Otherwise I pair up the abbreviation parts with
+the identifier words and check if all of the abbreviation parts are prefixes of
+the identifier words. If any are not, the match fails.</p>
+<h2 id="building-the-lookup">Building the Lookup</h2>
+<p>Hooking it all together, we would like to cache these results in reverse
+direction, so that each task has a list of tasks that depend on it. DOT files
+specify dependencies from the dependency to the dependent task because that is
+the direction we want the arrows to point.</p>
+<pre>
+  <code class="language-en">pub fn resolve_dependent_tasks(tasks: Vec&lt;Todo&gt;) -&gt; Option&lt;HashMap&lt;String, Vec&lt;String&gt;&gt;&gt; {
+    let mut dependent_tasks = HashMap::new();
+
+    for task in tasks.iter() {
+        dependent_tasks.insert(task.identifier.clone(), Vec::new());
+    }
+
+    for task in tasks.iter() {
+        for dependency_abbreviation in task.dependencies.clone() {
+            match tasks.iter().find(|task| abbreviation_matches(&amp;task.identifier, &amp;dependency_abbreviation)) {
+                Some(dependency) =&gt; dependent_tasks
+                    .entry(dependency.identifier.clone())
+                    .and_modify(|dependent_tasks| dependent_tasks.push(task.identifier.clone())),
+                None =&gt; return None
+            };
+        }
+    }
+
+    Some(dependent_tasks)
+}
+
+#[test]
+fn abbreviation_resolution_works() {
+    let resolved_abbreviations = resolve_dependent_tasks(vec![
+        Todo::new(TaskStatus::Completed, &quot;Brainstorm&quot;, vec![]),
+        Todo::new(TaskStatus::InProgress, &quot;Specify Format&quot;, vec![&quot;B&quot;]),
+        Todo::new(TaskStatus::Waiting, &quot;Implement Parser&quot;, vec![&quot;SF&quot;]),
+        Todo::new(TaskStatus::Waiting, &quot;DOT Generator&quot;, vec![&quot;B&quot;]),
+        Todo::new(TaskStatus::Waiting, &quot;Command Line&quot;, vec![&quot;IP&quot;, &quot;DG&quot;])
+    ]).unwrap();
+
+    assert_eq!(resolved_abbreviations[&quot;Brainstorm&quot;], vec![&quot;Specify Format&quot;, &quot;DOT Generator&quot;]);
+    assert_eq!(resolved_abbreviations[&quot;Specify Format&quot;], vec![&quot;Implement Parser&quot;]);
+    assert_eq!(resolved_abbreviations[&quot;Implement Parser&quot;], vec![&quot;Command Line&quot;]);
+    assert_eq!(resolved_abbreviations[&quot;DOT Generator&quot;], vec![&quot;Command Line&quot;]);
+    assert!(resolved_abbreviations.[&quot;Command Line&quot;].is_empty());
+}</code>
+</pre>
+<p>I construct a dependent task lookup, add empty collections for each identifier,
+and loop over each of the tasks. Then for each abbreviation in a given task, I
+find the matching task, and add an entry in the correct list. The <code>entry</code>
+function is a very clean way to to modify an entry in the <code>HashMap</code> while
+iterating over it. Since it is guaranteed for the tasks to already have entries
+in the <code>HashMap</code> from the first loop, I use <code>and_modify</code> without a default and
+throw away the entry object.</p>
+<p>I return an option from this function so that if any of the abbreviations don't
+have a matching identifier, we can track that failure.</p>
+<p>That about wraps it up. This was the hardest portion of the DOT file generator,
+so next time it will be some simple string interpolation and we should be able
+to produce an end to end execution. On the home stretch for V1 of Pando!</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day7-bomb-survival-demake&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day9-pando-generator&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

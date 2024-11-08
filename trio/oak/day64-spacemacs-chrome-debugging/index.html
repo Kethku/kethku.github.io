@@ -1,0 +1,216 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day64 - Spacemacs Chrome Debugging
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Added chrome debugging layer to my spacemacs config
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-14
+    
+    
+    </p>
+    
+  </summary>
+  <p>Today I spent some time researching and configuring a chrome debugging package
+in my emacs config. The particular package I went with is called
+<a href="https://github.com/NicolasPetton/Indium">indium</a> and adds support debugging
+javascript applications from within emacs. It achieves this using the chrome
+debugger protocol which allows applications outside of chrome to manipulate the
+chrome debugger by steping, navigating frames, and accessing local variables.</p>
+<h2 id="spacemacs">Spacemacs</h2>
+<p>In emacs I use the spacemacs project to initialize sane defaults for languages,
+setup vim emulation, and in general make emacs a better environment to live in.
+Spacemacs configures itself using &quot;layers&quot; which are small snippets of emacs
+lisp code which specify packages to pull down and install as well as
+configuration for the keybindings and functionality of said packages.</p>
+<p>To add support for Indium I created a new Indium layer by creating an <code>indium</code>
+in my <code>~/.spacemacs.d/layers</code> folder and adding a packages.el file to it. In it
+I added this lisp:</p>
+<pre>
+  <code class="language-en">(defconst indium-packages
+  &#x27;(indium))
+
+(defun indium&#x2F;init-indium ()
+  (use-package indium
+    :config
+    (progn
+      (spacemacs&#x2F;declare-prefix-for-mode &#x27;indium-debugger-mode &quot;d&quot; &quot;debugger&quot;)
+      (spacemacs&#x2F;set-leader-keys-for-minor-mode &#x27;indium-debugger-mode
+        &quot;dy&quot; &#x27;indium-debugger-previous-frame
+        &quot;do&quot; &#x27;indium-debugger-next-frame
+        &quot;dl&quot; &#x27;indium-debugger-step-into
+        &quot;dj&quot; &#x27;indium-debugger-step-over
+        &quot;dh&quot; &#x27;indium-debugger-step-out
+        &quot;dr&quot; &#x27;indium-debugger-resume)
+      (spacemacs&#x2F;set-leader-keys-for-major-mode &#x27;js2-mode
+        &quot;l&quot; &#x27;indium-launch
+        &quot;br&quot; &#x27;indium-repl-switch-from-buffer))))</code>
+</pre>
+<p>In short this specifies that my layer depends on a package called &quot;indium&quot; and
+adds some keybinding support for the various functions I use in Indium. In
+practice the main places I use the package are for jumping to the correct source
+file in spacemacs when a breakpoing or error is thrown, navigating the debugger
+when paused, and accessing the repl.</p>
+<p>Then to add this layer to spacemacs, I just added indium to my layer list in my
+<code>~/.spacemacs.d/init.el</code> file.</p>
+<pre>
+  <code class="language-en">(defun dotspacemacs&#x2F;layers ()
+  (setq-default
+   dotspacemacs-distribution &#x27;spacemacs
+   dotspacemacs-enable-lazy-installation &#x27;unused
+   dotspacemacs-ask-for-lazy-installation t
+   dotspacemacs-configuration-layer-path &#x27;()
+
+   dotspacemacs-configuration-layers
+   `(indium
+     graphviz
+     csharp
+     vimscript
+     csv</code>
+</pre>
+<h2 id="a-note-about-editors">A Note About Editors</h2>
+<p>Unfortunately I wasted a bunch of time today also trying to chase down a weird
+bug in my emacs configuration related to the portable dumper and it's
+interaction with spacemacs. As some background, emacs is a huge monstrosity of a
+program with a ton of legacy. The vast majority of it's source code is written
+in emacs-lisp, a dialect of lisp with a ton of warts and cruft. As a result, it
+tends to be pretty slow unless some crazy hacks are used. One that might not
+immediately be obvious is that emacs runs a ton of configuration in the default
+which gets dumped into a memory snapshot and reloaded on startup every time.
+This works great for the base configuration but gets slow again if you use a
+huge configuration file like spacemacs. </p>
+<p>To get around this I use an experimental feature in spacemacs which adds support
+for dumping a personalized version of emacs with all of my configuration and
+loading that instead of the distributed one. Achieving this requires a bunch of
+bending over backwards including recompiling emacs to support larger dump files,
+reworking the <code>init.el</code> to manually force load all of the configuration before
+dumping, and fiddling with various spacemacs settings to fix everything that
+gets broken when you fly too close to the sun like I have. Things start breaking
+in weird ways. Various parts of emacs think they are running in a terminal when
+they aren't, https calls cause emacs to crash without recovery, and some things
+reload themselves on file open no matter how hard I try.</p>
+<p>The fact that this affront to humanity is required to make emacs usable is sad
+and concerning. I love the premise behind emacs, but I worry about how much work
+is required to make the experience anywhere close to plug and play. When paired
+with the fact that relatively few people go through the effort to get emacs
+fully configured, I begin to wonder if there are better options. I love the
+culture of absolute reconfigurability that emacs users seem to cherish, but I
+worry that emacs is just too old and has too much baggage. Here are some other
+options I am eyeing in a post emacs world:</p>
+<p>Before using emacs I tried for a while to use vim. I switched to emacs after
+getting incredibly frustrated with vim's configuration and performance
+characteristics. These days however <a href="https://neovim.io/">Neovim</a> has fixed most
+of these issues by adding a async-first plugin api that uses messagepack to
+allow any language as a plugin language. I may spend some time playing around
+with neovim soon.</p>
+<p>On the rust side of things, <a href="https://github.com/xi-editor/xi-editor">Xi</a> is
+incredibly promising. The project has been around for a while with relatively
+little outward progress, but the core of the editor is nothing short of
+incredible. I don't claim to understand the
+<a href="https://github.com/xi-editor/xi-editor/blob/master/docs/docs/rope_science_00.md">datastructures</a>
+at Xi's core at all, but what I do understand is fascinating. Xi's team is
+clearly very invested in making a performance oriented text editor which should
+help solve some of the problems I encounter in emacs with performance. Xi also
+has a strong focus on cross platform support which is refreshing. As an example
+of the crazyness going on over there, the main developer has developed an entire
+<a href="https://github.com/xi-editor/druid">UI framework</a> for building fast
+applications on windows and has spent countless hours ensuring that the resize
+logic is flawless. The guy is nuts. The Xi folks claim that they are building an
+editor for the next 25 years, and I believe them.</p>
+<p>Lastly, the front runner among my peers seems to be <a href="https://code.visualstudio.com/">Visual Studio
+Code</a>. I've spent some time with Visual Studio
+Code, but was turned off by it's configuration scheme which reminded me too much
+of Atom where configuration is highly constrained. Since that time however they
+have continued to improve the story and add support for language after language
+becoming best in class in each. Visual Studio Code feels like a fresh start from
+the old legacy of Visual Studio while preserving their attention to detail and
+engineering rigor.</p>
+<p>The point I'm trying to make with this list is that these new editors are making
+bold steps while emacs seems to be plodding along. Emacs has been around for
+decades, but instead of being decades ahead I feel as though emacs is falling
+behind. I switched to emacs with the hope that since it has survived this long,
+maybe it will continue to survive longer. I'm beginning to realize that Emacs is
+doing just that: Surviving. It is not however Thriving and that makes me sad.</p>
+<h2 id="book-keeping">Book Keeping</h2>
+<p>Weird post today with a stronger focus on writing. I'm interested in using this
+blog as a place to talk about what I'm passionate about as well as my coding
+projects. I spend a ton of time in my editors and am never quite satisfied with
+them. Maybe writing about it will help me get a clear idea of what needs done
+next.</p>
+<p>Today is also the first day back from my first 3 day break. I was unable to
+write the past 3 days because I was attending a friend's wedding. Hopefully
+breaks like that won't be too frequent.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day63-garbage-refactoring&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day65-multi-line-garbage-clearing&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,226 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day93 - Express Server
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Added Express Based Server
+    </h2>
+    
+    
+    <p>
+    
+      2019-10-26
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day93-express-server/./todo.svg" alt="Todo" /></p>
+<p>Today I worked on the preliminary steps required to build a mutliplayer tetris attack server. This required fiddling
+with the webpack config and moving some files around tomake things simpler. While I was in the area I also decided to
+move all of my assets into the src directory and have webpack copy them to the dist directory. This has a couple of
+benefits, the main one being that I can specify which files I need in the javascript source files, and webpack will tell
+me if the URL doesn't line up anymore.</p>
+<h2 id="multi-target">Multi Target</h2>
+<p>Webpack has a couple of different methods for splitting up a project into multiple files or compiling multiple final
+bundles. The classic one is to use multiple entries. This assumes though that the bundles themselves should use the same
+configuration. If instead you are trying to build a server and client which have some differences in target, externals
+etc, then you need to create completely separate configuration objects.</p>
+<p>Luckily there is a simple way to do this. Webpack allows for webpack.config.js files which allow for arbitrary
+javascript. Further, if the javascript config file returns an array of objects, webpack will run a build for each of the
+configurations in sequence. These two features let me share as much of the configuration as I can while still allowing
+me to specialize in any way I want.</p>
+<pre>
+  <code class="language-en">const serverConfig = {
+  ...createConfigBase({ 
+    compilerOptions: {
+      &quot;module&quot;: &quot;commonjs&quot;
+    }
+  }),
+  target: &#x27;node&#x27;,
+  node: {
+    __dirname: false
+  },
+  entry: { 
+    &#x27;server&#x27;: &#x27;.&#x2F;src&#x2F;server.ts&#x27; 
+  },
+  externals: [nodeExternals()]
+};
+
+const clientConfig = {
+  ...createConfigBase(),
+  target: &#x27;web&#x27;,
+  entry: { 
+    &#x27;client&#x27;: &#x27;.&#x2F;src&#x2F;client.tsx&#x27; 
+  },
+};
+
+module.exports = [ serverConfig, clientConfig ];</code>
+</pre>
+<p>Here you can see serverConfig and clientConfig objects are created and returned in an array of config objects. I use
+object destructuring of a config base (returned from createConfigBase described further below) to allow the server and
+client configs to share what they can.</p>
+<h2 id="shared-config">Shared Config</h2>
+<p>My preferred method for sharing configuration is to create a function which returns a base config object. This base
+config takes arguments for some simple specialization where needed and uses them in the constructed object.</p>
+<pre>
+  <code class="language-en">function createConfigBase(tsLoaderOptions = {}) {
+  return {
+    mode: &#x27;development&#x27;,
+    output: {
+      filename: &#x27;[name].js&#x27;,
+      path: path.resolve(__dirname, &#x27;dist&#x2F;&#x27;)
+    },
+    devtool: &#x27;source-map&#x27;,
+    resolve: {
+      extensions: [&quot;.ts&quot;, &quot;.tsx&quot;, &quot;.js&quot;, &quot;.glsl&quot;, &quot;.html&quot;, &quot;.png&quot;]
+    },
+    module: {
+      rules: [
+        {
+          test: &#x2F;\.tsx?$&#x2F;,
+          exclude: &#x2F;node_modules&#x2F;,
+          use: {
+            loader: &quot;ts-loader&quot;,
+            options: tsLoaderOptions
+          }
+        },
+        {
+          test: &#x2F;\.glsl$&#x2F;,
+          use: {
+            loader: &#x27;raw-loader&#x27;
+          }
+        },
+        {
+          test: &#x2F;\.(html|png)$&#x2F;,
+          use: {
+            loader: &#x27;file-loader&#x27;,
+            options: {
+              name: &#x27;[name].[ext]&#x27;
+            }
+          }
+        }
+      ]
+    }
+  };
+}</code>
+</pre>
+<p>I use the tsLoaderOptions to specialize how typesript builds for each target.</p>
+<h2 id="imports">Imports</h2>
+<p>I also added a new loader to the webpack config: the file-loader. This lets me tell webpack that I want to import a
+given file path by copying it to the output directory and getting a relative path string to the copied location. I used
+this extensively with the image assets and with the index.html page.</p>
+<pre>
+  <code class="language-en">export const blockImages = {
+  &quot;Bang&quot;: require(&quot;..&#x2F;images&#x2F;Bang.png&quot;),
+  &quot;Cloud&quot;: require(&quot;..&#x2F;images&#x2F;Cloud.png&quot;),
+  &quot;Leaf&quot;: require(&quot;..&#x2F;images&#x2F;Leaf.png&quot;),
+  &quot;Moon&quot;: require(&quot;..&#x2F;images&#x2F;Moon.png&quot;),
+  &quot;Rain&quot;: require(&quot;..&#x2F;images&#x2F;Rain.png&quot;),
+  &quot;Stick&quot;: require(&quot;..&#x2F;images&#x2F;Stick.png&quot;),
+  &quot;Sun&quot;: require(&quot;..&#x2F;images&#x2F;Sun.png&quot;)
+};
+
+export const garbageImages = {
+  &quot;ThreeWide&quot;: require(&quot;..&#x2F;images&#x2F;garbage&#x2F;ThreeWideGarbage.png&quot;),
+  &quot;FourWide&quot;: require(&quot;..&#x2F;images&#x2F;garbage&#x2F;FourWideGarbage.png&quot;),
+  &quot;FiveWide&quot;: require(&quot;..&#x2F;images&#x2F;garbage&#x2F;FiveWideGarbage.png&quot;),
+  &quot;SingleLine&quot;: require(&quot;..&#x2F;images&#x2F;garbage&#x2F;SingleLineGarbage.png&quot;),
+  &quot;TwoLine&quot;: require(&quot;..&#x2F;images&#x2F;garbage&#x2F;TwoLineGarbage.png&quot;),
+
+  &quot;TopLine&quot;: require(&quot;..&#x2F;images&#x2F;garbage&#x2F;TopLineGarbage.png&quot;),
+  &quot;MiddleLine&quot;: require(&quot;..&#x2F;images&#x2F;garbage&#x2F;MiddleLineGarbage.png&quot;),
+  &quot;EvenMiddleLine&quot;: require(&quot;..&#x2F;images&#x2F;garbage&#x2F;EvenMiddleLineGarbage.png&quot;),
+  &quot;MiddleLineNoExclamationPoint&quot;: require(&quot;..&#x2F;images&#x2F;garbage&#x2F;MiddleLineGarbageNoExclamationPoint.png&quot;),
+  &quot;BottomLine&quot;: require(&quot;..&#x2F;images&#x2F;garbage&#x2F;BottomLineGarbage.png&quot;),
+
+  &quot;Lock&quot;: require(&quot;..&#x2F;images&#x2F;garbage&#x2F;Lock.png&quot;),
+  &quot;Clear&quot;: require(&quot;..&#x2F;images&#x2F;garbage&#x2F;Clear.png&quot;)
+};
+
+export const Lose = require(&quot;..&#x2F;images&#x2F;Lose.png&quot;) as string;
+export const LoseWidthOverHeight = 65 &#x2F; 30;
+
+export const Win = require(&quot;..&#x2F;images&#x2F;Win.png&quot;) as string;
+export const WinWidthOverHeight = 51 &#x2F; 30;
+
+export const imageURLs = Object.values(blockImages).concat(Object.values(garbageImages)).concat([ Lose, Win ]);</code>
+</pre>
+<p>As discussed above, this allows webpack to tell me when I get the urls incorrect and lets me place all of the assets in
+the src directory instead of cluttering the base directory of the repository.</p>
+<h2 id="next">Next</h2>
+<p>With these bits out of the way, I should be able to get started with designing the communication protocol which will
+enable multipler TA battles.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day92-lose-screen&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day94-webgl-react-component&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

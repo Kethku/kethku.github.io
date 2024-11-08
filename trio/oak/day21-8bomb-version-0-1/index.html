@@ -1,0 +1,354 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day21 - 8Bomb Version 0.1
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      8Bomb is now playable!
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-27
+    
+    
+      <br>
+      <a href="../../hemlock/projects/8bomb/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day21-8bomb-version-0-1/./todo.svg" alt="Todo" /></p>
+<p>Today I finished a first playable version of 8Bomb! I built upon the self hosted
+SCRIPT-8 engine from yesterday by adding some performance improvements to the
+canvas API calls (which I will try to push upstream after SCRIPT-8 is back and
+running). I also added keyboard input support also based on the code from the
+original repository. With those out of the way, I was able to get back to making
+progress. These changes were much of the same as yesterday, so I decided not to
+document much.</p>
+<p>I made a number of changes to the game code:</p>
+<ol>
+<li>I changed the terrain rendering to be completely pixel based, tearing out
+the marching squares</li>
+<li>I added a concept of panels so the terrain can be extended automatically</li>
+<li>I added a score counter</li>
+<li>I added bombs which flicker and explode after a short while causing the game
+to restart if the player is too close.</li>
+</ol>
+<div id="gameContainer">
+<style>
+iframe {
+    position: relative;
+    left: 50%;
+    transform: translate(-50%,0%);
+    min-width: 7in;
+    min-height: 7in;
+}
+<p>@media (max-width: 8.5in) {
+iframe {
+min-width: 80vw;
+min-height: 80vw;
+}
+}
+</style></p>
+<iframe src="https://kethku.github.io/8Bomb/"></iframe>
+</div>
+<h2 id="terrain-improvements">Terrain Improvements</h2>
+<p>After digging through the rendering code in SCRIPT-8 I found out that sprites
+are rendered square by square similar to how the <code>setPixel</code> and <code>fillRectangle</code>
+functions work. Since everything was run in JavaScript, I figured that doing
+that rendering by hand would be just as efficient as letting SCRIPT-8 do it for
+me.</p>
+<p>So I modified the terrain data structure to have 300 by 128 entries:</p>
+<pre>
+  <code class="language-en">function initTerrain() {
+  let terrain = [];
+  for (let y = 0; y &lt; 300; y++) {
+    let row = [];
+    for (let x = 0; x &lt; 128; x++) {
+      if (y &gt; 90) {
+        row.push(1);
+      } else {
+        row.push(0);
+      }
+    }
+    terrain.push(row);
+  }
+  return terrain;
+}</code>
+</pre>
+<p>And updated the <code>drawTerrain</code> function to <code>setPixels</code> and pick the color based on
+whether there is an open pixel above or below the current pixel:</p>
+<pre>
+  <code class="language-en">function drawTerrain({ terrain, cameraY }) {
+  let top = Math.max(0, Math.floor(cameraY));
+  let bottom = Math.min(Math.floor(cameraY + 128), terrain.length); 
+  for (let y = top; y &lt; bottom; y++) {
+    for (let x = 0; x &lt; terrain[y].length - 1; x++) {
+      if (terrainAt(x, y, terrain)) {
+        if (!terrainAt(x, y - 1, terrain)) {
+          setPixel(x, y, 0);
+        } else if (!terrainAt(x, y + 1, terrain)) {
+          setPixel(x, y, 2);
+        } else {
+          setPixel(x, y, 1);
+        }
+      }
+    }
+  }
+}</code>
+</pre>
+<p>This adds a little bit of depth to the terrain which goes a long way.</p>
+<p>I then refactored further to allow for automatic extension of the terrain. I
+could have just went with adding pixel rows to the terrain array, but I decided
+to go with a panel based approach which will allow me to add more information
+such as style etc to the panels later on. I moved the terrain init code to a
+<code>createPanel</code> function, and added an <code>updateTerrain</code> function which will
+automatically append panels to a terrain map each time the camera moves far
+enough.</p>
+<pre>
+  <code class="language-en">function createPanel() {
+  let panel = [];
+  for (let y = 0; y &lt; 100; y++) {
+    let row = [];
+    for (let x = 0; x &lt; 128; x++) {
+      row.push(true);
+    }
+    panel.push(row);
+  }
+  return panel;
+}
+
+export function updateTerrain(cameraY) {
+  let panelTop = Math.floor(cameraY &#x2F; panelHeight) - 1;
+  let panelBottom = panelTop + 5;
+
+  for (let i = panelTop; i &lt; panelBottom; i++) {
+    if (!terrain[i]) {
+      terrain[i] = createPanel();
+      if (lowestPanel &lt; i) lowestPanel = i;
+    }
+  }
+}</code>
+</pre>
+<p>The <code>terrainAt</code>, and <code>cutTerrain</code> functions were similarly modified to first
+index into the terrain map, and then index into the correct entry in the
+associated panel. I also added a <code>setTerrainAt</code> function which handles settings
+a terrain boolean if it is contained in the terrain map.</p>
+<pre>
+  <code class="language-en">export function terrainAt(x, y) {
+  if (y &lt; terrainStart) return false;
+  let panelNumber = Math.floor(y &#x2F; panelHeight);
+  let panel = terrain[panelNumber];
+  let panelY = y - (panelNumber * panelHeight);
+  if (panel &amp;&amp; panelNumber != lowestPanel) {
+    return panel[panelY][x];
+  }
+  return false;
+}
+
+export function setTerrainAt(x, y, value) {
+  let panelNumber = Math.floor(y &#x2F; panelHeight);
+  let panel = terrain[panelNumber];
+
+  if (panel) {
+    let panelY = y - (panelNumber * panelHeight);
+    let row = panel[panelY];
+    if (x &gt;= 0 &amp;&amp; x &lt; row.length) {
+      row[x] = value;
+    }
+  }
+}
+
+export function cutTerrain(x, y, r) {
+  for (let cx = Math.floor(x - r); cx &lt;= x + r; cx++) {
+    for (let cy = Math.floor(y - r); cy &lt;= y + r; cy++) {
+      let dx = cx - x;
+      let dy = cy - y;
+      let cr = Math.floor(Math.sqrt(dx * dx + dy * dy));
+
+      if (cr &gt; r) continue;
+      setTerrainAt(cx, cy, false);
+    }
+  }
+}</code>
+</pre>
+<p>Luckily since <code>drawTerrain</code> already used the <code>terrainAt</code> abstraction, it did not
+need modified. These changes made the terrain much smoother, and actually
+improved performance since only the pixels on the screen were drawn.</p>
+<p><img src="https://kaylees.dev/trio/oak/day21-8bomb-version-0-1/./SmootherTerrain.PNG" alt="SmootherTerrain" /></p>
+<h2 id="bombs">Bombs</h2>
+<p>The bombs were pretty simple. I split the functionality into three sections:
+Spawning, Timer Updates, and Explosions.</p>
+<p>Spawning was pretty simple. Every frame I generate a random number between 0 and
+100 and check if that number is less than the current score divided by 400 plus
+0.5. This means that at the start of the game, there is a 0.5% chance that a
+bomb will spawn, and as the player moves down the screen, that chance will
+increase at a linear rate.</p>
+<pre>
+  <code class="language-en">export function spawnBombs({ player,  bombs, score }) {
+  if (Math.random() * 100 &lt;= score &#x2F; 400 + 0.5) {
+    bombs.push(createPhysicsObject(Math.random() * 112 + 8, player.position.y - 300, 2));
+  }
+}</code>
+</pre>
+<p>Then each frame I also update the fuzes on each bomb.</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F; Update Bomb Timers
+for (const bomb of state.bombs) {
+  if (bomb.timeLeft != undefined) {
+    &#x2F;&#x2F; Reset Bomb Sprite
+    bomb.sprite = 2;
+    &#x2F;&#x2F; Decrement timer
+    bomb.timeLeft -= 1;
+    if (bomb.timeLeft &lt;= 0) {
+      &#x2F;&#x2F; Halve next timer length
+      bomb.fuze = bomb.fuze * 0.75;
+      if (bomb.fuze &lt; 1 &amp;&amp; bomb.grounded) {
+        &#x2F;&#x2F; Fuze finished. Explode
+        bombsToExplode.push(bomb);
+        continue;
+      } else {
+        &#x2F;&#x2F; Not enough iterations yet. Flicker again
+        bomb.timeLeft = bomb.fuze;
+        bomb.sprite = 3;
+      }
+    }
+  } else if (bomb.grounded) {
+    &#x2F;&#x2F; Start fuze since the bomb has hit the ground
+    bomb.timeLeft = fuzeTime;
+    bomb.fuze = fuzeTime;
+  }
+
+  &#x2F;&#x2F; Preserve this bomb
+  remainingBombs.push(bomb);
+}
+&#x2F;&#x2F; Preserve all remaining bombs
+state.bombs = remainingBombs;</code>
+</pre>
+<p>The basic idea with the fuze is two fold: First, flicker the bomb at a steadily
+increasing speed so that the player can tell when a bomb is about to blow and
+second, only start the fuze (or blow up the bomb) if the bomb is touching the
+ground.</p>
+<p>I achieve the first by keeping track of two timers, the fuze and the <code>timeLeft</code>.
+The fuze is used to keep track of how long until the next flash, and the
+<code>timeLeft</code> is used to keep track of when to actually flash. Each iteration, the
+fuze is shrunk by 0.75 and when the fuze hits less than 1, the bomb is queued
+for explosion.</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F; Blog up bombs
+let physicsObjects = getPhysicsObjects(state);
+for (const bomb of bombsToExplode) {
+  cutTerrain(bomb.position.x, bomb.position.y, bombRadius, state.terrain);
+  for (const object of physicsObjects) {
+    &#x2F;&#x2F; Find the distance to the object
+    let dx = object.position.x - bomb.position.x;
+    let dy = object.position.y - bomb.position.y;
+    let length = Math.sqrt(dx * dx + dy * dy);
+
+    &#x2F;&#x2F; If the object is the player, and the length is less than 3&#x2F;4 of the
+    &#x2F;&#x2F; bomb radius, the player has lost.
+    if (object == state.player &amp;&amp; length &lt; bombRadius * 0.75) location.reload();
+
+    &#x2F;&#x2F; Otherwise knockback the object by the distance * knockBack &#x2F; length^2;
+    let lengthSquared = length * length;
+    object.position.x += dx * knockBack &#x2F; lengthSquared;
+    object.position.y += dy * knockBack &#x2F; lengthSquared;
+  }
+}</code>
+</pre>
+<p>The comments make things pretty self explanatory, but the gist is to loop over
+every physics object and add some velocity away from the exploding bomb
+depending on how far the object is from the explosion. To wrap things up, I
+check if the player is too close to the explosion, and restart the game as a
+losing condition.</p>
+<p><img src="https://kaylees.dev/trio/oak/day21-8bomb-version-0-1/./Bomb.PNG" alt="Bomb" /></p>
+<h2 id="score">Score</h2>
+<p>As shown in the above screen cap, I also added a simple score number at the
+bottom of the screen which indicates how far the player got.</p>
+<pre>
+  <code class="language-en">export function drawScore({ cameraY, score }) {
+  camera();
+  let scoreText = Math.max(score - 68, 0).toString();
+  if (scoreText.length &gt; 5) scoreText = scoreText.substring(0, 5);
+  print(5, 120, scoreText, 6);
+}</code>
+</pre>
+<p>Pretty easy, but works well. I take the <code>substring</code> to truncate the extra decimal
+points. Eventually I will need to make this smarter, but it works for now.</p>
+<p>The game is very playable at this point and if I don't say so myself, pretty
+fun! There is still a lot of polishing to do though! I haven't decided what all
+I will implement next, but I think I might do some final polish steps on this
+simplified version so that I can have a truly SCRIPT-8 game, and then pull out
+into my own engine to loosen the constraints on color and libraries. Who knows,
+maybe I'll build a multiplayer version :P</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day20-script-8-crisis&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day22-pando-vnext&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,477 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day13 - Rusty Mandelbrot
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Executing Rust Code in the Browser
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-19
+    
+    
+      <br>
+      <a href="../../hemlock/projects/blog/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p>Today I decided to lay some groundwork for future projects. I hope in the future
+have more interactive content in these daily posts in order to demonstrate the
+concepts more effectively. These days running code in the browser is much easier
+than it has been historically. The advent of WebAssembly has opened doors that
+previously have been closed. Running anything from the simplest lua script to
+the the most complex of Rust or c++ code can now be done in the browser.</p>
+<p>With that in mind, I decided to build a simple demo of compiling a library in
+WebAssembly to be used in the browser. To make this as easy as possible I used
+<a href="https://parceljs.org/">Parcel</a> which is the new darling bundler in the
+JavaScript community. Parcel promises zero configuration bundling, but as you
+will see shortly, this isn't really true if you stray from the happy path.</p>
+<p>The demo I built was a simple Mandelbrot viewer:</p>
+<script src="./index.js"></script>
+<div style="display: flex; flex-direction: column; max-width: 8.5in; margin-left: auto; margin-right: auto;">
+  <div>
+    <canvas id="canvas" width="400" height="400"></canvas>
+  </div>
+  <div>
+    <button onclick="draw()">Redraw</button>
+  </div>
+</div>
+<p>The actual complex number calculations are done in rust compiled to a
+WebAssembly module which gets automatically imported and initialized by the
+Parcel runtime. I will describe the steps to get to this point.</p>
+<h2 id="dependencies">Dependencies</h2>
+<p>Tools that need installed:</p>
+<ol>
+<li><a href="https://yarnpkg.com/en/">Yarn</a></li>
+<li><a href="https://parceljs.org/getting_started.html">Parcel</a></li>
+<li><a href="https://www.rust-lang.org/">Rust</a></li>
+</ol>
+<p>Once they are installed, I started a new project with parcel by creating a
+folder, and adding an index.rs file:</p>
+<pre>
+  <code class="language-en">#[no_mangle]
+pub fn mandle() -&gt; i32 {
+  42
+}</code>
+</pre>
+<p>Any function that you intend to expose to the outside world must
+have the <code>no_mangle</code> attribute in order to tell the Rust compiler not to
+optimize this function away.</p>
+<p>To access the file, I created a simple index.js file:</p>
+<pre>
+  <code class="language-en">import { mandle } from &#x27;.&#x2F;index.rs&#x27;;
+
+console.log(mandle());</code>
+</pre>
+<p>And lastly a scaffold in an index.html file to actually see something:</p>
+<pre>
+  <code class="language-en">&lt;html&gt;
+  &lt;body&gt;
+    &lt;script src=&quot;.&#x2F;index.js&quot;&gt;&lt;&#x2F;script&gt;
+  &lt;&#x2F;body&gt;
+&lt;&#x2F;html&gt;</code>
+</pre>
+<p>Then bundling and compiling is really as simple as running <code>parcel index.html</code>
+in your favorite shell.</p>
+<pre>
+  <code class="language-en">Server running at http:&#x2F;&#x2F;localhost:1234
+√  Built in 722ms.</code>
+</pre>
+<p>Going to the reported URL will open a blank page, but the dev console should
+show 42.</p>
+<h2 id="why-webassembly">Why WebAssembly</h2>
+<p>Lets get something on the screen shall we? The Mandelbrot fractal is a
+fascinating quirk of polynomial multiplication which appears when you plot the
+time it takes for the function Z = Z * Z + C to diverge to infinity over various
+points (C) on the complex plane. This will make more sense shortly but first a
+note on why to use compiled languages in the browser.</p>
+<p>Most of the excitement I have seen around WebAssembly centers around the
+possibility of significant performance gain when using it. Although this may be
+true, the thing that excites me is the possibility of using more expressive, and
+safe languages. I find JavaScript very valuable for quick and dirty projects,
+but when projects get more complicated than a few thousand lines long, I find
+myself relying more and more on the type system of my favorite languages to keep
+me sane.</p>
+<p>And even beyond that, most of the languages I reach for have significant tools
+for building DSL's or domain specific languages within the syntax of the
+language. An extremely simplified version of DSL design can be achieved through
+operator overloading.</p>
+<p>Back to the original goal; the Mandelbrot fractal is much easier to render if we
+can use a simple arithmetic DSL for adding and multiplying complex numbers. We
+don't need much, but it is very useful to abstract away the complexities of the
+algebra and write the code for the actual Mandelbrot function (Z = Z * Z + C)
+directly. First lets define our algebra.</p>
+<h2 id="complex-numbers">Complex Numbers</h2>
+<p>Complex Numbers is a scary name for a relatively simple concept. The idea is to
+invent a new number defined as the square root of -1. Clearly no such number
+really exists, but if you can imagine it existing, some interesting features
+would arise. </p>
+<ol>
+<li>
+<p>Since the square root of any number n multiplied by itself
+equals n, multiplying our imaginary number (hence forth i) by itself will get
+you -1. </p>
+</li>
+<li>
+<p>Since we don't really know how to factor i, the smallest
+simplification we can do with a multiple of i is leave it alone. </p>
+</li>
+</ol>
+<p>Hang in there, we are almost to the good part. A complex number is defined as a
+group of two numbers. A normal number like what we are used to, and some
+multiple of our imaginary number i. Given point number 2, we can't really do
+anything fancy with the i part to combine it with the normal number, so we have
+to keep them separate. Mathematicians call the normal number the <code>real</code> component
+and the multiple of i the <code>imaginary</code> component</p>
+<p>So any complex number has two parts, a real part which can be any <code>real</code> number,
+and an <code>imaginary</code> part which is some multiple of i. The last thing we can know
+before we get pretty pictures is that we can add and multiply complex numbers
+together.</p>
+<p>Adding and multiplying is identical to adding and multiplying to binomials
+together except instead of having an x squared and y squared stick around, we
+can simplify the resulting expression using rule number 1 above. For example if
+we have two complex numbers <code>(a + bi)</code> and <code>(c + di)</code> we can add them together
+to get <code>(a + c)</code> as the <code>real</code> component and <code>(b + d)i</code> for the <code>imaginary</code>
+component.</p>
+<p>To multiply the above components, its similar but we must apply the &quot;foil&quot;
+multiplication of binomials:</p>
+<pre>
+  <code class="language-en">First: a * c +
+Outer: a * di +
+Inner: bi * c +
+Last: bi * di</code>
+</pre>
+<p>Notice that the first and last products simplify down to real numbers. Trivially
+with the first, and with last the i's multiply together to give us -1. So the
+<code>real</code> component of multiplying the two complex numbers together is equal to
+<code>a * c - b * d</code>. And just as before since we can't factor the i out of the Outer
+and Inner parts, the <code>imaginary</code> component becomes <code>a * di + c * bi</code>.</p>
+<p>Lets build this in Rust.</p>
+<h2 id="rust-operator-overloading">Rust Operator Overloading</h2>
+<p>The <code>Complex</code> struct is very simple, composed of two 64 bit floats.</p>
+<pre>
+  <code class="language-en">#[derive(PartialEq, Copy, Clone)]
+pub struct Complex {
+    pub real: f64,
+    pub imaginary: f64
+}</code>
+</pre>
+<p>Importantly I derive the implementations of Clone and Copy to give the final
+objects copy semantics. This means that any time the variable is passed around,
+the struct is copied instead of borrowed.</p>
+<p>In rust operators are overloaded for a given struct by implementing the traits
+found in <code>std::ops</code>. In our case we only need <code>Add</code> and <code>Mul</code>.</p>
+<pre>
+  <code class="language-en">impl Add for Complex {
+    type Output = Complex;
+
+    fn add(self, rhs: Complex) -&gt; Complex {
+        Complex {
+            real: self.real + rhs.real,
+            imaginary: self.imaginary + rhs.imaginary
+        }
+    }
+}
+
+impl Mul for Complex {
+    type Output = Complex;
+
+    fn mul(self, rhs: Complex) -&gt; Complex {
+        Complex {
+            real: self.real * rhs.real - self.imaginary * rhs.imaginary,
+            imaginary: self.real * rhs.imaginary + self.imaginary * rhs.real
+        }
+    }
+}</code>
+</pre>
+<p>These mirror the above calculations exactly. Note the type parameter <code>Output</code>
+which tells the Rust compiler that these operators should return <code>Complex</code>
+instances.</p>
+<p>Lastly finding the length of a complex number is useful when trying to decide if
+a given point is escaping to infinity. We define the length as the Cartesian
+distance from the origin of the complex plane. Simply put, it is the square root
+of the real component squared plus the imaginary component squared. For our
+purposes, a simple optimization can be made by not actually taking the square
+root in the length calculation.</p>
+<pre>
+  <code class="language-en">impl Complex {
+    pub fn length_squared(self) -&gt; f64 {
+        self.real * self.real + self.imaginary * self.imaginary
+    }
+}</code>
+</pre>
+<h2 id="using-the-dsl">Using the DSL</h2>
+<p>To draw something to the screen, we will split the calculation into two parts:
+the complex arithmetic in Rust and interpreting the results in JavaScript. Since
+we don't want the JavaScript side to have to worry about the complex numbers at
+all, I decided to do the viewport transform on the Rust side. So the mandle
+function would take an x and y coordinate which moves from the top left corner
+to the bottom right row by row, and a width and height value. Then the Rust code
+transforms those values to fit a roughly 3 by 3 unit square centered slightly
+left of the origin. This gives a satisfying full view of the Mandelbrot fractal.</p>
+<pre>
+  <code class="language-en">#[no_mangle]
+pub fn mandle(x: f64, y: f64, width: usize, height: usize) -&gt; i32 {
+    let c = Complex {
+        real: x * 3.0 &#x2F; (width as f64) - 2.25,
+        imaginary: y * 3.0 &#x2F; (height as f64) - 1.5
+    };
+
+    iterate(c, c, 0)
+}</code>
+</pre>
+<p>Finally iterate is defined as a recursive function that repeatedly applies the
+function <code>Z = Z * Z + C</code> to the initial state of <code>C</code> transformed from the
+JavaScript side's coordinates. The function stops and reports how many loops it
+made if either the length of <code>Z</code> becomes greeted than 4 (16 in our case since we
+don't square root the length) or we do n iterations without escaping.</p>
+<pre>
+  <code class="language-en">fn iterate(z: Complex, c: Complex, n: i32) -&gt; i32 {
+    if n &gt;= 100 {
+        return n;
+    }
+
+    if z.length_squared() &gt; 16.0 {
+        return n;
+    }
+
+    iterate(z * z + c, c, n + 1)
+}</code>
+</pre>
+<p>And thats it for the math. You made it.</p>
+<h2 id="draw-something-already">Draw Something Already</h2>
+<p>Now to see something on the screen. First we need something to draw on, so I
+added a canvas to the html page and initialized a <a href="https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API">2d drawing
+context</a>. </p>
+<pre>
+  <code class="language-en">const canvas = document.getElementById(&#x27;canvas&#x27;);
+const ctx = canvas.getContext(&#x27;2d&#x27;);</code>
+</pre>
+<p>I also define a button for future use to redraw the Mandelbrot.</p>
+<pre>
+  <code class="language-en">&lt;html&gt;
+  &lt;body&gt;
+    &lt;script src=&quot;.&#x2F;index.js&quot;&gt;&lt;&#x2F;script&gt;
+    &lt;canvas id=&quot;canvas&quot; width=&quot;400&quot; height=&quot;400&quot;&gt;&lt;&#x2F;canvas&gt;
+    &lt;button onclick=&quot;draw()&quot;&gt;Redraw&lt;&#x2F;button&gt;
+  &lt;&#x2F;body&gt;
+&lt;&#x2F;html&gt;</code>
+</pre>
+<p>Then I define a draw function which calls mandle for each pixel and draws a
+single pixel wide and tall rectangle with the results. For color I simply use
+whether the result is even or odd. This is a quick way to get an interesting
+image, but there is much more that could be done to add color. For now this is
+good enough.</p>
+<pre>
+  <code class="language-en">const width = 400;
+const height = 400;
+
+function draw() {
+  for (let y = 0; y &lt; height; y += 1) {
+    for (let x = 0; x &lt; width; x += 1) {
+      let n = mandle(x, y, width, height);
+      let color = n % 2 == 0 ? &quot;black&quot; : &quot;white&quot;;
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+}
+
+draw();
+
+window.draw = draw;</code>
+</pre>
+<p>Refreshing the browser window presents us with:</p>
+<p><img src="https://kaylees.dev/trio/oak/day13-rusty-mandelbrot/./Pixelated.PNG" alt="Pixelated" /></p>
+<h2 id="improvements">Improvements</h2>
+<p>This is awesome, but we can do better. The draw button doesn't work because the
+browser is too busy calculating everything to return control to the renderer.
+Similarly, things look pretty pixelated. The color choices don't help, but a
+little bit of anti aliasing goes a long way with Mandelbrot fractals. Lets fix
+that first.</p>
+<pre>
+  <code class="language-en">const samplesPerPixel = 100;
+
+function draw() {
+  let i = 0;
+  for (let y = 0; y &lt; height; y += 1) {
+    for (let x = 0; x &lt; width; x += 1) {
+      let c = 0;
+
+      for (let s = 0; s &lt; samplesPerPixel; s++) {
+        let n = mandle(x + Math.random(), y + Math.random(), width, height);
+        c += n % 2;
+      }
+
+      let gray = Math.floor(c * 255 &#x2F; samplesPerPixel);
+      ctx.fillStyle = &quot;rgb(&quot; + gray + &quot;, &quot; + gray + &quot;, &quot; + gray + &quot;)&quot;;
+      ctx.fillRect(x, y, 1, 1);
+    }
+  }
+}</code>
+</pre>
+<p>The basic idea is instead of using one sample of the complex plane per pixel, we
+can randomly select a bunch of samples and average the results together.
+Experimentally I found that 100 samples is a pretty good compromise. In
+practice, the majority of the time spent in our Mandelbrot renderer currently is
+taken up crossing the barrier between Rust and JavaScript, so doing more
+calculation on the Rust side doesn't actually make the render much slower.</p>
+<p><img src="https://kaylees.dev/trio/oak/day13-rusty-mandelbrot/./Smooth.PNG" alt="Smooth" /></p>
+<p>MUCH better. Now for the other piece. It would be awesome if we could see the
+image draw as it goes. To handle this, I decided to use some modern JavaScript
+features and build an async version of sleep.</p>
+<pre>
+  <code class="language-en">function sleep()  {
+  return new Promise(resolve =&gt; setTimeout(resolve));
+}</code>
+</pre>
+<p>And convert our draw function to be async, and every chunk of about 1000 pixels,
+yield to the browser so that it can draw to the screen.</p>
+<pre>
+  <code class="language-en">async function draw() {
+  let i = 0;
+  for (let y = 0; y &lt; height; y += 1) {
+    for (let x = 0; x &lt; width; x += 1) {
+      let c = 0;
+
+      for (let s = 0; s &lt; samplesPerPixel; s++) {
+        let n = mandle(x + Math.random(), y + Math.random(), width, height);
+        c += n % 2;
+      }
+
+      let gray = Math.floor(c * 255 &#x2F; samplesPerPixel);
+      ctx.fillStyle = &quot;rgb(&quot; + gray + &quot;, &quot; + gray + &quot;, &quot; + gray + &quot;)&quot;;
+      ctx.fillRect(x, y, 1, 1);
+
+      i++;
+      if (i &gt; chunkSize) {
+        i = 0;
+        await sleep();
+      }
+    }
+  }
+}</code>
+</pre>
+<p>In a normal build system, this would work and everything would be roses.
+Unfortunately there is an outstanding bug in the Parcel Bundler which over
+utilizes the Babel transpiler. So instead of our beautiful Mandelbrot fractal we
+are presented with a blank page and this error in the log:</p>
+<pre>
+  <code class="language-en">index.js:15 Uncaught (in promise) ReferenceError: regeneratorRuntime is not defined
+    at _draw (index.js:15)
+    at draw (index.js:15)
+    at Object.parcelRequire.index.js..&#x2F;SkyLight.rs (index.js:39)
+    at newRequire (SkyLight.e31bb0bc.js:49)
+    at localRequire (SkyLight.e31bb0bc.js:55)
+    at index.js:41</code>
+</pre>
+<h2 id="helping-parcel-along">Helping Parcel Along</h2>
+<p>After some searching on the web I found that the quickest fix was to lean in,
+and provide the translator what it wants. I did this by installing some babel
+dependencies using:</p>
+<pre>
+  <code class="language-en">yarn add babel-plugin-transform-runtime babel-core -D</code>
+</pre>
+<p>As well as adding a .babelrc file with:</p>
+<pre>
+  <code class="language-en">{
+    &quot;plugins&quot;: [
+        [&quot;transform-runtime&quot;,
+        {
+            &quot;polyfill&quot;: false,
+            &quot;regenerator&quot;: true
+        }]
+    ]
+}</code>
+</pre>
+<p>And lastly adding this to the top of the JavaScript file to initialize it all:</p>
+<pre>
+  <code class="language-en">import &quot;babel-polyfill&quot;;</code>
+</pre>
+<p>Unfortunately I have found errors such as these to be pretty common when pushing
+the edges of what Parcel supports. I am hopeful that these things will get
+simpler over time, but for now fixes like the above work well enough.</p>
+<p>A final refresh gives us the demo I have embedded at the top of this post!
+Refresh smoothly draws a clear Mandelbrot image to the canvas, and repeat clicks
+will redraw over and over.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>For a simple Web Assembly demo, this build system is extremely quick and clean.
+I have found a couple of frustrations occasionally but overall I am extremely
+pleased using Parcel. The comforting thing is that if I ever need to fall back,
+there are other more configurable options. However so long as I can get away
+with it, Parcel's no configuration approach is very nice.</p>
+<p>Although this project isn't associated with a project in particular, I plan on
+using this framework and setup in future posts. More like this to come!</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day12-project-pages&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day14-blog-style-updates&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

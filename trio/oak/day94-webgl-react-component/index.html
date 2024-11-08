@@ -1,0 +1,174 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day94 - WebGL React Component
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Wrapping game engine in a React component
+    </h2>
+    
+    
+    <p>
+    
+      2019-10-27
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day94-webgl-react-component/./todo.svg" alt="Todo" /></p>
+<p>Today I added React UI support to my game engine by wrapping the webgl canvas in a React component and using hooks to
+detect mounts and unmounts of the canvas element. This should make menus and even in game UI much simpler to implement
+while still preserving the performance and graphics capabilities I've been working on.</p>
+<h2 id="hooks">Hooks</h2>
+<p>The newish versions of React support hooks as a new pattern for dealing with effects and state. They work by exposing
+some tricky functions which &quot;hook&quot; into the React rendering code and store some state from render call to render call.
+The particular hook I am using is called <code>useEffect</code> and it runs a given callback whenever the containing React function
+component is updated, or unmounted.</p>
+<pre>
+  <code class="language-en">export function GameComponent() {
+  useEffect(() =&gt; {
+    return function cleanup() {
+      running = false;
+    }
+  }, [])
+  return &lt;canvas ref={canvasMounted} touch-action=&quot;none&quot; &#x2F;&gt;;
+}
+
+export const CanvasMounted = new EventManager&lt;[HTMLCanvasElement]&gt;();
+async function canvasMounted(newCanvas: HTMLCanvasElement) {
+  await Promise.all(baseScreen.Setup.Publish());
+
+  currentScreen = playScreen;
+  baseScreen.Setup.Publish();
+  playScreen.Setup.Publish();
+
+  CanvasMounted.Publish(newCanvas);
+  window.requestAnimationFrame(loop);
+  running = true;
+}</code>
+</pre>
+<p>Here I use the effect hook and return a function from inside the hook which tracks unmount events to stop the draw loop.
+To track updates, since I need a reference to the actual canvas HTML element, I use the React Ref attribute to pass a
+callback which gets called with the mounted element every time it changes.</p>
+<p>Using my standard event manager pattern I publish a new CanvasMounted event with the mounted element to hook in the
+webgl specifics.</p>
+<pre>
+  <code class="language-en">Setup.Subscribe(async () =&gt; {
+  CanvasMounted.Subscribe(async (newCanvas) =&gt; {
+    canvas = newCanvas;
+    resize();
+    console.log(newCanvas);
+    gl = newCanvas.getContext(&quot;webgl&quot;, {alpha: false});
+    spriteProgram = twgl.createProgramInfo(gl, [vertex, fragment]);
+    gl.useProgram(spriteProgram.program);
+    spriteArrays = {
+      a_coord: {numComponents: 2, data: new Float32Array(maxCount * 2), drawType: gl.DYNAMIC_DRAW},
+      a_position: {numComponents: 3, data: new Float32Array(maxCount * 2), drawType: gl.DYNAMIC_DRAW},
+      a_texcoord: {numComponents: 2, data: new Float32Array(maxCount * 2), drawType: gl.DYNAMIC_DRAW},
+      a_rotation: {numComponents: 1, data: new Float32Array(maxCount * 2), drawType: gl.DYNAMIC_DRAW},
+      a_dimensions: {numComponents: 2, data: new Float32Array(maxCount * 2), drawType: gl.DYNAMIC_DRAW},
+      a_center: {numComponents: 2, data: new Float32Array(maxCount * 2), drawType: gl.DYNAMIC_DRAW},
+      a_scale: {numComponents: 1, data: new Float32Array(maxCount * 2), drawType: gl.DYNAMIC_DRAW},
+      a_color: {numComponents: 4, data: new Float32Array(maxCount), drawType: gl.DYNAMIC_DRAW},
+      indices: {numComponents: 3, data: new Uint16Array(maxCount * 2), drawType: gl.DYNAMIC_DRAW}
+    };
+    bufferInfo = twgl.createBufferInfoFromArrays(gl, spriteArrays);
+    textures = await setupTextures(gl, imageURLs);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  });
+});
+{% code %}
+
+So here instead of running the webgl setup code once, I run it every time a new canvas is mounted allowing the graphics
+to setup and restart for another game after the canvas no longer exists. To use the new component I simply mount it to 
+a known div and the rest is handled automatically.
+
+{% code(lang=&quot;typescript&quot;) %}
+import { GameComponent } from &quot;.&#x2F;game&quot;;
+
+ReactDOM.render(
+  &lt;GameComponent &#x2F;&gt;,
+  document.getElementById(&quot;app&quot;)
+);</code>
+</pre>
+<p>In the future I will add multiple screens and dynamically swap between them depending on what menu buttons and links are
+clicked, but for now the proof of concept is complete and the game is rendering properly again. I did some research and
+came across <a href="https://github.com/bschulte/nes-react">nes-react</a> which is an awesome react component library that provides
+html elements styled to look like NES games or graphics. I plan on using it to build the lobby and game host windows
+once multiplayer is more fleshed out.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day93-express-server&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day95-script-8-learnable-programming&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

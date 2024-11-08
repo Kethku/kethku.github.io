@@ -1,0 +1,350 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day75 - Poor Man&#x27;s Animation Curves
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Building a live reloadable interpolation curve system
+    </h2>
+    
+    
+    <p>
+    
+      2019-05-02
+    
+    
+      <br>
+      <a href="../../hemlock/projects/robot/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day75-poor-man-s-animation-curves/./todo.svg" alt="Todo" /></p>
+<p>Today and yesterday I worked on a system for drawing and using animation curves.
+Many modern engines have the ability to specify a curve which dictates some type
+of interpolation between values over time. Frequently this system is accompanied
+by an editor which allows fine grain manipulation of the curve and live updates
+as you edit it.</p>
+<p>Unfortunately I don't have the time or desire to build such a system from
+scratch, so instead I built a poor-man's version of it which uses animation
+curves drawn as pixels in an image and live reloads the curve when the image is
+edited. To get this working, I built a mechanism for watching and reloading
+textures at runtime in Monogame and a simple interpolation curve system which
+turns an image with a line drawn in it into functions which give a middle value
+depending on that curve and a given progress.</p>
+<h2 id="reloadable-resources">Reloadable Resources</h2>
+<p>Monogame, the graphics library I use to build games and demos in C#, loads
+textures via a content pipeline which is run at compile time. This pipeline
+enables the Monogame library to compile assets to whatever format is necessary
+for a given platform and enables cross-platform support without changing any
+game logic.</p>
+<p>Unfortunately this makes it difficult to build live-reloading capabilities.
+Luckily there is a way around this for certain platforms. Monogame provides a
+function for loading images from a memory stream which bypasses the content
+pipeline and parses the image format directly.</p>
+<p>This combined with the existing infrastructure I built earlier this week for
+running the Monogame in a debug mode on windows, means that I can build a system
+for reloading assets from the content files directly and watch for changes in
+those files to trigger a reload at runtime. Further, in the future I have some
+ideas for integrating a scripting language such as Lua. So I decided to build a
+general purpose <code>ReloadingResource</code> type which watches files and triggers some
+abstract functions on reload depending on the currently built target. Then I
+built an implementation of this type which loads textures and triggers a
+callback whenever the texture is loaded.</p>
+<pre>
+  <code class="language-en">public abstract class ReloadingResource : IDisposable {
+    ResourceReloader resourceReloader;
+
+    &#x2F;&#x2F; Name of the resource to use in the content directory
+    protected string resourceName;
+    &#x2F;&#x2F; Path under the Shared&#x2F;Content directory to watch
+    protected string debugPath;
+
+    FileSystemWatcher watcher;
+
+    public ReloadingResource(ResourceReloader resourceReloader, string resourceName) {
+#if DEBUG &amp;&amp; !IOS
+        this.resourceReloader = resourceReloader;
+        this.resourceName = resourceName;
+
+        watcher = new FileSystemWatcher();
+        debugPath = $&quot;..&#x2F;..&#x2F;..&#x2F;..&#x2F;Shared&#x2F;Content&#x2F;{resourceName}&quot;;
+
+        watcher.Path = Path.GetDirectoryName(debugPath);
+        watcher.Filter = Path.GetFileName(debugPath) + &quot;.*&quot;;
+        watcher.Changed += (_, __) =&gt; {
+            resourceReloader.TriggerReload(resourceName);
+        };
+        watcher.EnableRaisingEvents = true;
+
+        resourceReloader.Register(resourceName, this);
+#endif
+    }
+
+    public abstract void DebugReload();
+    public abstract void ProductionLoad(ContentManager content);
+
+    public void Dispose() {
+#if DEBUG &amp;&amp; !IOS
+        resourceReloader.Unregister(resourceName);
+        watcher.Dispose();
+#endif
+    }
+}</code>
+</pre>
+<p>The reloading resource is given a resource name meant to refer to a given
+resource file in the shared content directory. This name is assumed to be
+without an extension as the basic <code>Content.Load</code> function expects the extension
+to be stripped. Then if the current build is a DEBUG and not targeting iOS, a
+file system watcher is built to notify when the given file is changed.</p>
+<p>Unfortunately the file system watcher notifies of changes on it's own thread, so
+I needed to implement a queue of resources to reload and then run down that
+queue on the update thread. For this I took advantage of the Dependency
+Injection system I built earlier to create a special purpose <code>ResourceReloader</code>
+class which would be called on update and handle triggering the reloads.</p>
+<pre>
+  <code class="language-en">public class ResourceReloader : IContentLoadable, IUpdateable {
+    Dictionary&lt;string, ReloadingResource&gt; reloadingResources = new Dictionary&lt;string, ReloadingResource&gt;();
+    ConcurrentQueue&lt;string&gt; resourcesToReload = new ConcurrentQueue&lt;string&gt;();
+
+    public void LoadContent(ContentManager content) {
+        foreach (ReloadingResource resource in reloadingResources.Values) {
+#if DEBUG &amp;&amp; !IOS
+            resource.DebugReload();
+#else
+            resource.ProductionLoad(content);
+#endif
+        }
+    }
+
+    public void Update(GameTime gameTime) {
+        while (resourcesToReload.TryDequeue(out var resourcePath)) {
+            reloadingResources[resourcePath].DebugReload();
+        }
+    }
+
+    public void TriggerReload(string resourcePath) =&gt; resourcesToReload.Enqueue(resourcePath);
+
+    public void Register(string resourcePath, ReloadingResource resource) =&gt; reloadingResources[resourcePath] = resource;
+    public void Unregister(string resourcePath) =&gt; reloadingResources.Remove(resourcePath);
+}</code>
+</pre>
+<p>It is worth noting here that I use conditional compilation heavily here to
+ensure that reload logic is only used for debug builds. Also since the resource
+queue may be modified on multiple threads, I decided to use a ConcurrentQueue to
+prevent any resource contention.</p>
+<p>Lastly for the reloadable resources I created the <code>ReloadingTexture</code> class which
+just inherits from <code>ReloadingResource</code> and takes a callback function which gets
+called with the updated texture on reload.</p>
+<pre>
+  <code class="language-en">public class ReloadingTexture : ReloadingResource {
+    Action&lt;Texture2D&gt; loadAction;
+    GraphicsDevice graphicsDevice;
+
+    public Texture2D LoadedTexture { get; private set; }
+
+    public ReloadingTexture(GraphicsDevice graphicsDevice, ResourceReloader resourceReloader, string textureName, Action&lt;Texture2D&gt; loadAction = null) 
+        : base(resourceReloader, textureName) {
+        this.graphicsDevice = graphicsDevice;
+        this.loadAction = loadAction;
+    }
+
+    public override void DebugReload() {
+        using (FileStream textureStream = new FileStream(debugPath + &quot;.png&quot;, FileMode.Open)) {
+            LoadedTexture = Texture2D.FromStream(graphicsDevice, textureStream);
+            loadAction?.Invoke(LoadedTexture);
+        }
+    }
+
+    public override void ProductionLoad(ContentManager content) {
+        LoadedTexture = content.Load&lt;Texture2D&gt;(resourceName);
+        loadAction?.Invoke(LoadedTexture);
+    }
+}</code>
+</pre>
+<p>Here I rely upon the dependency injection for locating the <code>GraphicsDevice</code> and
+<code>ResourceReloader</code> instances for me. These get injected in the factory function
+and are used to trigger reloads and create new texture objects.</p>
+<h2 id="animation-curves">Animation Curves</h2>
+<p>With hot-reloading out of the way I built a super simple animation curve system
+which averages the y value of all pixels that are not white or transparent for
+each vertical line in a given image. I then take those values and put them in an
+array normalized from 0 to 1 and use the cached array to calculate an
+interpolated value between a min and a max at a given progress.</p>
+<p>In simpler terms this gives me a clean way to get an animation from point a to
+point b via the route drawn in an image like this one:</p>
+<p><img src="https://kaylees.dev/trio/oak/day75-poor-man-s-animation-curves/ExampleAnimationCurve.png" alt="Example Animation Curve" /></p>
+<p>To do this I used the <code>GetData</code> function on <code>Texture2D</code> to access the pixel
+values and calculate an array of doubles.</p>
+<pre>
+  <code class="language-en">private double[] BuildCurve(Texture2D texture) {
+    var pixels = new Color[texture.Width * texture.Height];
+    texture.GetData(pixels);
+    Color GetPixel(int x, int y) =&gt; pixels[y * texture.Width + x];
+
+    var curve = new double[texture.Width];
+
+    for (var x = 0; x &lt; texture.Width; x++) {
+        var totalY = 0.0;
+        var yCount = 0.0;
+
+        for (var y = 0; y &lt; texture.Height; y++) {
+            var pixelColor = GetPixel(x, y);
+            if (pixelColor.A != 0 &amp;&amp; pixelColor != Color.White) {
+                totalY += y;
+                yCount++;
+            }
+        }
+        curve[x] = totalY &#x2F; yCount &#x2F; texture.Height;
+    }
+
+    return curve;
+}</code>
+</pre>
+<p>I store arrays calculated in this way in a dictionary by name for future use at
+startup. I use the above described &quot;ReloadingTexture&quot; to manage when and how to
+load the textures and a simple factory injected into the animation factory to
+fill in the constructor parameters.</p>
+<pre>
+  <code class="language-en">public void LoadContent(ContentManager content) {
+    LoadCurve(&quot;Test&quot;, content);
+}
+
+private void LoadCurve(string textureName, ContentManager content) {
+    var reloadingTexture = reloadingTextureFactory(textureName, texture =&gt; {
+        animationCurves[textureName] = BuildCurve(texture);
+    });
+    animationCurveTextures.Add(reloadingTexture);
+}</code>
+</pre>
+<p>A then created a sample function which takes a curve name and a progress value
+and returns a value from 0 to 1 representing the position on the curve at
+progress.</p>
+<pre>
+  <code class="language-en">public double Sample(string curveName, double progress) {
+    double[] curve = animationCurves[curveName];
+    return curve[(int)(progress * curve.Length) % curve.Length];
+}</code>
+</pre>
+<p>Then pulling everything together I created some simple <code>Interpolate</code> functions
+which take a named curve, a progress value, a from value, and a to value and
+returns an interpolated result based on the animation curve. I created overloads
+for integers, doubles, and vectors so that they are generally applicable
+anywhere I could want to use the function.</p>
+<pre>
+  <code class="language-en">public int Interpolate(string curveName, double progress, int from, int to) {
+    int diff = to - from;
+    return (int)(Sample(curveName, progress) * diff) + from;
+}
+
+public double Interpolate(string curveName, double progress, double from, double to) {
+    double diff = to - from;
+    return Sample(curveName, progress) * diff + from;
+}
+
+public Vector2 Interpolate(string curveName, double progress, Vector2 from, Vector2 to) {
+    Vector2 diff = to - from;
+    return (float)Sample(curveName, progress) * diff + from;
+}</code>
+</pre>
+<p>To test all of this out I modified my <code>RoutineTicker</code> object to load the pixel
+art blocks I built for my Tetris Attack game and to draw them in a row animated
+by a given curve.</p>
+<pre>
+  <code class="language-en">public void LoadContent(ContentManager content) {
+    font = content.Load&lt;SpriteFont&gt;(&quot;Gugi&quot;);
+
+    actions.Add(content.Load&lt;Texture2D&gt;(&quot;Actions&#x2F;Cloud&quot;));
+    actions.Add(content.Load&lt;Texture2D&gt;(&quot;Actions&#x2F;Leaf&quot;));
+    actions.Add(content.Load&lt;Texture2D&gt;(&quot;Actions&#x2F;Moon&quot;));
+    actions.Add(content.Load&lt;Texture2D&gt;(&quot;Actions&#x2F;Rain&quot;));
+    actions.Add(content.Load&lt;Texture2D&gt;(&quot;Actions&#x2F;Stick&quot;));
+    actions.Add(content.Load&lt;Texture2D&gt;(&quot;Actions&#x2F;Sun&quot;));
+}
+
+public void Draw(GameTime gameTime) {
+    spriteBatch.DrawString(font, &quot;Hello World!&quot;, new Vector2(100, 100), colors.Foreground);
+
+    for (var i = 0; i &lt; 5; i++) {
+        int yPosition = animationManager.Interpolate(&quot;Test&quot;, gameTime.TotalGameTime.TotalSeconds + 3.1415 * i, 600, 300);
+        spriteBatch.Draw(actions[i], new Rectangle(i * 100 + 40, yPosition, 80, 80), Color.White);
+    }
+}</code>
+</pre>
+<p>I just interpolate using a Test animation curve and passing the current time in
+as the progress value from 600 to 300. This value is then used as the y position
+to draw each block and results in this gif:</p>
+<p><img src="https://kaylees.dev/trio/oak/day75-poor-man-s-animation-curves/AnimationCurves.gif" alt="Animation Curves" /></p>
+<p>I am hopeful that by simplifying this process I will be more likely to integrate
+nifty animations into the UI for my game. I'm pretty pleased with the tradeoffs
+made for this system as it was achievable in an afternoon and should get me most
+of the way there without sacrificing too much in ergonomics. Time will tell.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day74-debug-infrastructure-and-text&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day76-isometric-rendering-textures&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

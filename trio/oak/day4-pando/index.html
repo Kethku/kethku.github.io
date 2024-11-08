@@ -1,0 +1,212 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day4 - Pando
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Tree Based Task Tracking
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-10
+    
+    
+      <br>
+      <a href="../../hemlock/projects/pando/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day4-pando/./output.svg" alt="Output" /></p>
+<p>Another day another project. I have plans to build larger projects, but I want
+to get my sea legs with some simpler more bite sized tools. Today I hope to
+build a simple file format for describing a task tree and a parser which will
+draw a diagram of the entire structure. The idea is that with larger projects
+planning what task to do next and talking about why a certain task is being done
+can be hard to visualize. It would be cool to have a clean way to draw a tree of
+all of the planned tasks, what each task needs done before it can be started,
+and what has already been done.</p>
+<p>The key insight is that this structure is a graph where each node is a task in
+the list and they are connected to each other by directed edges. The classic
+tool for drawing such things in programming circles is
+<a href="https://www.graphviz.org/">GraphViz</a>. GraphViz is an incredibly powerful tool
+for drawing graphs with many graphical features. GraphViz consumes files in a
+specification format written in a grammar called DOT. I could just write the
+todo structure in the DOT language to start and manipulate it directly, however
+I find the format to be clunky and it supports many more features than I need.
+To that end I plan on describing a simple format specifically suited for todo
+list trees, and a &quot;compiler&quot; which will convert that format into the DOT
+language. Then producing the final image should be as simple as piping the DOT
+file to graphviz.</p>
+<p>I've decided to call the project
+<a href="https://en.wikipedia.org/wiki/Pando_(tree)">Pando</a> after what is thought to be
+the largest tree structure on the planet, a clonal colony of aspen in Utah.</p>
+<h2 id="requirements">Requirements</h2>
+<p>The format for building the todo tree has a number of requirements.</p>
+<ol>
+<li>It should be usable as a todo tracker.</li>
+</ol>
+<p>Ideally each of my projects on this site should have a todo list stored in a
+central location. As I plan out tasks that need done for each project, I would
+like to store them in this central list.</p>
+<ol start="2">
+<li>Should be able to mark a single task as in progress.</li>
+</ol>
+<p>When I render the graph, I would like to be able to indicate that a given node
+is in progress either with a color change or a subheader.</p>
+<ol start="3">
+<li>Task dependencies as a list</li>
+</ol>
+<p>Each task should have an optional list of dependencies by name.</p>
+<ol start="4">
+<li>Tasks should be able to be marked done.</li>
+</ol>
+<p>Pretty self explanatory. The file format should have a simple way to mark a
+given task as done.</p>
+<h2 id="format">Format</h2>
+<p>I'm probably going to change this format as we go however I suspect this will
+be a good start. Simplicity is key here.</p>
+<p>Each task requires a status indicator, and a dependency list as established
+above. </p>
+<p>For the initial version there are 3 states of a task: Waiting, In
+Progress, and Done. I plan on using different list bullets for each '-',
+'&gt;', and 'x' respectively.</p>
+<pre>
+  <code class="language-en">x Brainstorm
+&gt; Specify Format
+- Implement Parser
+- DOT generator
+- Command Line</code>
+</pre>
+<p>The dependencies should exist as a simple list of names. At least to start I
+will write them in a comma delimited array with square brackets surrounding.</p>
+<pre>
+  <code class="language-en">x Brainstorm
+&gt; Specify Format [ Brainstorm ]
+- Implement Parser [ Specify Format ]
+- DOT Generator [ Brainstorm ]
+- Command Line [ Implement Parser, DOT Generator ]</code>
+</pre>
+<p>Lastly a quality of life improvement. The dependency list involves rewriting the
+entire task name. The dependency should just contain enough information to
+differentiate which task is intended. We should be able to get away with
+abbreviated prefixes. For most tasks, a prefix will be enough, but for multi word
+tasks we should allow the user to give CamelCase prefixes for each word. This is
+clearly less readable, but for most cases the dependencies will be written once
+and not modified after the fact. So being write only is fine since it cleans up
+the format.</p>
+<pre>
+  <code class="language-en">x Brainstorm
+&gt; Specify Format [ B ]
+- Implement Parser [ SF ]
+- DOT Generator [ B ]
+- Command Line [ IP, DG ]</code>
+</pre>
+<p>There is an added complication here that DOT is all caps, but we use the
+capitalization as a hint for the abbreviation matcher. As a hack we will assume
+that for the abbreviations each word is in proper camel case. So to differentiate
+the tasks <code>DOT Application</code> and <code>DOJ Appointment</code> we would use <code>DotA</code> and
+<code>DojA</code>.</p>
+<h2 id="output">Output</h2>
+<p>At the start of this post I embedded an image of the todo graph for Pando. I
+built this image by manually writing the DOT file I expected as output for the
+above pando file.</p>
+<pre>
+  <code class="language-en">digraph {
+  node [shape=record, splines=&quot;curve&quot;];
+  a[label=&lt;&lt;font color=&#x27;gray&#x27;&gt;Brainstorm &lt;br&#x2F;&gt; &lt;i&gt;Complete&lt;&#x2F;i&gt;&lt;&#x2F;font&gt;&gt;, color=&quot;gray&quot;];
+  b[label=&lt;Specify Format &lt;br&#x2F;&gt; &lt;i&gt;In Progress&lt;&#x2F;i&gt;&gt;];
+  c[label=&lt;DOT Generator&gt;];
+  d[label=&lt;Parser&gt;];
+  e[label=&lt;Command Line&gt;];
+
+  a -&gt; { b c };
+  b -&gt; { d };
+  d -&gt; { e };
+  c -&gt; { e };
+}</code>
+</pre>
+<p>I then rendered it to an svg using this command: <code>dot .\todo.dot -Tsvg &gt; output.svg</code>. The <code>-Tsvg</code> argument specifies the output format which I pipe to
+<code>output.svg</code>. </p>
+<p>There are two pieces of note. First, although our format stores the dependencies
+of a task next to the task that needs them, the DOT version specifies the
+connections the other way around. This shouldn't be hard to write out with a
+hashmap, but it needs to be kept in mind. The other issue is that of formatting.
+Names of nodes in DOT must be one word, so we are forced to describe the formatting
+using labels. Also to get more complicated output such as the <em>Completed</em> and
+<em>In Progress</em> tags, we must output the label in a pseudo HTML format. Not hard, but
+somewhat complicated.</p>
+<p>That about wraps up the plan. As shown by the todo graph, next is to write the
+parser for the todo format and write a DOT file generator from the parsed
+representation.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day3-okeydokey-cont&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day5-pando-parser&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

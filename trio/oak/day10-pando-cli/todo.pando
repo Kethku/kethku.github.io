@@ -1,0 +1,10 @@
+x Brainstorm
+x Specify Format [ B ]
+x Abbreviation Resolver [ SF ]
+x DOT Generator [ AR ]
+x Implement Parser [ SF ]
+> Command Line Interface [ IP, DG ]
+- Arcs [ DG ]
+- Task Links [ IP ]
+- Side Tasks [ DG ]
+- References [ IP ]

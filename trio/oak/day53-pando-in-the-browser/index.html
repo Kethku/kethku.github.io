@@ -1,0 +1,192 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day53 - Pando in the Browser
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Port Pando to the browser and make a new plan
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-31
+    
+    
+      <br>
+      <a href="../../hemlock/projects/pando/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day53-pando-in-the-browser/./todo.svg" alt="Todo" /></p>
+<p>Recently I came across a quote from an author named <a href="https://en.wikipedia.org/wiki/John_Gall_(author)">John
+Gall</a>. He has been attributed
+with coming up with &quot;Gall's Law&quot; which when summarized, states: &quot;No complex
+system was ever built from scratch. Instead all systems are built simply and
+modified until they are complex.&quot; With this principle in mind I have decided
+against rewriting much of Pando.</p>
+<p>I have decided to abandon my plan I described
+<a href="https://kaylees.dev/trio/oak/day22-pando-vnext/">here</a> to write my own graph
+renderer and manipulation UI. I've decided that GraphViz produces better graphs
+than I can reasonably expect to draw with any algorithm I can come up with in a
+short period of time. So instead of rebuilding everything from scratch I will
+use GraphViz and instrument the produced svg with event handlers to enable a
+simple modification UI.</p>
+<h2 id="the-new-plan">The &quot;New&quot; Plan</h2>
+<p>The new plan is to use the emscripten compiled version of GraphViz found
+<a href="https://github.com/mdaines/viz.js">here</a> to run GraphViz in the browser,
+compile the Pando code to web assembly using stdweb, and add event handlers for
+mouse functions to the svg elements produced from GraphViz to figure out what
+connections to add and remove from the nodes.</p>
+<p>The user interaction will support five operations: Add a node with a given
+title, remove a node, change a node status, link a node to another node, and
+unlink two nodes. </p>
+<ul>
+<li>Adding will be supported by a simple input box which allows naming a node and
+tracks when the user presses enter at which point the node will be added to the
+tree.</li>
+<li>Removing will be enabled via middle mouse clicking a node.</li>
+<li>Node status will be cycled by clicking the node without dragging.</li>
+<li>Linking will be done by dragging from one node to another currently unlinked node.</li>
+<li>Unlinking will be enabled by linking two already linked nodes.</li>
+</ul>
+<p>Overall much of the work is already finished however there are two new tasks
+with this plan. First, I will need to add support in the current rust code for
+turning a parsed pando file back into text after being modified. This will allow
+me to store in a clean readable fashion the modified graph. Secondly and as a
+result of the first, I will need to build some way to abbreviate node names.
+Neither of these tasks is overly hard, but will likely get a daily post about
+each individually.</p>
+<h2 id="why-tho">Why tho?</h2>
+<p>I have realized that some change is needed for the way that Pando is interacted
+with. For the most part Pando is easy to read and understand, but modifying a
+Pando graph is very cumbersome as the graph gets larger. I found myself not
+wanting to modify my todo tree in response to new ideas which is VERY bad. So
+for the next couple of days I will do some work to fix things up and make the
+tool more easy to use.</p>
+<h2 id="rusty-wasm">Rusty WASM</h2>
+<p>The first step for this plan is to port Pando to Web Assembly so that it can be
+imported and used from javascript. There are a couple of tools for this, you can
+produce wasm from Cargo directly by targeting wasm-unknown-unknown, you can use
+cargo-web, or as I did, you can use <a href="https://github.com/koute/stdweb">stdweb</a>
+and a <a href="https://github.com/koute/parcel-plugin-cargo-web">plugin in Parcel</a>. For
+new and exploratory projects I like to use Parcel, and at the moment the best
+way I have found to use it when strings are involved is to use stdweb. Stdweb
+adds a ton of support in Rust for running javascript code, interacting with the
+browser, and other related tasks, but in my case the main thing it provides is
+simple type translation for strings across the native/javascript barrier.</p>
+<p>Porting Pando was pretty easy. First I added stdweb to the toml file, and
+changed the crate type to cdylib which will allow the wasm bindgen tool used by
+the parcel plugin to produce the correct wrappers.</p>
+<pre data-lang="toml" class="language-toml z-code"><code class="language-toml" data-lang="toml"><span class="z-source z-toml"><span class="z-punctuation z-definition z-table z-begin z-toml">[</span><span class="z-meta z-tag z-table z-toml"><span class="z-entity z-name z-table z-toml">dependencies</span></span><span class="z-punctuation z-definition z-table z-end z-toml">]</span>
+<span class="z-meta z-tag z-key z-toml"><span class="z-entity z-name z-tag z-toml">nom</span></span> <span class="z-punctuation z-definition z-key-value z-toml">=</span> <span class="z-string z-quoted z-double z-basic z-toml"><span class="z-punctuation z-definition z-string z-begin z-toml">&quot;</span>4.2.0<span class="z-punctuation z-definition z-string z-end z-toml">&quot;</span></span>
+<span class="z-meta z-tag z-key z-toml"><span class="z-entity z-name z-tag z-toml">stdweb</span></span> <span class="z-punctuation z-definition z-key-value z-toml">=</span> <span class="z-string z-quoted z-double z-basic z-toml"><span class="z-punctuation z-definition z-string z-begin z-toml">&quot;</span>*<span class="z-punctuation z-definition z-string z-end z-toml">&quot;</span></span>
+</span></code></pre>
+<p>[lib]
+crate-type = [&quot;cdylib&quot;]
+{% end %}</p>
+<p>Then I moved main.rs to lib.rs, deleted the now unused main function and panic
+handler, and added an <code>js_export</code> attribute to the compile function.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">js_export</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-modifier z-rust">pub</span> <span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">compile</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-variable z-parameter z-rust">pando_code</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span><span class="z-storage z-type z-rust">str</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> String</span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-support z-function z-rust">generate_dot_file</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-support z-function z-rust">parse_pando</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>pando_code</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>Finally I created a super simple html file with a link to an <code>index.js</code> file:</p>
+<pre data-lang="html" class="language-html z-code"><code class="language-html" data-lang="html"><span class="z-text z-html z-basic"><span class="z-meta z-tag z-structure z-any z-html"><span class="z-punctuation z-definition z-tag z-begin z-html">&lt;</span><span class="z-entity z-name z-tag z-structure z-any z-html">html</span><span class="z-punctuation z-definition z-tag z-end z-html">&gt;</span></span>
+  <span class="z-meta z-tag z-structure z-any z-html"><span class="z-punctuation z-definition z-tag z-begin z-html">&lt;</span><span class="z-entity z-name z-tag z-structure z-any z-html">body</span><span class="z-punctuation z-definition z-tag z-end z-html">&gt;</span></span>
+    <span class="z-meta z-tag z-script z-begin z-html"><span class="z-punctuation z-definition z-tag z-begin z-html">&lt;</span><span class="z-entity z-name z-tag z-script z-html">script</span></span><span class="z-meta z-tag z-script z-begin z-html"> <span class="z-meta z-attribute-with-value z-html"><span class="z-entity z-other z-attribute-name z-html">src</span><span class="z-punctuation z-separator z-key-value z-html">=</span><span class="z-string z-quoted z-double z-html"><span class="z-punctuation z-definition z-string z-begin z-html">&quot;</span>./index.js<span class="z-punctuation z-definition z-string z-end z-html">&quot;</span></span></span><span class="z-punctuation z-definition z-tag z-end z-html">&gt;</span></span><span class="z-meta z-tag z-script z-end z-html"><span class="z-punctuation z-definition z-tag z-begin z-html">&lt;/</span><span class="z-entity z-name z-tag z-script z-html">script</span><span class="z-punctuation z-definition z-tag z-end z-html">&gt;</span></span>
+  <span class="z-meta z-tag z-structure z-any z-html"><span class="z-punctuation z-definition z-tag z-begin z-html">&lt;/</span><span class="z-entity z-name z-tag z-structure z-any z-html">body</span><span class="z-punctuation z-definition z-tag z-end z-html">&gt;</span></span>
+<span class="z-meta z-tag z-structure z-any z-html"><span class="z-punctuation z-definition z-tag z-begin z-html">&lt;/</span><span class="z-entity z-name z-tag z-structure z-any z-html">html</span><span class="z-punctuation z-definition z-tag z-end z-html">&gt;</span></span>
+</span></code></pre>
+<p>and created a javascript file which imports Viz.js, the compiled Pando binary,
+and renders a test svg to the screen:</p>
+<pre data-lang="js" class="language-js z-code"><code class="language-js" data-lang="js"><span class="z-source z-ts"><span class="z-meta z-import z-ts"><span class="z-keyword z-control z-import z-ts">import</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span><span class="z-variable z-other z-readwrite z-alias z-ts">compile</span><span class="z-punctuation z-definition z-block z-ts">}</span></span> <span class="z-keyword z-control z-from z-ts">from</span> <span class="z-string z-quoted z-double z-ts"><span class="z-punctuation z-definition z-string z-begin z-ts">&quot;</span>./PandoRust/Cargo.toml<span class="z-punctuation z-definition z-string z-end z-ts">&quot;</span></span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+<span class="z-meta z-import z-ts"><span class="z-keyword z-control z-import z-ts">import</span> <span class="z-variable z-other z-readwrite z-alias z-ts">Viz</span> <span class="z-keyword z-control z-from z-ts">from</span> <span class="z-string z-quoted z-double z-ts"><span class="z-punctuation z-definition z-string z-begin z-ts">&quot;</span>viz.js<span class="z-punctuation z-definition z-string z-end z-ts">&quot;</span></span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+<span class="z-meta z-import z-ts"><span class="z-keyword z-control z-import z-ts">import</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span> <span class="z-variable z-other z-readwrite z-alias z-ts">Module</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-variable z-other z-readwrite z-alias z-ts">render</span> <span class="z-punctuation z-definition z-block z-ts">}</span></span> <span class="z-keyword z-control z-from z-ts">from</span> <span class="z-string z-quoted z-single z-ts"><span class="z-punctuation z-definition z-string z-begin z-ts">&#39;</span>viz.js/full.render.js<span class="z-punctuation z-definition z-string z-end z-ts">&#39;</span></span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+<span class="z-meta z-import z-ts"><span class="z-keyword z-control z-import z-ts">import</span> <span class="z-string z-quoted z-double z-ts"><span class="z-punctuation z-definition z-string z-begin z-ts">&quot;</span>babel-polyfill<span class="z-punctuation z-definition z-string z-end z-ts">&quot;</span></span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+
+<span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">const</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-constant z-ts">viz</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-new z-expr z-ts"><span class="z-keyword z-operator z-new z-ts">new</span> <span class="z-entity z-name z-type z-ts">Viz</span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-objectliteral z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span> <span class="z-meta z-object z-member z-ts"><span class="z-variable z-other z-readwrite z-ts">Module</span></span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-meta z-object z-member z-ts"><span class="z-variable z-other z-readwrite z-ts">render</span> </span><span class="z-punctuation z-definition z-block z-ts">}</span></span><span class="z-meta z-brace z-round z-ts">)</span></span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+
+<span class="z-meta z-function z-ts"><span class="z-storage z-modifier z-async z-ts">async</span> <span class="z-storage z-type z-function z-ts">function</span> <span class="z-meta z-definition z-function z-ts"><span class="z-entity z-name z-function z-ts">renderGraph</span></span><span class="z-meta z-parameters z-ts"><span class="z-punctuation z-definition z-parameters z-begin z-ts">(</span><span class="z-punctuation z-definition z-parameters z-end z-ts">)</span></span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+  <span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">element</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-keyword z-control z-flow z-ts">await</span> <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">viz</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-entity z-name z-function z-ts">renderSVGElement</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-function-call z-ts"><span class="z-entity z-name z-function z-ts">compile</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-string z-quoted z-double z-ts"><span class="z-punctuation z-definition z-string z-begin z-ts">&quot;</span>x foo<span class="z-constant z-character z-escape z-ts">\n</span>&gt; bar [ F ]<span class="z-constant z-character z-escape z-ts">\n</span>- baz [ B ]<span class="z-punctuation z-definition z-string z-end z-ts">&quot;</span></span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-meta z-brace z-round z-ts">)</span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+  <span class="z-meta z-function-call z-ts"><span class="z-support z-variable z-dom z-ts">document</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-dom z-ts">body</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-dom z-ts">appendChild</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">element</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+<span class="z-punctuation z-definition z-block z-ts">}</span></span></span>
+
+<span class="z-meta z-function-call z-ts"><span class="z-entity z-name z-function z-ts">renderGraph</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+</span></code></pre>
+<p>After running the produced graph is identical to what I would have gotten from
+the command line version but in the browser.</p>
+<p><img src="https://kaylees.dev/trio/oak/day53-pando-in-the-browser/PandoInBrowser.PNG" alt="PandoInBrowser" /></p>
+<p>And thats it for today. Tomorrow I will look into modifying the Pando rust code
+to allow serializing modified todo trees back into the Pando file format.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day52-garbage-clearing&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day54-remove-pando-abbreviations&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

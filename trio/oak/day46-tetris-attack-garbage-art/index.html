@@ -1,0 +1,126 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day46 - Tetris Attack Garbage Art
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      I made more Tetris Attack art
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-24
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/./todo.svg" alt="Todo" /></p>
+<p>Today I worked on the art side for the Tetris Attack Garbage blocks. In
+principle this wasn't a super complicated task, but there was one interesting
+bit.</p>
+<p>Garbage blocks in Tetris Attack come in a couple of different varieties. They
+can be 3, 4, or 6 blocks wide, or full line with multiple blocks tall. For the
+one block tall versions, I basically just created a sprite for each one.</p>
+<p><img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/ThreeWideGarbage.png" alt="ThreeWideGarbage" />
+<img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/FourWideGarbage.png" alt="FourWideGarbage" />
+<img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/SingleLineGarbage.png" alt="SingleLineGarbage" /></p>
+<p>The multi line tall garbage blocks however are a little more complicated. For
+the double line block, I had to create a block by hand since the exclamation
+point has to be in the middle of the block. For blocks larger in size however I
+didn't want to create a texture for every single one, so instead I created a top
+block, middle block, double middle block, and bottom block which can be combined
+depending on the number and parity (even or odd) of lines the block covers.</p>
+<p>Simple double line looks like this:</p>
+<p><img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/TwoLineGarbage.png" alt="TwoLineGarbage" /></p>
+<p>But anything larger must be combined parts of other block types. For example a 4 tall block would be made of a top block, an even middle block and a bottom block like so:</p>
+<p><img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/TopLineGarbage.png" alt="TopLineGarbage" /></p>
+<p><img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/EvenMiddleLineGarbage.png" alt="EvenMiddleLineGarbage" /></p>
+<p><img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/BottomLineGarbage.png" alt="BottomLineGarbage" /></p>
+<p>Similarly a 5 block tall garbage would be built from a top block, middle block
+without an exclamation point, middle block with an exclamation point, middle
+block without an exclamation point, and a bottom block:</p>
+<p><img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/TopLineGarbage.png" alt="TopLineGarbage" /></p>
+<p><img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/MiddleLineGarbageNoExclamationPoint.png" alt="MiddleLineGarbageNoExclamationPoint" /></p>
+<p><img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/MiddleLineGarbage.png" alt="MiddleLineGarbage" /></p>
+<p><img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/MiddleLineGarbageNoExclamationPoint.png" alt="MiddleLineGarbageNoExclamationPoint" /></p>
+<p><img src="https://kaylees.dev/trio/oak/day46-tetris-attack-garbage-art/BottomLineGarbage.png" alt="BottomLineGarbage" /></p>
+<p>Repeating middle blocks can allow for any size garbage block, and drawing them
+this way with the exclamation point in the very center preserves the &quot;OH CRAP
+HOW BIG IS THAT&quot; mystery from the original game which I like.</p>
+<p>No coding today because I'm suuuuper slow at making pixel art, but this got a
+big chunk of the hard bit out of the way so that I can focus on the algorithms
+next time.</p>
+<p>Till tomorrow!<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day45-switch-to-webpack&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day47-garbage-rendering&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

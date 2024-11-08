@@ -1,0 +1,120 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="683pt" height="264pt" viewBox="0.00 0.00 683.35 264.00">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 260)">
+<title>%0</title>
+<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-260 679.3493,-260 679.3493,4 -4,4"/>
+<!-- EnsureDatHistoryDeleted -->
+<g id="node1" class="node">
+<title>EnsureDatHistoryDeleted</title>
+<polygon fill="none" stroke="#000000" points="202.4793,-219.5 202.4793,-255.5 373.5881,-255.5 373.5881,-219.5 202.4793,-219.5"/>
+<text text-anchor="start" x="210.4793" y="-233.3" font-family="Times,serif" font-size="14.00" fill="#000000">Ensure Dat History Deleted</text>
+</g>
+<!-- ImplementRayleighCorrection -->
+<g id="node3" class="node">
+<title>ImplementRayleighCorrection</title>
+<polygon fill="none" stroke="#000000" points="0,-146.5 0,-182.5 194.0674,-182.5 194.0674,-146.5 0,-146.5"/>
+<text text-anchor="start" x="8" y="-160.3" font-family="Times,serif" font-size="14.00" fill="#000000">Implement Rayleigh Correction</text>
+</g>
+<!-- EnsureDatHistoryDeleted&#45;&gt;ImplementRayleighCorrection -->
+<g id="edge1" class="edge">
+<title>EnsureDatHistoryDeleted-&gt;ImplementRayleighCorrection</title>
+<path fill="none" stroke="#000000" d="M240.8202,-219.4551C214.5344,-209.4087 181.6255,-196.8309 153.9267,-186.2445"/>
+<polygon fill="#000000" stroke="#000000" points="154.9566,-182.8912 144.366,-182.5904 152.4575,-189.4299 154.9566,-182.8912"/>
+</g>
+<!-- BuildBetterGreen -->
+<g id="node4" class="node">
+<title>BuildBetterGreen</title>
+<polygon fill="none" stroke="#000000" points="387.7728,-146.5 387.7728,-182.5 510.2946,-182.5 510.2946,-146.5 387.7728,-146.5"/>
+<text text-anchor="start" x="395.7728" y="-160.3" font-family="Times,serif" font-size="14.00" fill="#000000">Build Better Green</text>
+</g>
+<!-- EnsureDatHistoryDeleted&#45;&gt;BuildBetterGreen -->
+<g id="edge2" class="edge">
+<title>EnsureDatHistoryDeleted-&gt;BuildBetterGreen</title>
+<path fill="none" stroke="#000000" d="M327.8315,-219.4551C349.6016,-209.5841 376.7612,-197.2695 399.8493,-186.801"/>
+<polygon fill="#000000" stroke="#000000" points="401.4736,-189.9076 409.1358,-182.5904 398.5829,-183.5323 401.4736,-189.9076"/>
+</g>
+<!-- RenderChannelsasWell -->
+<g id="node5" class="node">
+<title>RenderChannelsasWell</title>
+<polygon fill="none" stroke="#000000" points="212.0852,-146.5 212.0852,-182.5 369.9822,-182.5 369.9822,-146.5 212.0852,-146.5"/>
+<text text-anchor="start" x="220.0852" y="-160.3" font-family="Times,serif" font-size="14.00" fill="#000000">Render Channels as Well</text>
+</g>
+<!-- EnsureDatHistoryDeleted&#45;&gt;RenderChannelsasWell -->
+<g id="edge3" class="edge">
+<title>EnsureDatHistoryDeleted-&gt;RenderChannelsasWell</title>
+<path fill="none" stroke="#000000" d="M288.7753,-219.4551C289.107,-211.3828 289.5059,-201.6764 289.8755,-192.6817"/>
+<polygon fill="#000000" stroke="#000000" points="293.3766,-192.7257 290.2903,-182.5904 286.3825,-192.4382 293.3766,-192.7257"/>
+</g>
+<!-- SpikeDesktopUpdater -->
+<g id="node2" class="node">
+<title>SpikeDesktopUpdater</title>
+<polygon fill="none" stroke="#000000" points="528.7181,-146.5 528.7181,-182.5 675.3493,-182.5 675.3493,-146.5 528.7181,-146.5"/>
+<text text-anchor="start" x="536.7181" y="-160.3" font-family="Times,serif" font-size="14.00" fill="#000000">Spike Desktop Updater</text>
+</g>
+<!-- BuildDesktopUI -->
+<g id="node7" class="node">
+<title>BuildDesktopUI</title>
+<polygon fill="none" stroke="#000000" points="396.263,-73.5 396.263,-109.5 511.8044,-109.5 511.8044,-73.5 396.263,-73.5"/>
+<text text-anchor="start" x="404.263" y="-87.3" font-family="Times,serif" font-size="14.00" fill="#000000">Build Desktop UI</text>
+</g>
+<!-- SpikeDesktopUpdater&#45;&gt;BuildDesktopUI -->
+<g id="edge4" class="edge">
+<title>SpikeDesktopUpdater-&gt;BuildDesktopUI</title>
+<path fill="none" stroke="#000000" d="M565.4494,-146.4551C545.615,-136.6719 520.914,-124.4883 499.8135,-114.0806"/>
+<polygon fill="#000000" stroke="#000000" points="501.2267,-110.8751 490.71,-109.5904 498.1302,-117.1529 501.2267,-110.8751"/>
+</g>
+<!-- AllowHttpDownload -->
+<g id="node10" class="node">
+<title>AllowHttpDownload</title>
+<polygon fill="none" stroke="#000000" points="531.4334,-73.5 531.4334,-109.5 672.634,-109.5 672.634,-73.5 531.4334,-73.5"/>
+<text text-anchor="start" x="539.4334" y="-87.3" font-family="Times,serif" font-size="14.00" fill="#000000">Allow Http Download</text>
+</g>
+<!-- SpikeDesktopUpdater&#45;&gt;AllowHttpDownload -->
+<g id="edge5" class="edge">
+<title>SpikeDesktopUpdater-&gt;AllowHttpDownload</title>
+<path fill="none" stroke="#000000" d="M602.0337,-146.4551C602.0337,-138.3828 602.0337,-128.6764 602.0337,-119.6817"/>
+<polygon fill="#000000" stroke="#000000" points="605.5338,-119.5903 602.0337,-109.5904 598.5338,-119.5904 605.5338,-119.5903"/>
+</g>
+<!-- RenderforbothSatellites -->
+<g id="node6" class="node">
+<title>RenderforbothSatellites</title>
+<polygon fill="none" stroke="#000000" points="214.3026,-73.5 214.3026,-109.5 373.7648,-109.5 373.7648,-73.5 214.3026,-73.5"/>
+<text text-anchor="start" x="222.3026" y="-87.3" font-family="Times,serif" font-size="14.00" fill="#000000">Render for both Satellites</text>
+</g>
+<!-- RenderChannelsasWell&#45;&gt;RenderforbothSatellites -->
+<g id="edge6" class="edge">
+<title>RenderChannelsasWell-&gt;RenderforbothSatellites</title>
+<path fill="none" stroke="#000000" d="M291.7753,-146.4551C292.107,-138.3828 292.5059,-128.6764 292.8755,-119.6817"/>
+<polygon fill="#000000" stroke="#000000" points="296.3766,-119.7257 293.2903,-109.5904 289.3825,-119.4382 296.3766,-119.7257"/>
+</g>
+<!-- AddSatelliteSelector -->
+<g id="node8" class="node">
+<title>AddSatelliteSelector</title>
+<polygon fill="none" stroke="#000000" points="302.6066,-.5 302.6066,-36.5 441.4608,-36.5 441.4608,-.5 302.6066,-.5"/>
+<text text-anchor="start" x="310.6066" y="-14.3" font-family="Times,serif" font-size="14.00" fill="#000000">Add Satellite Selector</text>
+</g>
+<!-- RenderforbothSatellites&#45;&gt;AddSatelliteSelector -->
+<g id="edge7" class="edge">
+<title>RenderforbothSatellites-&gt;AddSatelliteSelector</title>
+<path fill="none" stroke="#000000" d="M313.3146,-73.4551C322.971,-64.4177 334.8161,-53.3319 345.3321,-43.4899"/>
+<polygon fill="#000000" stroke="#000000" points="347.7947,-45.979 352.7043,-36.5904 343.0114,-40.8681 347.7947,-45.979"/>
+</g>
+<!-- BuildDesktopUI&#45;&gt;AddSatelliteSelector -->
+<g id="edge8" class="edge">
+<title>BuildDesktopUI-&gt;AddSatelliteSelector</title>
+<path fill="none" stroke="#000000" d="M433.764,-73.4551C423.6125,-64.4177 411.1599,-53.3319 400.1046,-43.4899"/>
+<polygon fill="#000000" stroke="#000000" points="402.1507,-40.6255 392.3544,-36.5904 397.4962,-45.8539 402.1507,-40.6255"/>
+</g>
+<!-- ProcessHimawari -->
+<g id="node9" class="node">
+<title>ProcessHimawari</title>
+<polygon fill="none" stroke="#000000" points="391.9155,-219.5 391.9155,-255.5 510.1519,-255.5 510.1519,-219.5 391.9155,-219.5"/>
+<text text-anchor="start" x="399.9155" y="-233.3" font-family="Times,serif" font-size="14.00" fill="#000000">Process Himawari</text>
+</g>
+<!-- ProcessHimawari&#45;&gt;BuildBetterGreen -->
+<g id="edge9" class="edge">
+<title>ProcessHimawari-&gt;BuildBetterGreen</title>
+<path fill="none" stroke="#000000" d="M450.5393,-219.4551C450.3182,-211.3828 450.0522,-201.6764 449.8058,-192.6817"/>
+<polygon fill="#000000" stroke="#000000" points="453.302,-192.4907 449.5293,-182.5904 446.3046,-192.6825 453.302,-192.4907"/>
+</g>
+</g>
+</svg>

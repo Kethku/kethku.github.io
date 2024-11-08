@@ -1,0 +1,203 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day14 - Blog Style Updates
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Improve Syntax Highlighting and Comments
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-20
+    
+    
+      <br>
+      <a href="../../hemlock/projects/blog/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day14-blog-style-updates/./todo.svg" alt="Todo" /></p>
+<p>Today was another random website improvements day, so its going to be a bit
+light on actual blog content. I have had on my list for a while now, to rework
+the syntax highlighting and improve the experience on mobile. As it turns out,
+the two issues were related. Previously I had attempted to improve the mobile
+site by adding the following to the base site template:</p>
+<pre>
+  <code class="language-en">&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, user-scalable=false&quot;&gt;</code>
+</pre>
+<p>This made things somewhat better, but the content was still pushed to the left
+side of the screen on some pages. After some fumbling about I eventually
+discovered the reason for it was that long code lines were pushing the size of
+the page to be wider than the main content width.</p>
+<h2 id="syntax-highlighting">Syntax Highlighting</h2>
+<p>Unfortunately the default syntax highlighting in
+<a href="https://www.getzola.org/">Zola</a> simply uses a <code>pre</code> tag with the code formatted
+inside. This doesn't give me sufficient control over the styling and in general
+leaves a bunch to be desired. So I decided to replace the default highlighting
+with
+<a href="https://prismjs.com/download.html#themes=prism&amp;languages=markup+css+clike+javascript">Prism</a>.
+This was pretty simple, and just required configuring the language list on the
+download page (I checked all the things), picking a theme, and downloading both
+the style sheet and the JavaScript file and referencing them in the base
+template.</p>
+<pre>
+  <code class="language-en">&lt;head&gt;
+  &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, user-scalable=false&quot;&gt;
+  &lt;link href=&quot;https:&#x2F;&#x2F;fonts.googleapis.com&#x2F;css?family=Roboto&quot; rel=&quot;stylesheet&quot;&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;https:&#x2F;&#x2F;unpkg.com&#x2F;basic-css-typography-reset@1.0.0&#x2F;typography.min.css&quot;&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;{{ get_url(path=&quot;&#x2F;style.css&quot;) }}&quot;&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;{{ get_url(path=&quot;&#x2F;prism.css&quot;) }}&quot;&gt;
+  {% block head %}{% endblock head %}
+  &lt;title&gt;02Credits {% block title %}{% endblock title %}&lt;&#x2F;title&gt;
+&lt;&#x2F;head&gt;</code>
+</pre>
+<p>Unfortunately I also needed to change the method of adding code tags. Instead of
+using the normal markdown strategy:</p>
+<pre>
+  <code class="language-en">``` Language
+```</code>
+</pre>
+<p>I needed to switch to a hand written &quot;shortcode&quot; which is a way of embedding
+templates directly into the post markdown. To enable it I adding a <code>code.html</code>
+file to the <code>templates/shortcodes/</code> folder in the site source with this content:</p>
+<pre>
+  <code class="language-en">&lt;pre&gt;
+  &lt;code{% if lang %} class=&quot;language-{{lang}}&quot;{% else %} class=&quot;language-text&quot;{% endif %}&gt;{{ body }}&lt;&#x2F;code&gt;
+&lt;&#x2F;pre&gt;</code>
+</pre>
+<p>Then anywhere I needed to add some source I can use the shortcode like so:</p>
+<pre>
+<code class="language-markdown">{% code(lang="javascript") %}
+console.log("Hello World!");
+{% end %}
+</code>
+</pre>
+<p>This works great, however the code is left aligned on the screen. So I decided
+to take the opportunity to make things a little more fancy as well with these
+style changes:</p>
+<pre>
+  <code class="language-en">pre {
+    display: flex;
+}
+
+pre code {
+    flex-grow: 100;
+    text-align: left;
+    max-width: 8.5in;
+    margin-left: auto;
+    margin-right: auto;
+}</code>
+</pre>
+<p>This causes the content of the highlighted code to line up with the main content
+column, but cause the background to stretch to the edges of the screen as you
+can see above. Much nicer, and works on mobile. Two in one!</p>
+<h2 id="comments">Comments</h2>
+<p>While I was working on the site format, I also decided to add a comment service
+to the page. Recently I saw a link to <a href="https://commento.io/">Commento</a> which
+bills itself as a more privacy focused comment competitor for the popular
+Disqus. As the site rightfully points out, with free products, you aren't the
+customer. Instead you are the product. So I gladly dished out the $5
+subscription fee (its actually pay what you want, but I picked $5) to add
+comments to the blog!</p>
+<p>Following the instructions on the site, I added this snippet to the page
+template:</p>
+<pre>
+  <code class="language-en">&lt;div id=&quot;commento&quot;&gt;&lt;&#x2F;div&gt;
+&lt;script src=&quot;https:&#x2F;&#x2F;cdn.commento.io&#x2F;js&#x2F;commento.js&quot;&gt;&lt;&#x2F;script&gt;</code>
+</pre>
+<p>And a few style fiddlings later and everything was working great!</p>
+<h2 id="image-size">Image Size</h2>
+<p>Lastly I noticed that the todo list images tend to grow past the edge of the
+content and screen, so I employed a trick to make sure the image is always
+visible, but not too big.</p>
+<pre>
+  <code class="language-en">img {
+    max-width: 100vw;
+}
+
+@media (min-width: 8.5in) {
+    img {
+        max-width: 8.5in;
+    }
+}</code>
+</pre>
+<p>The idea is to use the <code>@media</code> query to change the max-width rule when the size
+is over the 8.5 inch max content size. This way over 8.5 inches, the image is
+locked to 8.5 inches, but below the limit, the image maxes out to the screen
+width. Pretty simple, but effective and really improves the feel of the site.</p>
+<p>Hopefully these changes make the blog more readable and easy to use. I'm going
+to give it a few days, but I think the blog is getting close to public facing! I
+may start pushing it more to friends and family and posting on Show Hacker News.
+We'll see.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day13-rusty-mandelbrot&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day15-8bomb-physics&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

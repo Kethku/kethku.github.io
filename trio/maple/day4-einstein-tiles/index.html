@@ -1,0 +1,164 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Maple
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;">Maple</a>
+
+Day4 - Einstein Tiles
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Playing around with Einstein Tiles and 3d Printing
+    </h2>
+    
+    
+    <p>
+    
+      2023-03-27
+    
+    
+    </p>
+    
+  </summary>
+  <blockquote>
+<p>This stop on the maple Path looks rushed and scattered.
+Unlike the other resting spaces this one is barely a stop
+at all. There are some scattered sheets of paper and some
+strange looking wooden tiles in the shape of a hat.</p>
+</blockquote>
+<p>Yesterday I got distracted 3d printing the new aperiodic
+tile on the block and playing the Diablo 4 beta so I didn't
+get the chance to post anything. So today I will summarize
+what I learned and potentially do a second post a little
+later.</p>
+<h2 id="einstein-tiles">Einstein Tiles</h2>
+<p><img src="https://kaylees.dev/trio/maple/day4-einstein-tiles/Tiling.png" alt="Tiling" /></p>
+<p>Earlier this week my brother Rain sent me a link to an
+article talking about a recent discovery of an aperiodic
+monotile called an Einstein tile. Along with the link, he
+demanded that I print &quot;many of them in a bunch of colors so
+that I can pay with them&quot;. Naturally I jumped to it and
+ordered some color changing filament.</p>
+<p>With a quick search online I found a 3d model of the tile
+that had a nifty curving path on top. The tile had the same
+design on the bottom though which I figured would cause some
+print quality issues, so I sliced it in half and sent it to
+my printer. It turns out this was a mistake.</p>
+<p>I printed about 20 of the tiles all in the same orientation
+using the color changing filament but for the life of me I
+couldn't figure out how to get the tiles to fit together. No
+matter how I tried, there were always contradictions that
+made them fit poorly.</p>
+<h2 id="digging-a-little-deeper">Digging a Little Deeper</h2>
+<p>Eventually I realized that this monotile tiles infinitely
+only if you can flip the tile over. I later discovered by
+skimming the paper that the proof for the infinite tiling
+depends on constructing 4 different &quot;meta tiles&quot; out of the
+basic hat tile. They are as follows:</p>
+<p><img src="https://kaylees.dev/trio/maple/day4-einstein-tiles/MetaTiles.jpg" alt="MetaTiles" /></p>
+<p>Of note is the triangle meta tile which is the only one
+which contains a reflected tile in the center. I didn't
+spend the time to fully understand the paper, but I <em>think</em>
+the proportion of standard tiles to reflected tiles is
+roughly 1 to 9 but I'm not positive.</p>
+<p>With my new found knowledge, I printed a couple of the
+reflected tiles which enabled me to tile them all together.</p>
+<p><img src="https://kaylees.dev/trio/maple/day4-einstein-tiles/PrintedTiles.jpg" alt="Printed Tiles" /></p>
+<h2 id="some-possible-improvements">Some Possible Improvements</h2>
+<p>Although I like the squiggly path over the tile I found
+online, I dislike that the pattern doesn't give any hints
+about how to properly construct the tiling. Ideally the
+pattern on the tile could help you hook up the larger tile
+combinations like the pinwheel and the larger triangle.
+Bonus points if the larger structure is revealed from the
+pattern.</p>
+<p>To explain my thinking, its important to recognize the where
+the structure of the hat monotile comes from. It is a type
+of polygon called a polykite meaning its a shape constructed
+from smaller kites.</p>
+<p><img src="https://kaylees.dev/trio/maple/day4-einstein-tiles/PolyKite.png" alt="Polykite" /></p>
+<p>The path in the original model drew lines from the sides of
+the shape which corresponded with a long edge of one of the
+internal kites. This optimizes for thicker lines with more
+room to work with, but isn't ideal for revealing the meta
+tiles because the most important meta tile for the structure
+is the pinwheel one made of 6 standard tiles. They meet in
+the center with the short edges of the kite rather than the
+long edge.</p>
+<p>If the paths between tiles joined the short edge, then that
+crucial point in the center would be highlighted because it
+would be a single tight circle where as the rest of the
+paths would meander at least a little bit before closing.
+The reflected tile could also contain a special pattern
+which has a similar circle in the center to highlight it's
+importance in the structure.</p>
+<p>With those two reference points I imagine it would be much
+easier to construct the larger meta tiles and assemble them
+into a tiling of whatever size you would like. But for now
+I've left that as an exercise for some other time when I
+have patience enough to open some modeling software.</p>
+<p>Till Tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day3-rust-gpu&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day5-quad-shader&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

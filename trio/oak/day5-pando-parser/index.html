@@ -1,0 +1,246 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day5 - Pando Parser
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Parsing the Pando todo file format
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-11
+    
+    
+      <br>
+      <a href="../../hemlock/projects/pando/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day5-pando-parser/./output.svg" alt="Output" /></p>
+<p>Lets get to coding. Today I'd like to get started with the todo format parser.
+In contrast to Okeydokey where the file format is simple enough to parse and
+manipulate, the format for Pando is information dense. Since we will be
+compiling it to the DOT format, it would be a good idea to use a more principled
+approach. To that end I have decided to use <a href="https://github.com/Geal/nom">nom</a>
+which is a parser combinator library.</p>
+<p>I'm no expert in parsers, but my understanding is that parser combinators are a
+different branch in the taxonomy of parser libraries from Lex and Yacc. Where
+Lex and Yacc describe the desired format in a domain specific language for
+grammars, parser combinator libraries are built up with combinator functions
+which are composed to consume a data stream.</p>
+<p>In the case of nom, a large library of macros are provided for producing new
+combinator function out old ones. So the complicated job of parsing an entire
+file format turns into a collection of the simpler tasks of parsing portions of
+the file format.</p>
+<p>For example, in the Pando specification (see yesterday's post on
+<a href="../day4-pando/">Pando</a> for more details) there are 3 parts of a todo item: the
+status bullet, the identifier, and the dependencies list. We will implement
+parsers for each. We will then combine the combinators in a future post.</p>
+<h2 id="status">Status</h2>
+<pre>
+  <code class="language-en">- Command Line [ IP, DG ]
+^</code>
+</pre>
+<p>The status bullet determines whether the described task is Completed, In
+Progress, or Waiting.</p>
+<pre>
+  <code class="language-en">#[derive(Debug, PartialEq)]
+enum TaskStatus {
+    Completed,
+    InProgress,
+    Waiting
+}
+
+named!(parse_status&lt;CompleteStr, TaskStatus&gt;,
+    alt!(map!(tag!(&quot;x&quot;), |_| TaskStatus::Completed) |
+         map!(tag!(&quot;&gt;&quot;), |_| TaskStatus::InProgress) |
+         map!(tag!(&quot;-&quot;), |_| TaskStatus::Waiting)));</code>
+</pre>
+<p>This code reads pretty much as you might expect. Each <code>tag!</code> macro takes a
+string indicating what to match. The <code>map!</code> macro takes the result of a
+successful match and runs it through the past in lambda, in this case we use the
+lambda to return the enum version of the token. <code>alt!</code> tries each of it's
+arguments in sequence proceeding to the next one when a given argument fails to
+parse the input. Lastly, <code>named!</code> wraps the passed in combinators in a function
+threading the input type (in this case CompleteStr, more on this type later. For
+now, think of CompleteStr as a small wrapper over &amp;str) through each combinator.
+The type parameters specify the expected input and output types.</p>
+<p>Calling the combinator we just made is pretty self explanatory.</p>
+<pre>
+  <code class="language-en">#[test]
+fn parse_status_works() {
+    assert_eq!(parse_status(CompleteStr(&quot;x&quot;)), Ok((CompleteStr(&quot;&quot;), TaskStatus::Completed)));
+    assert_eq!(parse_status(CompleteStr(&quot;&gt;&quot;)), Ok((CompleteStr(&quot;&quot;), TaskStatus::InProgress)));
+    assert_eq!(parse_status(CompleteStr(&quot;-&quot;)), Ok((CompleteStr(&quot;&quot;), TaskStatus::Waiting)));
+}</code>
+</pre>
+<p>Every combinator returns a <code>Result&lt;(I, O), E&gt;</code> where <code>I</code> is the remaining input
+to be parsed, <code>O</code> is the output of the combinator, and <code>E</code> is the nom error
+type. So in the case of the test we expect an empty string remaining, and the
+enum value.</p>
+<h2 id="identifier">Identifier</h2>
+<pre>
+  <code class="language-en">- Command Line [ IP, DG ]
+  ^^^^^^^^^^^^</code>
+</pre>
+<p>The identifier is used in the output format and as the basis for the dependency abbreviations</p>
+<pre>
+  <code class="language-en">named!(parse_identifier&lt;CompleteStr, &amp;str&gt;, map!(is_not!(&quot;[\n&quot;), |id| id.trim()));</code>
+</pre>
+<p>The identifier parser is simpler. Moving from the inside out, <code>is_not!</code> matches
+the longest stream of characters which do not contain any of the characters in
+the input stream. In our case, since the dependencies of a task are optional, we
+want to match any character that is not the start of a dependency list or the
+end of a line. Moving outward, <code>map!</code> is used this time to trim the white-space
+around the string. Note: technically the string being parsed and produced is a
+<code>CompleteStr</code> however since <code>CompleteStr</code> impls <code>Deref</code> to <code>&amp;str</code> we still have
+access to the <code>trim</code> function. Finally <code>named!</code> wraps the combinators in a
+function.</p>
+<h2 id="dependencies">Dependencies</h2>
+<pre>
+  <code class="language-en">- Command Line [ IP, DG ]
+               ^^^^^^^^^^</code>
+</pre>
+<p>The dependencies list is used to describe what tasks must finish before this
+one. </p>
+<pre>
+  <code class="language-en">named!(parse_dependencies&lt;CompleteStr, Vec&lt;&amp;str&gt; &gt;,
+    map!(opt!(complete!(delimited!(
+        char!(&#x27;[&#x27;),
+        separated_list!(char!(&#x27;,&#x27;), map!(is_not!(&quot;,]&quot;), |dep| dep.trim())),
+        char!(&#x27;]&#x27;)))),
+    |deps| deps.unwrap_or(Vec::new())));</code>
+</pre>
+<p>The dependency parser was the most difficult to get right. I will describe the
+operators and then give my theory for why they were required. I feel strongly
+that this section could be done simpler... but this is as good as I could figure
+out.</p>
+<p>Moving from the inside out again, <code>map!(is_not!(&quot;,]&quot;), |dep| dep.trim())</code> parses
+any dependency abbreviation. We know that an abbreviation must either be
+followed by a <code>,</code> or a <code>]</code> since the abbreviations are in the list structure. So
+we can play the same trick as we did with the identifier, and match everything
+including white space, but then trim the result.</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F; fn dependency(input: CompleteStr) -&gt; &amp;str
+map!(is_not!(&quot;,]&quot;), |dep| dep.trim())</code>
+</pre>
+<p><code>separated_list!</code> takes a separator parser, and an item parser. In our case, the
+separator is the single character <code>,</code> so we use the <code>char!(',')</code> parser to match
+it. This returns a list of the results we produced in the dependency item
+parser.</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F; fn dependencies(input: CompleteStr) -&gt; Vec&lt;&amp;str&gt;
+separated_list!(char!(&#x27;,&#x27;), map!(is_not!(&quot;,]&quot;), |dep| dep.trim()))</code>
+</pre>
+<p><code>delimited!</code> takes 3 arguments, a leading delimiter parser, a body parser, and a
+trailing delimiter parser. Conveniently the only result is the body so we don't
+have to do a further map here. </p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F; fn dependency_list(input: CompleteStr) -&gt; Vec&lt;&amp;str&gt;
+delimited!(
+    char!(&#x27;[&#x27;),
+    separated_list!(char!(&#x27;,&#x27;), map!(is_not!(&quot;,]&quot;), |dep| dep.trim())),
+    char!(&#x27;]&#x27;)),</code>
+</pre>
+<p><code>opt!</code> modifies a parser to return an <code>Option</code> and succeed if the the parser
+fails, but return <code>None</code> instead. Here we need to play a trick however and use
+the <code>complete!</code> combinator to tell nom that the input passed into the
+<code>dependency_list</code> block is all of the values, so fail instead of returning the
+<code>Incomplete</code> error. Nom was written originally for parsing data streams, not
+necessarily text. In that domain frequently parsing an incomplete data source
+may result in incorrect data, so Nom has many guards in place to try to ensure
+failure on incomplete results whenever possible. For our task however this is
+only a distraction which we solve with the <code>CompleteStr</code> input type and
+<code>complete!</code> combinator.</p>
+<pre>
+  <code class="language-en">opt!(complete!(delimited!(
+    char!(&#x27;[&#x27;),
+    separated_list!(char!(&#x27;,&#x27;), map!(is_not!(&quot;,]&quot;), |dep| dep.trim())),
+    char!(&#x27;]&#x27;))))</code>
+</pre>
+<p>Finally since the resulting type is now incorrect, we must correct it to return
+an empty list of dependencies when no dependency list is specified. This is
+handled simply with <code>map!</code>. <code>unwrap_or</code> is used to provide a default value if
+the parser would have returned None.</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F; fn optional_dependency_list(input: CompleteStr) -&gt; Option&lt;Vec&lt;&amp;str&gt;&gt;
+map!(opt!(complete!(delimited!(
+    char!(&#x27;[&#x27;),
+    separated_list!(char!(&#x27;,&#x27;), map!(is_not!(&quot;,]&quot;), |dep| dep.trim())),
+    char!(&#x27;]&#x27;)))),
+|deps| deps.unwrap_or(Vec::new())));</code>
+</pre>
+<p>Today was a long one. And again, its 1:55am my time, so I will wrap it up here.
+Next time I will finish up the parser and possibly look into the DOT generator.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day4-pando&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day6-pando-parser-completed&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

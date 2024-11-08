@@ -1,0 +1,196 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Maple
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;">Maple</a>
+
+Day1 - Everydays
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Reintro to Everydays
+    </h2>
+    
+    
+    <p>
+    
+      2023-03-23
+    
+    
+      <br>
+      <a href="../../hemlock/projects/blog/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <blockquote>
+<p>A makeshift platform made out of boards and cordage is
+attached around one of the Maple's branches. There is a
+sketchy rope ladder hanging down from a branch higher up.
+Looking through the canopy you can make out that it
+connects to one of the Oak's branches a ways out and then
+higher up into the Hemlock.</p>
+<p>Placed at the edge of the platform is a rough lectern with
+a sheet of paper. On that paper is a rough plan for how
+the Maple will be developed and molded over time. The
+basic idea is there but many details need to be filled in.</p>
+</blockquote>
+<p>Here goes nothing.</p>
+<p>I'm back on my writing again. There are a couple reasons I'm
+trying to write consistently. One is that I'm currently
+without a job (hit me up on twitter @Kethku if you're
+interested in hiring me). Another is that I'm feeling
+drained.</p>
+<p>Politics are scary, my life is chaotic and unorganized, and
+it is becoming gradually harder to make progress on the
+things that used to bring me joy. The last time I felt this
+way I got a lot of value out of the every day blog posting.
+I hope that by using this as a forcing function I might be
+able to capture some of that excitement again. We will see.</p>
+<h2 id="the-blog-world-building">The Blog - World Building</h2>
+<p>This time around I'm doing things a little differently. I
+have this idea of a site that you can visit and interact
+with. One where you can see other people visit as well. That
+combined with a new interest in TTRPGs has lead to the
+current incarnation of the site. I want my website to be
+something you can explore and I want to use it as a place to
+play around with more creative writing.</p>
+<p>So the site has a new coat of paint. Right now everything is
+static, but eventually I would like to build a multi user
+dungeon on top of it that feels more live. Even without
+those dynamic features, I think its an interesting take I
+haven't seen before.</p>
+<p>At the moment its pretty abstract but I think with each post
+I want to iterate on it and at least expand the places you
+can explore. I suspect there may be some daily posts about
+implementing the dynamic pieces, but we'll see where it
+takes me. As it stands today, the older posts can be found
+in <a href="https://kaylees.dev/trio/oak/">The Oak</a> so you can scrub through and
+read those if you like. New posts will show up in <a href="https://kaylees.dev/trio/maple/">The
+Maple</a>.</p>
+<h2 id="build-and-publish-github-action">Build and Publish Github Action</h2>
+<p>This time around I've also done some work to automate the
+publishing process. When I first wrote my post, I didn't
+understand the ci build system in github that well. I also
+think it was pretty new. These days though its the way to go
+for publishing github sites. There are even off the shelf
+actions you can use to build and deploy zola sites without
+compiling them locally.</p>
+<p>The previous setup used two repositories, one for the source
+code which contained all of the markdown content and scripts
+for building things, and the other which was the github.io
+repo containing the built html pages. I previously used
+<a href="https://kaylees.dev/trio/hemlock/projects/okeydokey/">okeydokey</a> to automate
+building of the content, copying it to the publish repo, and
+pushing it up in individual commits. This worked ok but
+meant abusing git for something it wasn't made for.</p>
+<p>Now I have a simple <code>publish.yml</code> script which builds and
+pushes the new content to a gh-pages branch so I don't ever
+have to touch it. Its continuously deployed whenever I push
+anything to main. I write markdown, push it up, and a few
+minutes later the change is live ezpz.</p>
+<pre data-lang="yml" class="language-yml z-code"><code class="language-yml" data-lang="yml"><span class="z-source z-yaml"><span class="z-comment z-line z-number-sign z-yaml"><span class="z-punctuation z-definition z-comment z-line z-number-sign z-yaml">#</span> On every push this script is executed
+</span><span class="z-constant z-language z-boolean z-yaml">on</span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span> <span class="z-string z-unquoted z-plain z-out z-yaml">push</span>
+<span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">name</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span> <span class="z-string z-unquoted z-plain z-out z-yaml">Build and deploy GH Pages</span>
+<span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">jobs</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span>
+  <span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">build</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span>
+    <span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">runs-on</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span> <span class="z-string z-unquoted z-plain z-out z-yaml">ubuntu-latest</span>
+    <span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">if</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span> <span class="z-string z-unquoted z-plain z-out z-yaml">github.ref == &#39;refs/heads/main&#39;</span>
+    <span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">steps</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span>
+      <span class="z-punctuation z-definition z-block z-sequence z-item z-yaml">-</span> <span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">name</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span> <span class="z-string z-unquoted z-plain z-out z-yaml">checkout</span>
+        <span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">uses</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span> <span class="z-string z-unquoted z-plain z-out z-yaml">actions/checkout@v3.0.0</span>
+      <span class="z-punctuation z-definition z-block z-sequence z-item z-yaml">-</span> <span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">name</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span> <span class="z-string z-unquoted z-plain z-out z-yaml">build_and_deploy</span>
+        <span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">uses</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span> <span class="z-string z-unquoted z-plain z-out z-yaml">shalzz/zola-deploy-action@v0.16.1-1</span>
+        <span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">env</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span>
+          <span class="z-comment z-line z-number-sign z-yaml"><span class="z-punctuation z-definition z-comment z-line z-number-sign z-yaml">#</span> Target branch
+</span>          <span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">PAGES_BRANCH</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span> <span class="z-string z-unquoted z-plain z-out z-yaml">gh-pages</span>
+          <span class="z-comment z-line z-number-sign z-yaml"><span class="z-punctuation z-definition z-comment z-line z-number-sign z-yaml">#</span> Provide personal access token
+</span>          <span class="z-string z-unquoted z-plain z-out z-yaml"><span class="z-entity z-name z-tag z-yaml">TOKEN</span></span><span class="z-punctuation z-separator z-key-value z-mapping z-yaml">:</span> <span class="z-string z-unquoted z-plain z-out z-yaml">${{ secrets.GITHUB_TOKEN }}</span>
+</span></code></pre>
+<p>I will likely automate the creation of new post templates
+similar to what I had with the old site but for now this is
+easy enough. I'm pretty pleased with the setup and that the
+decision to use zola 4 years ago has held up.</p>
+<h2 id="relative-links">Relative Links</h2>
+<p>The other big change aside from moving content around and
+updating names #trans-things was to change the links to be
+relative. I've update the url to from the old site to a new
+domain <code>kaylees.dev</code>. Doing so broke a ton of links which
+were hard coded to the old url. A quick look at the zola
+docs showed that you can get build time checked relative
+links by using <code>[Link Text](@/relative/path/from/site/root)</code>
+which is great as it looks up the published root url and
+swaps the relative path out for the final built url.</p>
+<p>I believe I had avoided this approach in the past because it
+was a zola specific hack, but at this point I don't think
+zola is going anywhere and even if it did it wasn't that
+hard to fix the urls this time. So for now at least I'm
+going with this approach.</p>
+<p>Next up for the blog I am hoping to update my current
+iteration of pando to produce todo trees like I had with the
+old blog.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a id="first-nav">First Post!</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day2-blog-planning&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

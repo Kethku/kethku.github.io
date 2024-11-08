@@ -1,0 +1,242 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Maple
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;">Maple</a>
+
+Day14 - Text Rendering
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Finally figured out the text rendering issues
+    </h2>
+    
+    
+    <p>
+    
+      2023-04-10
+    
+    
+    </p>
+    
+  </summary>
+  <p>I have finally figured out the remaining issues with the
+text rendering. Most of them were some typos and mistakes on
+my part, but some were some strange gotchas with the output
+from swash that threw me for a loop. However its very late
+today, so I'm going to just list the issues here for future
+reference and call it a day.</p>
+<h2 id="1-atlas-size-wasn-t-used-for-the-atlas-textures">1. ATLAS_SIZE wasn't used for the atlas textures</h2>
+<p>This was straight forward. I was defining the atlas for
+glyphs with size <code>1000x1000</code> rather than by using the
+constant set to <code>1024x1024</code>. This led to the weirdly offset
+glyphs.</p>
+<h2 id="2-swash-images-have-a-left-and-top-value-i-was-ignoring">2. Swash images have a left and top value I was ignoring</h2>
+<p>Swash returns an <code>Image</code> struct which has a placement on it
+containing the expected width/height and a left/top in it.
+Not only was I not using the left/top values, but they are
+also defined with an upward facing coordinate system rather
+than the top to bottom coordinates I was expecting from most
+graphics systems.</p>
+<p>So where I declared the glyph instance object to upload to
+the gpu, I needed to convert the left/top offset using the
+width/height in the placement and add that to the
+bottom_left coordinate of the glyph.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> Add the glyph to instances
+</span><span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>glyphs<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">push</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>InstancedGlyph <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    bottom_left<span class="z-punctuation z-separator z-rust">:</span> bottom_left
+        <span class="z-keyword z-operator z-arithmetic z-rust">+</span> <span class="z-support z-function z-rust">vec2</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>
+            placement<span class="z-punctuation z-accessor z-dot z-rust">.</span>left <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">,</span>
+            placement<span class="z-punctuation z-accessor z-dot z-rust">.</span>height <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span> <span class="z-keyword z-operator z-arithmetic z-rust">-</span> placement<span class="z-punctuation z-accessor z-dot z-rust">.</span>top <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">,</span>
+        </span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    atlas_top_left<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-function z-rust">vec2</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>
+        allocation_rectangle<span class="z-punctuation z-accessor z-dot z-rust">.</span>min<span class="z-punctuation z-accessor z-dot z-rust">.</span>x <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">,</span>
+        allocation_rectangle<span class="z-punctuation z-accessor z-dot z-rust">.</span>min<span class="z-punctuation z-accessor z-dot z-rust">.</span>y <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">,</span>
+    </span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    atlas_size<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-function z-rust">vec2</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>placement<span class="z-punctuation z-accessor z-dot z-rust">.</span>width <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-separator z-rust">,</span> placement<span class="z-punctuation z-accessor z-dot z-rust">.</span>height <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">f32</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    _padding<span class="z-punctuation z-separator z-rust">:</span> <span class="z-support z-type z-rust">Default</span><span class="z-meta z-path z-rust"><span class="z-punctuation z-accessor z-rust">::</span></span>default<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+    color<span class="z-punctuation z-separator z-rust">,</span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span></code></pre>
+<p>Arriving at this was a lot of trial and error as well as
+some printline debugging. I got there in the end.</p>
+<h2 id="3-glyph-key-needed-more-than-just-the-glyph-id">3. Glyph Key needed more than just the glyph id</h2>
+<p>With the initial version of glyph rendering, I only used the
+glyph id for the key. This worked to test things out, but
+immediately caused problems because only the first text
+size for a glyph was used to render that particular
+character from that point on. Turns out not only did I need
+the font size as well, but also the font id, and the
+subpixel offset.</p>
+<p>While I was working on the subpixel offset I went and
+implemented the quantization that was highlighted in the
+swash demo. In the source code for the demo, there is a
+reference to skia's font rendering which quantizes to
+quarter pixels. So I followed suite.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">derive</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">Debug<span class="z-punctuation z-separator z-rust">,</span> Clone<span class="z-punctuation z-separator z-rust">,</span> Copy<span class="z-punctuation z-separator z-rust">,</span> Hash<span class="z-punctuation z-separator z-rust">,</span> PartialEq<span class="z-punctuation z-separator z-rust">,</span> Eq</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-enum z-rust"><span class="z-storage z-type z-enum z-rust">enum</span> <span class="z-entity z-name z-enum z-rust">SubpixelOffset</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    Zero<span class="z-punctuation z-separator z-rust">,</span>
+    Quarter<span class="z-punctuation z-separator z-rust">,</span>
+    Half<span class="z-punctuation z-separator z-rust">,</span>
+    ThreeQuarters<span class="z-punctuation z-separator z-rust">,</span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+
+<span class="z-meta z-impl z-rust"><span class="z-storage z-type z-impl z-rust">impl</span> </span><span class="z-meta z-impl z-rust"><span class="z-entity z-name z-impl z-rust">SubpixelOffset</span> </span><span class="z-meta z-impl z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">quantize</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-variable z-parameter z-rust">value</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-type z-rust">f32</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> <span class="z-storage z-type z-rust">Self</span></span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        <span class="z-storage z-type z-rust">let</span> value <span class="z-keyword z-operator z-assignment z-rust">=</span> value<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">fract</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-keyword z-control z-rust">if</span> value <span class="z-keyword z-operator z-comparison z-rust">&lt;</span> <span class="z-constant z-numeric z-float z-rust">0.</span><span class="z-constant z-numeric z-float z-rust">125</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+            <span class="z-storage z-type z-rust">Self</span><span class="z-meta z-path z-rust"><span class="z-punctuation z-accessor z-rust">::</span></span>Zero
+        </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span> <span class="z-keyword z-control z-rust">else</span> <span class="z-keyword z-control z-rust">if</span> value <span class="z-keyword z-operator z-comparison z-rust">&lt;</span> <span class="z-constant z-numeric z-float z-rust">0.</span><span class="z-constant z-numeric z-float z-rust">375</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+            <span class="z-storage z-type z-rust">Self</span><span class="z-meta z-path z-rust"><span class="z-punctuation z-accessor z-rust">::</span></span>Quarter
+        </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span> <span class="z-keyword z-control z-rust">else</span> <span class="z-keyword z-control z-rust">if</span> value <span class="z-keyword z-operator z-comparison z-rust">&lt;</span> <span class="z-constant z-numeric z-float z-rust">0.</span><span class="z-constant z-numeric z-float z-rust">625</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+            <span class="z-storage z-type z-rust">Self</span><span class="z-meta z-path z-rust"><span class="z-punctuation z-accessor z-rust">::</span></span>Half
+        </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span> <span class="z-keyword z-control z-rust">else</span> <span class="z-keyword z-control z-rust">if</span> value <span class="z-keyword z-operator z-comparison z-rust">&lt;</span> <span class="z-constant z-numeric z-float z-rust">0.</span><span class="z-constant z-numeric z-float z-rust">875</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+            <span class="z-storage z-type z-rust">Self</span><span class="z-meta z-path z-rust"><span class="z-punctuation z-accessor z-rust">::</span></span>ThreeQuarters
+        </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span> <span class="z-keyword z-control z-rust">else</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+            <span class="z-storage z-type z-rust">Self</span><span class="z-meta z-path z-rust"><span class="z-punctuation z-accessor z-rust">::</span></span>Zero
+        </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+
+    <span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">to_f32</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-keyword z-operator z-rust">&amp;</span><span class="z-variable z-parameter z-rust">self</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> <span class="z-storage z-type z-rust">f32</span></span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        <span class="z-keyword z-control z-rust">match</span> <span class="z-variable z-language z-rust">self</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+            <span class="z-storage z-type z-rust">Self</span><span class="z-meta z-path z-rust"><span class="z-punctuation z-accessor z-rust">::</span></span>Zero <span class="z-keyword z-operator z-rust">=&gt;</span> <span class="z-constant z-numeric z-float z-rust">0.</span><span class="z-constant z-numeric z-float z-rust">0</span><span class="z-punctuation z-separator z-rust">,</span>
+            <span class="z-storage z-type z-rust">Self</span><span class="z-meta z-path z-rust"><span class="z-punctuation z-accessor z-rust">::</span></span>Quarter <span class="z-keyword z-operator z-rust">=&gt;</span> <span class="z-constant z-numeric z-float z-rust">0.</span><span class="z-constant z-numeric z-float z-rust">25</span><span class="z-punctuation z-separator z-rust">,</span>
+            <span class="z-storage z-type z-rust">Self</span><span class="z-meta z-path z-rust"><span class="z-punctuation z-accessor z-rust">::</span></span>Half <span class="z-keyword z-operator z-rust">=&gt;</span> <span class="z-constant z-numeric z-float z-rust">0.</span><span class="z-constant z-numeric z-float z-rust">5</span><span class="z-punctuation z-separator z-rust">,</span>
+            <span class="z-storage z-type z-rust">Self</span><span class="z-meta z-path z-rust"><span class="z-punctuation z-accessor z-rust">::</span></span>ThreeQuarters <span class="z-keyword z-operator z-rust">=&gt;</span> <span class="z-constant z-numeric z-float z-rust">0.</span><span class="z-constant z-numeric z-float z-rust">75</span><span class="z-punctuation z-separator z-rust">,</span>
+        </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>With this in place I introduced a <code>GlyphKey</code> struct which
+contains all of the relevant information to key for a
+particular Glyph in the atlas.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">derive</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">Debug<span class="z-punctuation z-separator z-rust">,</span> Clone<span class="z-punctuation z-separator z-rust">,</span> Copy<span class="z-punctuation z-separator z-rust">,</span> PartialEq<span class="z-punctuation z-separator z-rust">,</span> Eq<span class="z-punctuation z-separator z-rust">,</span> Hash</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-struct z-rust"><span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-entity z-name z-struct z-rust">GlyphKey</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-variable z-other z-member z-rust">glyph</span><span class="z-punctuation z-separator z-type z-rust">:</span> GlyphId,
+    <span class="z-variable z-other z-member z-rust">font_cache_id</span><span class="z-punctuation z-separator z-type z-rust">:</span> CacheKey,
+    <span class="z-variable z-other z-member z-rust">size</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-meta z-generic z-rust">OrderedFloat<span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span><span class="z-storage z-type z-rust">f32</span><span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span>,
+    <span class="z-variable z-other z-member z-rust">x_offset</span><span class="z-punctuation z-separator z-type z-rust">:</span> SubpixelOffset,
+    <span class="z-variable z-other z-member z-rust">y_offset</span><span class="z-punctuation z-separator z-type z-rust">:</span> SubpixelOffset,
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+
+<span class="z-meta z-impl z-rust"><span class="z-storage z-type z-impl z-rust">impl</span> </span><span class="z-meta z-impl z-rust"><span class="z-entity z-name z-impl z-rust">GlyphKey</span> </span><span class="z-meta z-impl z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">new</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-variable z-parameter z-rust">font_ref</span><span class="z-punctuation z-separator z-rust">:</span> FontRef, <span class="z-variable z-parameter z-rust">glyph</span><span class="z-punctuation z-separator z-rust">:</span> GlyphId, <span class="z-variable z-parameter z-rust">size</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-type z-rust">f32</span>, <span class="z-variable z-parameter z-rust">offset</span><span class="z-punctuation z-separator z-rust">:</span> Vec2</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> <span class="z-storage z-type z-rust">Self</span></span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        <span class="z-storage z-type z-rust">let</span> font_cache_id <span class="z-keyword z-operator z-assignment z-rust">=</span> font_ref<span class="z-punctuation z-accessor z-dot z-rust">.</span>key<span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-storage z-type z-rust">let</span> size <span class="z-keyword z-operator z-assignment z-rust">=</span> size<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">into</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-storage z-type z-rust">let</span> x_offset <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">SubpixelOffset<span class="z-punctuation z-accessor z-rust">::</span></span>quantize<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>offset<span class="z-punctuation z-accessor z-dot z-rust">.</span>x</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-storage z-type z-rust">let</span> y_offset <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">SubpixelOffset<span class="z-punctuation z-accessor z-rust">::</span></span>quantize<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>offset<span class="z-punctuation z-accessor z-dot z-rust">.</span>y</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-storage z-type z-rust">Self</span> <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+            glyph<span class="z-punctuation z-separator z-rust">,</span>
+            font_cache_id<span class="z-punctuation z-separator z-rust">,</span>
+            size<span class="z-punctuation z-separator z-rust">,</span>
+            x_offset<span class="z-punctuation z-separator z-rust">,</span>
+            y_offset<span class="z-punctuation z-separator z-rust">,</span>
+        </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+
+    <span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">quantized_offset</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-keyword z-operator z-rust">&amp;</span><span class="z-variable z-parameter z-rust">self</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> Vector</span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        <span class="z-meta z-path z-rust">Vector<span class="z-punctuation z-accessor z-rust">::</span></span>new<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>x_offset<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">to_f32</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>y_offset<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">to_f32</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<h2 id="it-works">IT WORKS!</h2>
+<p>With these fixes in place, I could properly render many
+sizes of glyphs in the same scene. I built a simple demo
+json file with a pangram in various sizes.</p>
+<pre data-lang="json" class="language-json z-code"><code class="language-json" data-lang="json"><span class="z-source z-json"><span class="z-meta z-mapping z-json"><span class="z-punctuation z-section z-mapping z-begin z-json">{</span>
+  </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>texts<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-meta z-sequence z-json"><span class="z-punctuation z-section z-sequence z-begin z-json">[</span>
+    <span class="z-meta z-mapping z-json"><span class="z-punctuation z-section z-mapping z-begin z-json">{</span>
+      </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>bottom_left<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-meta z-sequence z-json"><span class="z-punctuation z-section z-sequence z-begin z-json">[</span><span class="z-constant z-numeric z-integer z-decimal z-json">0</span><span class="z-punctuation z-separator z-sequence z-json">,</span> <span class="z-constant z-numeric z-integer z-decimal z-json">10</span><span class="z-punctuation z-section z-sequence z-end z-json">]</span></span><span class="z-punctuation z-separator z-mapping z-pair z-json">,</span>
+      </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>size<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-value z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-constant z-numeric z-integer z-decimal z-json">8</span><span class="z-punctuation z-separator z-mapping z-pair z-json">,</span>
+      </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>color<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-value z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-meta z-sequence z-json"><span class="z-punctuation z-section z-sequence z-begin z-json">[</span><span class="z-constant z-numeric z-integer z-decimal z-json">0</span><span class="z-punctuation z-separator z-sequence z-json">,</span> <span class="z-constant z-numeric z-integer z-decimal z-json">0</span><span class="z-punctuation z-separator z-sequence z-json">,</span> <span class="z-constant z-numeric z-integer z-decimal z-json">0</span><span class="z-punctuation z-separator z-sequence z-json">,</span> <span class="z-constant z-numeric z-integer z-decimal z-json">1</span><span class="z-punctuation z-section z-sequence z-end z-json">]</span></span><span class="z-punctuation z-separator z-mapping z-pair z-json">,</span>
+      </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>text<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-value z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>Sphinx of black quartz, judge my vow.<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span>
+    <span class="z-punctuation z-section z-mapping z-end z-json">}</span></span><span class="z-punctuation z-separator z-sequence z-json">,</span>
+    <span class="z-meta z-mapping z-json"><span class="z-punctuation z-section z-mapping z-begin z-json">{</span>
+      </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>bottom_left<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-meta z-sequence z-json"><span class="z-punctuation z-section z-sequence z-begin z-json">[</span><span class="z-constant z-numeric z-integer z-decimal z-json">0</span><span class="z-punctuation z-separator z-sequence z-json">,</span> <span class="z-constant z-numeric z-integer z-decimal z-json">20</span><span class="z-punctuation z-section z-sequence z-end z-json">]</span></span><span class="z-punctuation z-separator z-mapping z-pair z-json">,</span>
+      </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>size<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-value z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-constant z-numeric z-integer z-decimal z-json">10</span><span class="z-punctuation z-separator z-mapping z-pair z-json">,</span>
+      </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>color<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-value z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-meta z-sequence z-json"><span class="z-punctuation z-section z-sequence z-begin z-json">[</span><span class="z-constant z-numeric z-integer z-decimal z-json">0</span><span class="z-punctuation z-separator z-sequence z-json">,</span> <span class="z-constant z-numeric z-integer z-decimal z-json">0</span><span class="z-punctuation z-separator z-sequence z-json">,</span> <span class="z-constant z-numeric z-integer z-decimal z-json">0</span><span class="z-punctuation z-separator z-sequence z-json">,</span> <span class="z-constant z-numeric z-integer z-decimal z-json">1</span><span class="z-punctuation z-section z-sequence z-end z-json">]</span></span><span class="z-punctuation z-separator z-mapping z-pair z-json">,</span>
+      </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>text<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-value z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>Sphinx of black quartz, judge my vow.<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span>
+    <span class="z-punctuation z-section z-mapping z-end z-json">}</span></span><span class="z-punctuation z-separator z-sequence z-json">,</span>
+    <span class="z-invalid z-illegal z-expected-sequence-separator z-json">.</span><span class="z-invalid z-illegal z-expected-sequence-separator z-json">.</span><span class="z-invalid z-illegal z-expected-sequence-separator z-json">.</span>
+    <span class="z-meta z-mapping z-json"><span class="z-punctuation z-section z-mapping z-begin z-json">{</span>
+      </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>bottom_left<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-meta z-sequence z-json"><span class="z-punctuation z-section z-sequence z-begin z-json">[</span><span class="z-constant z-numeric z-integer z-decimal z-json">0</span><span class="z-punctuation z-separator z-sequence z-json">,</span> <span class="z-constant z-numeric z-integer z-decimal z-json">295</span><span class="z-punctuation z-section z-sequence z-end z-json">]</span></span><span class="z-punctuation z-separator z-mapping z-pair z-json">,</span>
+      </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>size<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-value z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-constant z-numeric z-integer z-decimal z-json">36</span><span class="z-punctuation z-separator z-mapping z-pair z-json">,</span>
+      </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>color<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-value z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-meta z-sequence z-json"><span class="z-punctuation z-section z-sequence z-begin z-json">[</span><span class="z-constant z-numeric z-integer z-decimal z-json">0</span><span class="z-punctuation z-separator z-sequence z-json">,</span> <span class="z-constant z-numeric z-integer z-decimal z-json">0</span><span class="z-punctuation z-separator z-sequence z-json">,</span> <span class="z-constant z-numeric z-integer z-decimal z-json">0</span><span class="z-punctuation z-separator z-sequence z-json">,</span> <span class="z-constant z-numeric z-integer z-decimal z-json">1</span><span class="z-punctuation z-section z-sequence z-end z-json">]</span></span><span class="z-punctuation z-separator z-mapping z-pair z-json">,</span>
+      </span><span class="z-meta z-mapping z-key z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>text<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span></span><span class="z-meta z-mapping z-value z-json"><span class="z-punctuation z-separator z-mapping z-key-value z-json">:</span> </span><span class="z-meta z-mapping z-value z-json"><span class="z-string z-quoted z-double z-json"><span class="z-punctuation z-definition z-string z-begin z-json">&quot;</span>Sphinx of black quartz, judge my vow.<span class="z-punctuation z-definition z-string z-end z-json">&quot;</span></span>
+    <span class="z-punctuation z-section z-mapping z-end z-json">}</span></span>
+  <span class="z-punctuation z-section z-sequence z-end z-json">]</span></span>
+<span class="z-punctuation z-section z-mapping z-end z-json">}</span></span>
+</span></code></pre>
+<p>Which renders like this:</p>
+<p><img src="https://kaylees.dev/trio/maple/day14-text-rendering/TextRendering.png" alt="Text Rendering" /></p>
+<p>From here, I think the only remaining features are ensuring
+that we can allocate new atlases on demand when the atlas is
+filled, allowing clipping with scissor rects, and blurring
+the backgrounds of layers. At that point I should be able to
+integrate this work in with Neovide.</p>
+<p>I'm going on vacation and so might miss a couple days. But
+either way, till next time,<br />
+Kay</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day13-neovide-release&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day15-layers&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

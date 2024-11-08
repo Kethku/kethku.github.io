@@ -1,0 +1,240 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day56 - Misc Combo Improvements
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Refactored code to enable various improvements to combos
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-03
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day56-misc-combo-improvements/./todo.svg" alt="Todo" /></p>
+<p>Today I spent some time cleaning up and extracting code out from the
+<code>garbage.js</code> file into separate files. In particular I pulled all of the
+function I wrote for <a href="https://kaylees.dev/trio/oak/day48-garbage-grid-rendering/">garbage
+rendering</a> into the
+<code>garbageRenderUtils.js</code> and all of the functions I wrote for <a href="https://kaylees.dev/trio/oak/day52-garbage-clearing/">the clear
+animation</a> into
+<code>clearAnimation.js</code> with it's own class. This made it easier to organize things
+in my head and allowed me to make a number of improvements to the match and
+combo system I have had on the todo list.</p>
+<h2 id="link-garbage-breaks">Link Garbage Breaks</h2>
+<p>In the original game, garbage blocks would break each other if one was broken in
+a chain. Not only did this make it easier to clear a big stack of blocks, but it
+also gave the player more time to line up a combo with the falling match.
+Luckily implementing this feature was pretty easy. I just modified the garbage
+break logic I had already to add the garbage block slots to the triggering slots
+and loop until no more garbage blocks are broken.</p>
+<pre data-lang="js" class="language-js z-code"><code class="language-js" data-lang="js"><span class="z-source z-ts"><span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">MatchStarted</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-entity z-name z-function z-ts">Subscribe</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-arrow z-ts"><span class="z-variable z-parameter z-ts">matchedBlocks</span> </span><span class="z-meta z-arrow z-ts"><span class="z-storage z-type z-function z-arrow z-ts">=&gt;</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+  <span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">triggeringSlots</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span><span class="z-meta z-array z-literal z-ts"> <span class="z-meta z-brace z-square z-ts">[</span><span class="z-meta z-brace z-square z-ts">]</span></span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+  <span class="z-keyword z-control z-loop z-ts">for</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">matchedBlock</span></span> </span></span><span class="z-keyword z-operator z-expression z-of z-ts">of</span> <span class="z-variable z-other z-readwrite z-ts">matchedBlocks</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+    <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">triggeringSlots</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-ts">push</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-object z-ts">matchedBlock</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">gridSlot</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+  <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+
+  <span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">garbageToBreak</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-new z-expr z-ts"><span class="z-keyword z-operator z-new z-ts">new</span> <span class="z-entity z-name z-type z-ts">Set</span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-brace z-round z-ts">)</span></span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+
+  <span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">foundNewBrokenGarbage</span></span></span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+  <span class="z-keyword z-control z-loop z-ts">do</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+    <span class="z-variable z-other z-readwrite z-ts">foundNewBrokenGarbage</span> <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-constant z-language z-boolean z-false z-ts">false</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+    <span class="z-keyword z-control z-loop z-ts">for</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">garbage</span></span> </span></span><span class="z-keyword z-operator z-expression z-of z-ts">of</span> <span class="z-variable z-other z-readwrite z-ts">garbageBlocks</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+      <span class="z-keyword z-control z-conditional z-ts">if</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">garbageToBreak</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-dom z-ts">has</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">garbage</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-keyword z-control z-loop z-ts">continue</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+      <span class="z-keyword z-control z-conditional z-ts">if</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-object z-ts">garbage</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">state</span> <span class="z-keyword z-operator z-comparison z-ts">==</span> <span class="z-variable z-other z-object z-ts">state</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-constant z-property z-ts">CLEARING</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-keyword z-control z-loop z-ts">continue</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+      <span class="z-keyword z-control z-loop z-ts">for</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">triggeringSlot</span></span> </span></span><span class="z-keyword z-operator z-expression z-of z-ts">of</span> <span class="z-variable z-other z-readwrite z-ts">triggeringSlots</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+        <span class="z-keyword z-control z-conditional z-ts">if</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">garbage</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-entity z-name z-function z-ts">adjacentTo</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">triggeringSlot</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+          <span class="z-variable z-other z-readwrite z-ts">foundNewBrokenGarbage</span> <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-constant z-language z-boolean z-true z-ts">true</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+          <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">garbageToBreak</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-dom z-ts">add</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">garbage</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+          <span class="z-variable z-other z-readwrite z-ts">triggeringSlots</span> <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">triggeringSlots</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-ts">concat</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-function-call z-ts"><span class="z-support z-class z-builtin z-ts">Array</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-entity z-name z-function z-ts">from</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">garbage</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-entity z-name z-function z-ts">overlappingSlots</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+          <span class="z-keyword z-control z-loop z-ts">break</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+        <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+      <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+    <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+  <span class="z-punctuation z-definition z-block z-ts">}</span></span> <span class="z-keyword z-control z-loop z-ts">while</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">foundNewBrokenGarbage</span><span class="z-meta z-brace z-round z-ts">)</span>
+
+  <span class="z-keyword z-control z-conditional z-ts">if</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-object z-ts">garbageToBreak</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-dom z-ts">size</span> <span class="z-keyword z-operator z-comparison z-ts">!=</span> <span class="z-constant z-numeric z-decimal z-ts">0</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+    <span class="z-meta z-function-call z-ts"><span class="z-entity z-name z-function z-ts">breakBlocks</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">garbageToBreak</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-variable z-other z-readwrite z-ts">matchedBlocks</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+  <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+<span class="z-punctuation z-definition z-block z-ts">}</span></span></span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+</span></code></pre>
+<p>This has the added benefit of clearing all of the blocks at once instead of one
+by one. To enable this I also modified the clear animation code to keep track of
+multiple garbage blocks instead of just one.</p>
+<pre data-lang="js" class="language-js z-code"><code class="language-js" data-lang="js"><span class="z-source z-ts"><span class="z-meta z-function-call z-ts"><span class="z-entity z-name z-function z-ts">constructor</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">triggeringBlocks</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-variable z-other z-readwrite z-ts">garbageBlocks</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+  <span class="z-variable z-language z-this z-ts">this</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">timer</span> <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-constant z-numeric z-decimal z-ts">0</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+  <span class="z-variable z-language z-this z-ts">this</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">triggeringBlocks</span> <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-variable z-other z-readwrite z-ts">triggeringBlocks</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+  <span class="z-variable z-language z-this z-ts">this</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">garbageBlocks</span> <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-variable z-other z-readwrite z-ts">garbageBlocks</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+  <span class="z-variable z-language z-this z-ts">this</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">spawnedBlocks</span> <span class="z-keyword z-operator z-assignment z-ts">=</span><span class="z-meta z-array z-literal z-ts"> <span class="z-meta z-brace z-square z-ts">[</span><span class="z-meta z-brace z-square z-ts">]</span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+
+  <span class="z-keyword z-control z-loop z-ts">for</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">garbage</span></span> </span></span><span class="z-keyword z-operator z-expression z-of z-ts">of</span> <span class="z-variable z-other z-readwrite z-ts">garbageBlocks</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+    <span class="z-keyword z-control z-loop z-ts">for</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">slot</span></span> </span></span><span class="z-keyword z-operator z-expression z-of z-ts">of</span> <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">garbage</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-entity z-name z-function z-ts">overlappingSlots</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+      <span class="z-meta z-function-call z-ts"><span class="z-variable z-language z-this z-ts">this</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-object z-property z-ts">spawnedBlocks</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-ts">push</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-objectliteral z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+        <span class="z-meta z-object z-member z-ts"><span class="z-meta z-object-literal z-key z-ts">visible</span></span><span class="z-meta z-object z-member z-ts"><span class="z-meta z-object-literal z-key z-ts"><span class="z-punctuation z-separator z-key-value z-ts">:</span></span> <span class="z-constant z-language z-boolean z-false z-ts">false</span></span><span class="z-punctuation z-separator z-comma z-ts">,</span>
+        <span class="z-meta z-object z-member z-ts"><span class="z-meta z-object-literal z-key z-ts">block</span></span><span class="z-meta z-object z-member z-ts"><span class="z-meta z-object-literal z-key z-ts"><span class="z-punctuation z-separator z-key-value z-ts">:</span></span> <span class="z-new z-expr z-ts"><span class="z-keyword z-operator z-new z-ts">new</span> <span class="z-entity z-name z-type z-ts">Block</span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">slot</span><span class="z-meta z-brace z-round z-ts">)</span></span>
+      </span><span class="z-punctuation z-definition z-block z-ts">}</span></span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+    <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+  <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+<span class="z-punctuation z-definition z-block z-ts">}</span></span>
+</span></code></pre>
+<p><img src="https://kaylees.dev/trio/oak/day56-misc-combo-improvements/GarbageLinking.gif" alt="GarbageLinking" /></p>
+<h2 id="extending-combos-through-garbage-breaks">Extending Combos Through Garbage Breaks</h2>
+<p>When I wrote the initial version of garbage breaks I wrote a buggy attempt at
+extending combos through them which subscribed to the <code>GarbageBroken</code> event and
+added the new blocks to the <code>trackedBlocks</code> of a combo if any of the combo's
+tracked blocks participated in the breaking of the garbage. This didn't work for
+two reasons. First, it assumed that the combo already existed when the block was
+broken, and second, the garbage break event was raised before the combo could
+register to listen to it.</p>
+<p>I fixed the first issue by adding a concept of matched blocks to combos and
+moving combo creation to the start of a match instead of the end. </p>
+<pre data-lang="js" class="language-js z-code"><code class="language-js" data-lang="js"><span class="z-source z-ts"><span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">MatchStarted</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-entity z-name z-function z-ts">Subscribe</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-arrow z-ts"><span class="z-variable z-parameter z-ts">matchedBlocks</span> </span><span class="z-meta z-arrow z-ts"><span class="z-storage z-type z-function z-arrow z-ts">=&gt;</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+  <span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">foundExistingCombo</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-constant z-language z-boolean z-false z-ts">false</span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+
+  <span class="z-keyword z-control z-loop z-ts">for</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">combo</span></span> </span></span><span class="z-keyword z-operator z-expression z-of z-ts">of</span> <span class="z-variable z-other z-readwrite z-ts">combos</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+    <span class="z-keyword z-control z-conditional z-ts">if</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">matchedBlocks</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-entity z-name z-function z-ts">some</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-arrow z-ts"><span class="z-variable z-parameter z-ts">matchedBlock</span> </span><span class="z-meta z-arrow z-ts"><span class="z-storage z-type z-function z-arrow z-ts">=&gt;</span> </span><span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">combo</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-object z-property z-ts">trackedBlocks</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-dom z-ts">has</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">matchedBlock</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+      <span class="z-variable z-other z-readwrite z-ts">foundExistingCombo</span> <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-constant z-language z-boolean z-true z-ts">true</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+      <span class="z-variable z-other z-object z-ts">combo</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">cascades</span><span class="z-keyword z-operator z-increment z-ts">++</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+      <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">ComboExtended</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-entity z-name z-function z-ts">Publish</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">matchedBlocks</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-variable z-other z-object z-ts">combo</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">cascades</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+    <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+  <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+
+  <span class="z-keyword z-control z-conditional z-ts">if</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-keyword z-operator z-logical z-ts">!</span><span class="z-variable z-other z-readwrite z-ts">foundExistingCombo</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+    <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">combos</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-dom z-ts">add</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-new z-expr z-ts"><span class="z-keyword z-operator z-new z-ts">new</span> <span class="z-entity z-name z-type z-ts">Combo</span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">matchedBlocks</span><span class="z-meta z-brace z-round z-ts">)</span></span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+  <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+<span class="z-punctuation z-definition z-block z-ts">}</span></span></span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+</span></code></pre>
+<p>I also added a check that all of the matched blocks were cleared before dropping
+a combo.</p>
+<pre data-lang="js" class="language-js z-code"><code class="language-js" data-lang="js"><span class="z-source z-ts"><span class="z-meta z-function-call z-ts"><span class="z-entity z-name z-function z-ts">constructor</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">matchedBlocks</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+  <span class="z-variable z-language z-this z-ts">this</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">cascades</span> <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-constant z-numeric z-decimal z-ts">0</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+  <span class="z-variable z-language z-this z-ts">this</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">trackedBlocks</span> <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-new z-expr z-ts"><span class="z-keyword z-operator z-new z-ts">new</span> <span class="z-entity z-name z-type z-ts">Set</span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-brace z-round z-ts">)</span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+  <span class="z-variable z-language z-this z-ts">this</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">matchedBlocks</span> <span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-new z-expr z-ts"><span class="z-keyword z-operator z-new z-ts">new</span> <span class="z-entity z-name z-type z-ts">Set</span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-brace z-round z-ts">)</span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+  <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">matchedBlocks</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-dom z-ts">forEach</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-arrow z-ts"><span class="z-variable z-parameter z-ts">matchedBlock</span> </span><span class="z-meta z-arrow z-ts"><span class="z-storage z-type z-function z-arrow z-ts">=&gt;</span> </span><span class="z-meta z-function-call z-ts"><span class="z-variable z-language z-this z-ts">this</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-object z-property z-ts">matchedBlocks</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-dom z-ts">add</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">matchedBlock</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+<span class="z-punctuation z-definition z-block z-ts">}</span></span>
+</span></code></pre>
+<p>The second problem was solved by adding a new event which gets raised on
+animation creation instead of garbage break. This allowed the clear animation to
+be established including the spawned blocks before the combo list is checked
+against the match.</p>
+<pre data-lang="js" class="language-js z-code"><code class="language-js" data-lang="js"><span class="z-source z-ts"><span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">ClearAnimationStarted</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-entity z-name z-function z-ts">Subscribe</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-arrow z-ts"><span class="z-meta z-parameters z-ts"><span class="z-punctuation z-definition z-parameters z-begin z-ts">(</span><span class="z-meta z-parameter z-object-binding-pattern z-ts"><span class="z-punctuation z-definition z-binding-pattern z-object z-ts">{</span> <span class="z-variable z-parameter z-ts">triggeringBlocks</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-variable z-parameter z-ts">spawnedBlocks</span> <span class="z-punctuation z-definition z-binding-pattern z-object z-ts">}</span></span><span class="z-punctuation z-definition z-parameters z-end z-ts">)</span></span> </span><span class="z-meta z-arrow z-ts"><span class="z-storage z-type z-function z-arrow z-ts">=&gt;</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+  <span class="z-keyword z-control z-loop z-ts">for</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">combo</span></span> </span></span><span class="z-keyword z-operator z-expression z-of z-ts">of</span> <span class="z-variable z-other z-readwrite z-ts">combos</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+    <span class="z-keyword z-control z-loop z-ts">for</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">block</span></span> </span></span><span class="z-keyword z-operator z-expression z-of z-ts">of</span> <span class="z-variable z-other z-readwrite z-ts">triggeringBlocks</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+      <span class="z-keyword z-control z-conditional z-ts">if</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">combo</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-object z-property z-ts">matchedBlocks</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-dom z-ts">has</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">block</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+        <span class="z-keyword z-control z-loop z-ts">for</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">spawnedBlock</span></span> </span></span><span class="z-keyword z-operator z-expression z-of z-ts">of</span> <span class="z-variable z-other z-readwrite z-ts">spawnedBlocks</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+          <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">combo</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-object z-property z-ts">trackedBlocks</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-dom z-ts">add</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-object z-ts">spawnedBlock</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">block</span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+        <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+        <span class="z-keyword z-control z-loop z-ts">break</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+      <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+    <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+  <span class="z-punctuation z-definition z-block z-ts">}</span></span>
+<span class="z-punctuation z-definition z-block z-ts">}</span></span></span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+</span></code></pre>
+<p>Unfortunately I don't have a graphical indication that a combo was achieved
+other than an extra stop clock delay, but I was able to verify that things were
+working as expected using console output.</p>
+<h2 id="block-shadows">Block Shadows</h2>
+<p>Unrelated to combo infrastructure I also added a shadow to the block's when
+being manipulated as a simple but effective effect. The basic idea is that any
+time a block is grown in size we can assume that said block is being raised
+above the grid. In this case I can draw a shadow below the block by rendering
+the block image without the scaling, offset by an amount proportional to the
+scaling and with a black and transparent tint.</p>
+<pre data-lang="js" class="language-js z-code"><code class="language-js" data-lang="js"><span class="z-source z-ts"><span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">heldDimensions</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">dimensions</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-entity z-name z-function z-ts">multiply</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-language z-this z-ts">this</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">scale</span><span class="z-meta z-brace z-round z-ts">)</span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+<span class="z-meta z-var z-expr z-ts"><span class="z-storage z-type z-ts">let</span> <span class="z-meta z-var-single-variable z-expr z-ts"><span class="z-meta z-definition z-variable z-ts"><span class="z-variable z-other z-readwrite z-ts">shadowOffset</span></span> </span><span class="z-keyword z-operator z-assignment z-ts">=</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-object z-ts">heldDimensions</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-dom z-ts">width</span> <span class="z-keyword z-operator z-arithmetic z-ts">-</span> <span class="z-variable z-other z-object z-ts">dimensions</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-dom z-ts">width</span><span class="z-meta z-brace z-round z-ts">)</span></span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+
+<span class="z-keyword z-control z-conditional z-ts">if</span> <span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">shadowOffset</span> <span class="z-keyword z-operator z-relational z-ts">&gt;=</span> <span class="z-constant z-numeric z-decimal z-ts">0<span class="z-meta z-delimiter z-decimal z-period z-ts">.</span>1</span><span class="z-meta z-brace z-round z-ts">)</span> <span class="z-meta z-block z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+  <span class="z-meta z-function-call z-ts"><span class="z-entity z-name z-function z-ts">image</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-meta z-objectliteral z-ts"><span class="z-punctuation z-definition z-block z-ts">{</span>
+    <span class="z-meta z-object z-member z-ts"><span class="z-meta z-object-literal z-key z-ts">imageUrl</span></span><span class="z-meta z-object z-member z-ts"><span class="z-meta z-object-literal z-key z-ts"><span class="z-punctuation z-separator z-key-value z-ts">:</span></span> <span class="z-variable z-other z-readwrite z-ts">texture</span> <span class="z-keyword z-operator z-logical z-ts">||</span> <span class="z-variable z-other z-readwrite z-ts">blockImages</span><span class="z-meta z-array z-literal z-ts"><span class="z-meta z-brace z-square z-ts">[</span><span class="z-variable z-language z-this z-ts">this</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-variable z-property z-dom z-ts">type</span><span class="z-meta z-brace z-square z-ts">]</span></span></span><span class="z-punctuation z-separator z-comma z-ts">,</span>
+    <span class="z-meta z-object z-member z-ts"><span class="z-meta z-object-literal z-key z-ts">position</span></span><span class="z-meta z-object z-member z-ts"><span class="z-meta z-object-literal z-key z-ts"><span class="z-punctuation z-separator z-key-value z-ts">:</span></span> <span class="z-meta z-function-call z-ts"><span class="z-variable z-other z-object z-ts">center</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-support z-function z-dom z-ts">add</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-new z-expr z-ts"><span class="z-keyword z-operator z-new z-ts">new</span> <span class="z-entity z-name z-type z-ts">Vector</span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-variable z-other z-readwrite z-ts">shadowOffset</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-keyword z-operator z-arithmetic z-ts">-</span><span class="z-variable z-other z-readwrite z-ts">shadowOffset</span><span class="z-meta z-brace z-round z-ts">)</span></span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-meta z-function-call z-ts"><span class="z-punctuation z-accessor z-ts">.</span><span class="z-entity z-name z-function z-ts">withZ</span></span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-constant z-numeric z-decimal z-ts">0</span><span class="z-meta z-brace z-round z-ts">)</span></span><span class="z-punctuation z-separator z-comma z-ts">,</span>
+    <span class="z-meta z-object z-member z-ts"><span class="z-variable z-other z-readwrite z-ts">dimensions</span></span><span class="z-punctuation z-separator z-comma z-ts">,</span>
+    <span class="z-meta z-object z-member z-ts"><span class="z-meta z-object-literal z-key z-ts">tint</span></span><span class="z-meta z-object z-member z-ts"><span class="z-meta z-object-literal z-key z-ts"><span class="z-punctuation z-separator z-key-value z-ts">:</span></span> <span class="z-new z-expr z-ts"><span class="z-keyword z-operator z-new z-ts">new</span> <span class="z-entity z-name z-type z-ts">Color</span><span class="z-meta z-brace z-round z-ts">(</span><span class="z-constant z-numeric z-decimal z-ts">0</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-constant z-numeric z-decimal z-ts">0</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-constant z-numeric z-decimal z-ts">0</span><span class="z-punctuation z-separator z-comma z-ts">,</span> <span class="z-variable z-other z-object z-ts">tint</span><span class="z-punctuation z-accessor z-ts">.</span><span class="z-variable z-other z-property z-ts">a</span> <span class="z-keyword z-operator z-arithmetic z-ts">*</span> <span class="z-constant z-numeric z-decimal z-ts">0<span class="z-meta z-delimiter z-decimal z-period z-ts">.</span>4</span><span class="z-meta z-brace z-round z-ts">)</span></span>
+  </span><span class="z-punctuation z-definition z-block z-ts">}</span></span><span class="z-meta z-brace z-round z-ts">)</span><span class="z-punctuation z-terminator z-statement z-ts">;</span>
+<span class="z-punctuation z-definition z-block z-ts">}</span></span>
+</span></code></pre>
+<p>The resulting effect looks like this:</p>
+<p><img src="https://kaylees.dev/trio/oak/day56-misc-combo-improvements/BlockShadow.gif" alt="BlockShadow" /></p>
+<p>Its cheap but effective and adds some basic visual interest to the block manipulation.</p>
+<p>Thats it for today. I think I made a bunch of progress toward the initial
+multiplayer version and really improved the code organization for one of the
+most complex parts of the game.</p>
+<p>At this point I can confidently say that multiplayer is next. So next time I
+work on the project I will probably work out the exact tasks that need done
+server and animation wise to get a good experience going.</p>
+<p>Till tomorrow!<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day55-pando-ui&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day57-down-day&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

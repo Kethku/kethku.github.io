@@ -1,0 +1,156 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Maple
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;">Maple</a>
+
+Day8 - Glyph Rendering
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Glyphs Rendering on Screen
+    </h2>
+    
+    
+    <p>
+    
+      2023-04-02
+    
+    
+    </p>
+    
+  </summary>
+  <p>Today I finally got some text drawing to the screen. This
+update is going to be quick as it is very late, but I will
+likely write a more full fledged summary soon once I can
+confirm everything renders correctly.</p>
+<p><img src="https://kaylees.dev/trio/maple/day8-glyph-rendering/WorkingSubpixelK.png" alt="Subpixel" /></p>
+<p>Subpixel font rendering takes advantage of the structure in
+modern lcd monitors to render text sharper than would
+otherwise be possible. The red and blue outline aliasing in
+the text looks strange when blown up like this, but when
+rendered on an lcd, make the text look crisp.</p>
+<h2 id="ping-pong-textures">Ping Pong Textures</h2>
+<p>Text rendering is VERY complicated. To do it properly with
+good subpixel anti aliasing, you have to take into account
+the color of the thing you are rendering onto as well as the
+desired color of the text itself. For graphics apis, this
+isn't an easy lift because the shader is drawing into the
+buffer it is potentially reading from.</p>
+<p>The solution I eventually landed on was to maintain a two
+textures of screen textures which get alternately read and
+written to at the same time as the screen buffer. This way
+we can reference the most recent state as of the last draw
+in a shader. This is used today in text rendering, but will
+eventually power background blurs once I get that working.</p>
+<p>I wont bore with the details about what above involved, but
+it took quite some debugging and fiddling around to arrive
+at this solution. I'm pretty happy with the approach now
+though as it means there's a standard way to do post
+processing style effects for when we need it.</p>
+<h2 id="sub-pixel-text-rendering">Sub Pixel Text Rendering</h2>
+<p>With todays work done I have glyphs rendering as subpixel masks
+into an atlas texture which is then read in the glyph shader
+to draw individual characters. The glyph shader uses a
+combination of the current destination pixel color, the
+desired glyph color, and the mask alpha values to compute
+the final color.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust">
+<span class="z-meta z-annotation z-rust"><span class="z-punctuation z-definition z-annotation z-rust">#</span><span class="z-punctuation z-section z-group z-begin z-rust">[</span><span class="z-variable z-annotation z-rust">spirv</span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust">fragment</span></span><span class="z-meta z-annotation z-parameters z-rust"><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span>
+<span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-modifier z-rust">pub</span> <span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">glyph_fragment</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span>
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">storage_buffer</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">descriptor_set</span> = 0<span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">binding</span> = 0</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">glyphs</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>[InstancedGlyph],
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">descriptor_set</span> = 0<span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">binding</span> = 1</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">atlas</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>Image2d,
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">descriptor_set</span> = 1<span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">binding</span> = 0</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">surface</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>Image2d,
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">descriptor_set</span> = 1<span class="z-punctuation z-separator z-rust">,</span> <span class="z-variable z-parameter z-rust">binding</span> = 1</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">sampler</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>Sampler,
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">push_constant</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">constants</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span>ShaderConstants,
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">flat</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">instance_index</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-storage z-type z-rust">i32</span>,
+    #[spirv<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-variable z-parameter z-rust">frag_coord</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>] <span class="z-variable z-parameter z-rust">surface_position</span><span class="z-punctuation z-separator z-rust">:</span> Vec4,
+    <span class="z-variable z-parameter z-rust">atlas_position</span><span class="z-punctuation z-separator z-rust">:</span> Vec2,
+    <span class="z-variable z-parameter z-rust">out_color_surface</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> Vec4,
+    <span class="z-variable z-parameter z-rust">out_color_texture</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> Vec4,
+</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-storage z-type z-rust">let</span> glyph <span class="z-keyword z-operator z-assignment z-rust">=</span> glyphs<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">[</span>instance_index <span class="z-keyword z-operator z-rust">as</span> <span class="z-storage z-type z-rust">usize</span><span class="z-punctuation z-section z-group z-end z-rust">]</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> Here we have to sample specifically the 0 LOD. I don&#39;t
+</span>    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> fully understand why, but I think it has to do with how
+</span>    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> the spirv is generated.
+</span>    <span class="z-comment z-line z-double-slash z-rust"><span class="z-punctuation z-definition z-comment z-rust">//</span> More details here: https://github.com/gfx-rs/wgpu-rs/issues/912
+</span>    <span class="z-storage z-type z-rust">let</span> surface_color <span class="z-keyword z-operator z-assignment z-rust">=</span>
+        surface<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">sample_by_lod</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-arithmetic z-rust">*</span>sampler<span class="z-punctuation z-separator z-rust">,</span> surface_position<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">xy</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-arithmetic z-rust">/</span> constants<span class="z-punctuation z-accessor z-dot z-rust">.</span>surface_size<span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">0.</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+    <span class="z-storage z-type z-rust">let</span> mask_color <span class="z-keyword z-operator z-assignment z-rust">=</span> atlas<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">sample_by_lod</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-keyword z-operator z-arithmetic z-rust">*</span>sampler<span class="z-punctuation z-separator z-rust">,</span> atlas_position<span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-float z-rust">0.</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+    <span class="z-keyword z-operator z-arithmetic z-rust">*</span>out_color_texture <span class="z-keyword z-operator z-assignment z-rust">=</span>
+        glyph<span class="z-punctuation z-accessor z-dot z-rust">.</span>color <span class="z-keyword z-operator z-arithmetic z-rust">*</span> mask_color <span class="z-keyword z-operator z-arithmetic z-rust">+</span> <span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-float z-rust">1.</span><span class="z-constant z-numeric z-float z-rust">0</span> <span class="z-keyword z-operator z-arithmetic z-rust">-</span> glyph<span class="z-punctuation z-accessor z-dot z-rust">.</span>color<span class="z-punctuation z-accessor z-dot z-rust">.</span>w <span class="z-keyword z-operator z-arithmetic z-rust">*</span> mask_color</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-arithmetic z-rust">*</span> surface_color<span class="z-punctuation z-terminator z-rust">;</span>
+    <span class="z-keyword z-operator z-arithmetic z-rust">*</span>out_color_surface <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-keyword z-operator z-arithmetic z-rust">*</span>out_color_texture<span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>This approach is outlined in the <a href="https://github.com/servo/webrender/blob/master/webrender/doc/text-rendering.md">webrender docs</a>
+which go over it in much greater detail. The solution I
+chose isn't the most performant, but I believe may be as
+good as I'm going to get with wgpu because it doesn't yet
+support duel blend modes.</p>
+<p>Next up I plan on porting the swash based text shaping so
+that I can render more than just a single glyph at a time.</p>
+<p>Till tomorrow,<br />
+Kay</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day7-shader-struct-alignment&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day9-sketchy-text&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

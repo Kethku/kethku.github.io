@@ -1,0 +1,190 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day34 - Eval Error Sources
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Regexes to find the location of an error in javascript from the trace text
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-12
+    
+    
+      <br>
+      <a href="../../hemlock/projects/8bomb/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p>Today I spent some time starting a PR for SCRIPT-8 to add jump to source support
+for the error messages. I didn't end up finishing the PR because I wasn't sure
+how the event routing should work, but I did write some regexes to pull out the
+source location and route the position data through to the error messages. The
+PR currently writes the position data to the log, but I am hopeful that with
+Gabriel's help it shouldn't be that hard to finish it up.</p>
+<h2 id="why-not-error-stack-parser">Why Not error-stack-parser</h2>
+<p>As far as I can tell, the recommended way for parsing error trace text is to
+use the <a href="https://github.com/stacktracejs/error-stack-parser">error-stack-parser</a>
+library. Unfortunately in our case, the source location we care about exists
+within an eval call. There is an <a href="https://github.com/stacktracejs/error-stack-parser/issues/32">open
+issue</a> for
+error-stack-parser for this very case and as far as I can tell the package
+currently throws the data away.</p>
+<p>The issue of parsing trace text is complicated by the fact that there isn't a
+standard format. The APIs grant access to the text, but do not say anything
+about what the text should be. As such each browser has a slightly different
+format. Luckily as far as I can tell, they all provide the data.</p>
+<p>I did some further searching on the web, but never found anything to fix this,
+so I rolled up my sleeves and got out my regex references.</p>
+<h2 id="gathering-data">Gathering Data</h2>
+<p>The first step was to gather example traces for each of the browser I have
+access to.</p>
+<p>Chrome:
+<pre>
+  <code class="language-en">TypeError: Cannot read property &#x27;toString&#x27; of undefined
+    at print (print.js:7)
+    at print (index.js:72)
+    at draw (eval at &lt;anonymous&gt; (eval at evalCode (Iframe.js:644)), &lt;anonymous&gt;:2:3)
+    at Iframe.drawUserGraphics (Iframe.js:397)
+    at timerCallback (Iframe.js:702)
+    at tick (interval.js:10)
+    at timerFlush (timer.js:61)
+    at wake (timer.js:71)</code>
+</pre>
+</p>
+<p>Firefox:
+<pre>
+  <code class="language-en">print@http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:69091:7
+print@http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:68699:7
+draw@http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js line 67598 &gt; eval line 6 &gt; eval:2:3
+drawUserGraphics@http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:67340:9
+timerCallback@http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:67650:11
+tick@http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:1475:5
+timerFlush@http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:1580:40
+wake@http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:1590:5</code>
+</pre>
+</p>
+<p>Edge:
+<pre>
+  <code class="language-en">TypeError: Unable to get property &#x27;toString&#x27; of undefined or null reference
+  at print (http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:69091:3)
+  at print (http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:68699:7)
+  at draw (eval code:2:3)
+  at drawUserGraphics (http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:67340:9)
+  at timerCallback (http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:67650:11)
+  at tick (http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:1475:5)
+  at timerFlush (http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:1580:40)
+  at wake (http:&#x2F;&#x2F;localhost:3001&#x2F;static&#x2F;js&#x2F;bundle.js:1590:5)</code>
+</pre>
+</p>
+<p>From these logs, I was able to determine that the code position existed at the
+end of a single line in every case.</p>
+<h2 id="writing-regexes">Writing Regexes</h2>
+<p>I hate writing Regular Expressions. I think they are clunky and lend themselves
+to a write only read never coding style. It turns out that most people hate them
+and are bad at writing them, but for some cases they are a necessary evil. When
+I am forced to dabble, I tend to turn toward a regex authoring tool such as
+<a href="https://regex101.com/">regex101</a>. I find the experience of writing regexes much
+less painful when I can see what gets recognized in real time and when the
+reference information is visible and handy.</p>
+<p>Writing each of the browser trace regexes was as simple as copying the
+associated log into the test string box, and copying the line with the eval
+position into the regex field. This doesn't work as is because I need the code
+to be more generalized, and there are special characters, so I added backslashes
+before the parentheses, replaced the numbers with <code>\d+</code> to match one or more
+digits, and replaced the file names with <code>.+</code> to match one or more characters.
+Finally I surrounded the actual line and column <code>\d+</code>-s with un-escaped
+parenthesis in order to mark them for extraction. And that was it! The regexes I
+landed on were as follows:</p>
+<pre>
+  <code class="language-en">chrome: &#x2F;\(eval at &lt;anonymous&gt; \(eval at evalCode \(.+:\d+\)\), &lt;anonymous&gt;:(\d+):(\d+)\)&#x2F;
+firefox: &#x2F;line \d+ &gt; eval line \d+ &gt; eval:(\d+):(\d+)&#x2F;
+edge: &#x2F;\(eval code:(\d+):(\d+)\)&#x2F;</code>
+</pre>
+<p>Pretty straight forward.</p>
+<p>As I mentioned above, I was unable to figure out how to hook up the Redux parts
+of the PR, but I did get part of the way there. After writing the regexes, I
+needed to determine which browser is being used to pick the correct one. I
+searched a bit for a vanilla javascript approach, but eventually landed on a
+simple package called
+<a href="https://www.npmjs.com/package/detect-browser">detect-browser</a> because there
+were enough edge cases to make is frustrating.</p>
+<p>The actual guts of the code was mostly a bit of plumbing from the iframe to the
+outer window, and to surface the position data in an event when the error list
+item gets clicked. Nothing particularly interesting or confusing.</p>
+<p>I pushed my code and created <a href="https://github.com/script-8/script-8.github.io/pull/270">this
+PR</a>. Moments ago as I
+was writing this, Gabriel told me he would be happy to help push the PR the rest
+of the way, so I mark today's work as a success!</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day33-tetris-attack-planning&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day35-implement-block-grid&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

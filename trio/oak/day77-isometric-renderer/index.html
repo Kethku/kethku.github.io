@@ -1,0 +1,228 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day77 - Isometric Renderer
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Building the basics of an isometric renderer
+    </h2>
+    
+    
+    <p>
+    
+      2019-05-05
+    
+    
+      <br>
+      <a href="../../hemlock/projects/robot/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day77-isometric-renderer/./todo.svg" alt="Todo" /></p>
+<p>Building on yesterday's asset creation, today I worked on the isometric
+rendering system. Isometric rendering has some significant benefits when it
+comes to rendering them using some kind of engine. Since isometric tiles have a
+clear definition for all 3 axis, we can almost treat the objects in the world as
+though they are moving in 3d space and then convert them to the actual 2d
+coordinates by transforming their positions into a certain screen x and y as
+well as rendering order.</p>
+<h2 id="a-note-about-the-word-isometric">A Note About the Word Isometric</h2>
+<p>Contrary to the modern popular usage of the word &quot;Isometric&quot; in gyms, the term
+Isometric was originally used in technical drawings to describe a particular way
+of drawing 3d shapes in a flat plane such that each axis has the same visual
+length regardless of the distance from the camera.</p>
+<p><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/3D_shapes_in_isometric_projection.svg/1280px-3D_shapes_in_isometric_projection.svg.png" alt="Wikipedia Image Depicting Isometric Shapes" /></p>
+<p>As shown in this Wikipedia image, all sides of the cube have the same visual
+length. Physically this doesn't make sense, but there are some significant
+advantages in a technical setting. The lack of perspective enables comparing
+distances with a ruler and removes some of the artistic license provided by
+choices of camera parameters and scene layout.</p>
+<p>In games we use a slightly relaxed definition of Isometric. We use the distance
+preservation along the x and y axis on the horizontal plane but throw away the
+constraints on the vertical axis. Similarly instead of the carefully prescribed
+angles of the technical version of Isometric graphics, we often use a 2-1 ratio.
+This frequently results in smoother aliasing and simpler math than the more
+exact specification.</p>
+<p>True Isometric results in jagged lines and bumpy edges because the ratio does
+not divide evenly:</p>
+<p><img src="https://kaylees.dev/trio/oak/day77-isometric-renderer/TrueIsometric.png" alt="True Isometric" /></p>
+<p>In contrast Faux isometric ratios such as 2-1 alias great since the pattern is
+just two pixels horizontally, one pixel vertically:</p>
+<p><img src="https://kaylees.dev/trio/oak/day77-isometric-renderer/FauxIsometric.png" alt="Faux Isometric" /></p>
+<p>Comparing the two, it becomes obvious that the fake version is much cleaner. As
+an added benefit, the math gets cleaner as well. Technical drawings used the
+true isometric approach to make vertical distances more obvious, but for the
+purposes of a video game they often don't matter, so we can get away without it.</p>
+<h2 id="implementation">Implementation</h2>
+<p>My implementation of an Isometric renderer uses a two step approach. I create a
+grid containing all of the ground level tiles in it and create a list of objects
+to be rendered on top of that grid for a given position. I use a dictionary
+containing the loaded textures indexed by an enum with values for each of them.</p>
+<pre>
+  <code class="language-en">public Tiles[][] TileMap = new[]{
+    new [] { Tiles.RaisedDirt, Tiles.SlopeLeft, Tiles.Dirt, Tiles.Dirt },
+    new [] { Tiles.RaisedDirt, Tiles.SlopeLeft, Tiles.Dirt, Tiles.Dirt },
+    new [] { Tiles.SlopeRight, Tiles.SlopeUp, Tiles.Dirt, Tiles.Dirt },
+    new [] { Tiles.Dirt, Tiles.Dirt, Tiles.Dirt, Tiles.Dirt }
+}.FlipHorizontally();
+
+public List&lt;(Tiles tile, Vector3 position)&gt; Entities = new List&lt;(Tiles tile, Vector3 position)&gt; {
+    (Tiles.Tree, new Vector3(3, 0, 1)),
+    (Tiles.Tree, new Vector3(1, 2, 0)),
+    (Tiles.Tree, new Vector3(3, 3, 0))
+};
+
+
+public void LoadContent(ContentManager content) {
+    tileTextures[Tiles.Dirt] = content.Load&lt;Texture2D&gt;(&quot;Tiles&#x2F;U0R0D0L0&quot;);
+    tileTextures[Tiles.SlopeRight] = content.Load&lt;Texture2D&gt;(&quot;Tiles&#x2F;U1R1D0L0&quot;);
+    tileTextures[Tiles.SlopeLeft] = content.Load&lt;Texture2D&gt;(&quot;Tiles&#x2F;U1R0D0L1&quot;);
+    tileTextures[Tiles.SlopeUp] = content.Load&lt;Texture2D&gt;(&quot;Tiles&#x2F;U1R0D0L0&quot;);
+    tileTextures[Tiles.RaisedDirt] = content.Load&lt;Texture2D&gt;(&quot;Tiles&#x2F;U1R1D1L1&quot;);
+    tileTextures[Tiles.Tree] = content.Load&lt;Texture2D&gt;(&quot;Tiles&#x2F;Tree&quot;);
+    tileTextures[Tiles.Ball] = content.Load&lt;Texture2D&gt;(&quot;Tiles&#x2F;Ball&quot;);
+}</code>
+</pre>
+<p>To draw both categories of objects I use a function <code>DrawTile</code> which takes a
+particular tile and position in world coordinates to draw it at. I use a helper
+function for converting world coordinates to the screen coordinates:</p>
+<pre>
+  <code class="language-en">private Vector2 WorldToScreen(Vector3 worldPosition) {
+    Vector3 relativePosition = worldPosition - new Vector3(CameraWorldPosition, 0);
+
+    return (new Vector2(
+        relativePosition.X * TileBaseWidth + relativePosition.Y * TileBaseWidth,
+        -relativePosition.X * TileBaseHeight + relativePosition.Y * TileBaseHeight - relativePosition.Z * TileBaseHeight)
+        + new Vector2(screenSizeManager.PixelWidth, screenSizeManager.PixelHeight)) &#x2F; 2;
+}</code>
+</pre>
+<p>Then I calculate the size and offset of the object to draw and use the
+spritebatch to render it to the screen. Importantly I use the world position to
+calculate a layer to draw the sprite at in order to get the ordering of the
+textures correct. The core idea is that y values move down and to the right, x
+values move up and to the right, and z values move up. Since the <code>layerDepth</code>
+parameter must be from 0 to 1, I also add 50 to the value and divide by 100 to
+ensure that the value is somewhere in that range. I also added a <code>layerOffset</code>
+parameter for use when the automatic system screws up for whatever reason.
+Sometimes textures may have an implicit vertical offset in the asset. I use this
+to correct for that offset.</p>
+<pre>
+  <code class="language-en">private void DrawTile(Tiles tileToDraw, Vector3 worldPosition, float layerOffset = 0) {
+    Texture2D textureToDraw = tileTextures[tileToDraw];
+
+    float tileWidth = TileBaseWidth;
+    float tileHeight = TileBaseWidth * textureToDraw.Height &#x2F; textureToDraw.Width;
+
+    Vector2 screenPosition = WorldToScreen(worldPosition);
+    float positionX = screenPosition.X - tileWidth &#x2F; 2;
+    float bottom = screenPosition.Y + TileBaseWidth * 18 &#x2F; (32 * 2);
+    float positionY = bottom - tileHeight;
+
+    spriteBatch.Draw(
+        texture: textureToDraw, 
+        destinationRectangle: new Rectangle((int)positionX, (int)positionY, (int)tileWidth, (int)tileHeight), 
+        sourceRectangle: null, color: Color.White, rotation: 0, origin: Vector2.Zero, effects: SpriteEffects.None,
+        layerDepth: (worldPosition.Y - worldPosition.X + worldPosition.Z + layerOffset + 50) &#x2F; 100);
+}</code>
+</pre>
+<p>Finally I combine them all to draw the ground and tree entities.</p>
+<pre>
+  <code class="language-en">bool increasing = true;
+double progress = 0;
+public void Draw(GameTime gameTime) {
+    for (int x = 0; x &lt; TileMap.Length; x++) {
+        var column = TileMap[x];
+        for (int y = 0; y &lt; column.Length; y++) {
+            DrawTile(column[y], new Vector3(x, y, 0));
+        }
+    }
+
+    foreach ((Tiles tile, Vector3 position) in Entities) {
+        DrawTile(tile, new Vector3(position.X, position.Y, position.Z));
+    }
+
+    DrawTile(Tiles.Ball, new Vector3(0, (float)animationManager.Interpolate(&quot;Test&quot;, progress, 0.0, 3.0), 0), 1);
+    if (increasing) progress += 0.0025;
+    else progress -= 0.0025;
+
+    if (progress &gt; 1) increasing = false;
+    if (progress &lt; 0) increasing = true;
+}</code>
+</pre>
+<p>Since the draw order is defined by the draw layer, I only needed to loop over
+every index of the world map and draw them one by one. Same goes for the
+entities except the position is defined explicitly. Finally I created a simple
+animation test with a ball texture that bounces from <code>(x: 0, y: 0)</code> to <code>(x:0, y: 3)</code> using an animation curve. The resulting animation looks like this:</p>
+<p><img src="https://kaylees.dev/trio/oak/day77-isometric-renderer/IsometricMovement.gif" alt="Isometric Movement" /></p>
+<p>Thats it for today. Next I would like to get some form of camera movement
+working and possibly entity movement and or path finding working. </p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day76-isometric-rendering-textures&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day78-map-generation-and-ios-debugging-improvements&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

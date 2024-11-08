@@ -1,0 +1,222 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day35 - Implement Block Grid
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Built the initial grid and block modules for Tetris Attack
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-13
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day35-implement-block-grid/./todo.svg" alt="Todo" /></p>
+<p>Today I built the initial version of the block grid for my Tetris Attack remake.
+I did somethings a little weird in order to simplify what I think I will need
+later on.</p>
+<h2 id="size">Size</h2>
+<p>I would like my game to run on as many devices as possible. To that end I have
+decided to make everything to the best of my ability size independent. This
+means the graphics should look good at really low resolution, and really high
+resolution and at any aspect ration. The first step to this goal is to
+paramaterize the grid rendering with the required grid width and height.</p>
+<p>I calculate the grid size by picking a percentage margin and multiplying that
+percentage by both the height and width and taking the larger.</p>
+<pre>
+  <code class="language-en">function calculateGridPosition() {
+  let margin = Math.max(width * startingMargin, height * startingMargin);
+  let maxWidth = width - margin;
+  let maxHeight = height - margin;</code>
+</pre>
+<p>I then try both axes to see which orientation the grid will fit in. Obviously I
+could do this a smarter way, but trial and error with two options is very
+reasonable and to be honest I'm too tired to do better.</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F; Try Horizontal
+  let gridWidth = maxWidth;
+  let gridHeight = gridWidth * 2;
+
+  if (gridHeight &gt; maxHeight) {
+    &#x2F;&#x2F; Fallback to vertical
+    gridHeight = maxHeight;
+    gridWidth = gridHeight &#x2F; 2;
+  }</code>
+</pre>
+<p>Once I arrive at the correct dimensions, I calculate some useful positioning
+values and return them as an object.</p>
+<pre>
+  <code class="language-en">let gridLeft = (width - gridWidth) &#x2F; 2;
+  let gridTop = (height - gridHeight) &#x2F; 2 + gridHeight;
+
+  let blockWidth = gridHeight &#x2F; gridBlockHeight;
+
+  return { gridWidth, gridHeight, gridLeft, gridTop, blockWidth };
+}</code>
+</pre>
+<p>Then I subscribe to the Draw event and render a bang block as a test to
+visualize the positioning.</p>
+<pre>
+  <code class="language-en">Draw.Subscribe(() =&gt; {
+  let { gridWidth, gridHeight, gridLeft, gridTop, blockWidth } = calculateGridPosition();
+  image(bang, gridLeft + gridWidth &#x2F; 2, gridTop - gridHeight &#x2F; 2, gridWidth, gridHeight);
+});</code>
+</pre>
+<p>Testing out the positioning by resizing the window over a variety of sizes
+verified that the sizing is good and fits the grid in the correct location.</p>
+<p><img src="https://kaylees.dev/trio/oak/day35-implement-block-grid/GridStretch.gif" alt="Grid Stretch" /></p>
+<p>The goal is for the game to render for any aspect ratio, but I optimize for the
+vertical phone form factor. Since the grid takes up most of the space for the
+case of a tall and skinny window, I declared success.</p>
+<h2 id="blocks">Blocks</h2>
+<p>Moving onto the block module, I kept things simple. First step was to defined
+the block types in an Enum-like object and build a function for picking a random
+block.</p>
+<pre>
+  <code class="language-en">const types = {
+  CIRCLE: &quot;Circle&quot;,
+  TRIANGLE_UP: &quot;TriangleUp&quot;,
+  TRIANGLE_DOWN: &quot;TriangleDown&quot;,
+  DIAMOND: &quot;Diamond&quot;,
+  STAR: &quot;Star&quot;,
+  HEART: &quot;Heart&quot;,
+  BANG: &quot;Bang&quot;
+};
+
+function randomType() {
+  let keys = Object.keys(types);
+  return types[keys[Math.floor(Math.random() * keys.length)]];
+}</code>
+</pre>
+<p>I then created a simple <code>Block</code> class which assigns a random block type and
+stores the position for rendering. One weird bit I did was to invert the Y-axis
+for block positioning. My reasoning was that since blocks will get added from
+below, adding new blocks would require updating the y position numbers as more
+get pushed in. By numbering top to bottom, new blocks get increasing Y positions
+without needing any updates.</p>
+<pre>
+  <code class="language-en">export class Block {
+  constructor(gridX, gridY) {
+    this.type = randomType();
+    this.blockLeft = gridX;
+    this.blockTop = gridY;
+  }
+
+  render(gridLeft, blocksTop, gridWidth) {
+    let blockWidth = gridWidth &#x2F; gridBlockWidth;
+    let centerX = gridLeft + blockWidth * this.blockLeft + blockWidth &#x2F; 2;
+    let centerY = blocksTop - blockWidth * this.blockTop + blockWidth &#x2F; 2;
+    image(blockImages[this.type], centerX, centerY, blockWidth, blockWidth);
+  }
+}</code>
+</pre>
+<p>Then back on the grid side of things, I initialized the blocks in a simple
+starting pattern which stacks them column by column. I store them in an array to
+start since no block lookups are needed yet, but I suspect I will store them in
+a two dimensional array or map in the future.</p>
+<pre>
+  <code class="language-en">let blocks = [];
+
+let maxStackHeight = 5;
+for (let x = 0; x &lt; gridBlockWidth; x++) {
+  let stackHeight = Math.floor(Math.random() * 4) + maxStackHeight - 3;
+  for (let y = 0; y &lt; stackHeight; y++) {
+    blocks.push(new Block(x, maxStackHeight - y));
+  }
+}</code>
+</pre>
+<p>Finally back in the draw event I calculate the top position of the block grid
+and render each block!</p>
+<pre>
+  <code class="language-en">Draw.Subscribe(() =&gt; {
+  let { gridWidth, gridHeight, gridLeft, gridTop, blockWidth } = calculateGridPosition();
+  let blocksTop = gridTop - gridHeight + maxStackHeight * blockWidth;
+
+  image(bang, gridLeft + gridWidth &#x2F; 2, gridTop - gridHeight &#x2F; 2, gridWidth, gridHeight);
+
+  for (let block of blocks) {
+    block.render(gridLeft, blocksTop, gridWidth);
+  }
+});</code>
+</pre>
+<p>Which yields this image:</p>
+<p><img src="https://kaylees.dev/trio/oak/day35-implement-block-grid/FinishedGrid.PNG" alt="FinishedGrid" /></p>
+<p>This work lays the foundation for the actual game mechanics. Shouldn't be too
+long till I start moving blocks around!</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day34-eval-error-sources&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day36-ta-utilities-and-touch&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

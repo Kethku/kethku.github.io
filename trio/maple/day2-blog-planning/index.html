@@ -1,0 +1,197 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Maple
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;">Maple</a>
+
+Day2 - Blog Planning
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Making a Todo List for the Blog
+    </h2>
+    
+    
+    <p>
+    
+      2023-03-24
+    
+    
+    </p>
+    
+  </summary>
+  <blockquote>
+<p>Another platform of boards and cords sits around a maple
+branch here. Just as the previous one, there is a ladder
+reaching down from up above and tools scattered here and
+there. This time however there is a small kiln made of
+bricks and stone. Though not currently lit, the oven feels
+warm and you can see ash inside.</p>
+<p>The setup is again clearly not permanent and appears
+constructed for a one off project and does not look like
+it would withstand many more firings.</p>
+</blockquote>
+<p>Today I worked on cleaning up some loose ends and creating a
+todo tree for the next steps in the blog project.</p>
+<h2 id="loose-ends">Loose Ends</h2>
+<p>I made the cut yesterday with a rough sketch of some places
+to navigate around and some pretty tacky syntax highlighting
+using the default zola themes. I'll leave out the text
+polishing, but I'll give some details about the syntax
+highlighting.</p>
+<p>When I first started the site, Zola had pretty rough support
+for languages and highlighting themes. At the time, my
+approach for fixing this was to rely on a js library called
+prism which would search for divs with a particular ID and
+replace it with a pre and code element containing formatted
+and highlighted text.</p>
+<p>This worked great especially with the simple black on white
+style, but with the new skin the solarized light scheme
+looked pretty bad. I also never liked using a js library for
+a feature that should be static.</p>
+<p>Luckily in the 4 years since I last used it, Zola has
+stepped up their game. Not only are all of the languages I
+could want supported (along with an extension model for
+supporting more using sublime text language formats), but
+they also added support for manually styling via css. </p>
+<pre data-lang="sass" class="language-sass z-code"><code class="language-sass" data-lang="sass"><span class="z-source z-sass"><span class="z-meta z-selector z-css"><span class="z-entity z-other z-attribute-name z-class z-css"><span class="z-punctuation z-definition z-entity z-css">.</span></span><span class="z-entity z-other z-attribute-name z-class z-css">z-code</span>
+</span>    <span class="z-meta z-property-name z-css"><span class="z-support z-type z-property-name z-css">background-color</span></span><span class="z-punctuation z-separator z-key-value z-css">:</span><span class="z-meta z-property-value z-css"> <span class="z-variable z-other z-sass"><span class="z-punctuation z-definition z-variable z-sass">$</span>foreground</span></span><span class="z-meta z-property-value z-css">
+</span>
+<span class="z-meta z-selector z-css"><span class="z-entity z-other z-attribute-name z-class z-css"><span class="z-punctuation z-definition z-entity z-css">.</span></span><span class="z-entity z-other z-attribute-name z-class z-css">z-comment</span>
+</span>    <span class="z-meta z-property-name z-css"><span class="z-support z-type z-property-name z-css">color</span></span><span class="z-punctuation z-separator z-key-value z-css">:</span><span class="z-meta z-property-value z-css"> <span class="z-variable z-other z-sass"><span class="z-punctuation z-definition z-variable z-sass">$</span>accentPink</span></span><span class="z-meta z-property-value z-css">
+</span>    <span class="z-meta z-property-name z-css"><span class="z-support z-type z-property-name z-css">font-weight</span></span><span class="z-punctuation z-separator z-key-value z-css">:</span><span class="z-meta z-property-value z-css"> <span class="z-support z-constant z-property-value z-css">bold</span></span><span class="z-meta z-property-value z-css">
+</span>
+<span class="z-meta z-selector z-css"><span class="z-entity z-other z-attribute-name z-class z-css"><span class="z-punctuation z-definition z-entity z-css">.</span></span><span class="z-entity z-other z-attribute-name z-class z-css">z-modifier</span></span><span class="z-meta z-selector z-css"> <span class="z-entity z-other z-attribute-name z-class z-css"><span class="z-punctuation z-definition z-entity z-css">.</span></span><span class="z-entity z-other z-attribute-name z-class z-css">z-entity</span></span><span class="z-meta z-selector z-css"> <span class="z-entity z-other z-attribute-name z-class z-css"><span class="z-punctuation z-definition z-entity z-css">.</span></span><span class="z-entity z-other z-attribute-name z-class z-css">z-key</span></span><span class="z-meta z-selector z-css"> <span class="z-entity z-other z-attribute-name z-class z-css"><span class="z-punctuation z-definition z-entity z-css">.</span></span><span class="z-entity z-other z-attribute-name z-class z-css">z-constant</span>
+</span>    <span class="z-meta z-property-name z-css"><span class="z-support z-type z-property-name z-css">color</span></span><span class="z-punctuation z-separator z-key-value z-css">:</span><span class="z-meta z-property-value z-css"> <span class="z-variable z-other z-sass"><span class="z-punctuation z-definition z-variable z-sass">$</span>accentDarkBlue</span></span><span class="z-meta z-property-value z-css">
+</span>
+<span class="z-meta z-selector z-css"><span class="z-entity z-other z-attribute-name z-class z-css"><span class="z-punctuation z-definition z-entity z-css">.</span></span><span class="z-entity z-other z-attribute-name z-class z-css">z-string</span>
+</span>    <span class="z-meta z-property-name z-css"><span class="z-support z-type z-property-name z-css">color</span></span><span class="z-punctuation z-separator z-key-value z-css">:</span><span class="z-meta z-property-value z-css"> <span class="z-variable z-other z-sass"><span class="z-punctuation z-definition z-variable z-sass">$</span>accentDarkBlue</span></span><span class="z-meta z-property-value z-css">
+</span>    <span class="z-meta z-property-name z-css"><span class="z-support z-type z-property-name z-css">font-weight</span></span><span class="z-punctuation z-separator z-key-value z-css">:</span><span class="z-meta z-property-value z-css"> <span class="z-support z-constant z-property-value z-css">lighter</span></span><span class="z-meta z-property-value z-css">
+</span>
+<span class="z-meta z-selector z-css"><span class="z-entity z-other z-attribute-name z-class z-css"><span class="z-punctuation z-definition z-entity z-css">.</span></span><span class="z-entity z-other z-attribute-name z-class z-css">z-type</span>
+</span>    <span class="z-meta z-property-name z-css"><span class="z-support z-type z-property-name z-css">color</span></span><span class="z-punctuation z-separator z-key-value z-css">:</span><span class="z-meta z-property-value z-css"> <span class="z-variable z-other z-sass"><span class="z-punctuation z-definition z-variable z-sass">$</span>accentBlue</span></span><span class="z-meta z-property-value z-css">
+</span>
+<span class="z-meta z-selector z-css"><span class="z-entity z-other z-attribute-name z-class z-css"><span class="z-punctuation z-definition z-entity z-css">.</span></span><span class="z-entity z-other z-attribute-name z-class z-css">z-async</span></span><span class="z-meta z-selector z-css"> <span class="z-entity z-other z-attribute-name z-class z-css"><span class="z-punctuation z-definition z-entity z-css">.</span></span><span class="z-entity z-other z-attribute-name z-class z-css">z-keyword</span>
+</span>    <span class="z-meta z-property-name z-css"><span class="z-support z-type z-property-name z-css">color</span></span><span class="z-punctuation z-separator z-key-value z-css">:</span><span class="z-meta z-property-value z-css"> <span class="z-variable z-other z-sass"><span class="z-punctuation z-definition z-variable z-sass">$</span>accentBlue</span></span><span class="z-meta z-property-value z-css">
+</span>    <span class="z-meta z-property-name z-css"><span class="z-support z-type z-property-name z-css">font-weight</span></span><span class="z-punctuation z-separator z-key-value z-css">:</span><span class="z-meta z-property-value z-css"> <span class="z-support z-constant z-property-value z-css">bold</span></span><span class="z-meta z-property-value z-css">
+</span></span></code></pre>
+<p>Thus far I've been spot checking colors and adding classes
+to the relevant color. The color scheme I've chosen has 5
+colors which has been somewhat limiting even with the
+occasional bold token. So at some point I may have to come
+up with another color to add to the list, but for now this
+works.</p>
+<h2 id="pando-update">Pando Update</h2>
+<p>A key component of my earlier blog posts were todo trees. In
+the intervening time my todo tree app has gone through a
+number of iterations. Originally I wrote a simple dsl which
+I then compiled into graphviz definition files. This worked
+as a proof of concept but I quickly realized that to be
+useful, the todos needed to be easier to write and move
+around.</p>
+<p>The second iteration was a typescript/javascript app based
+on a react node graph library I found. This took things a
+bit farther but felt limiting because it required the app to
+be written in javascript and run as an electron app or
+website.</p>
+<p>The third and current iteration is built in Rust using the
+druid toolkit. Since I wrote it, Druid has been deprecated,
+so we are due for another rewrite, but for now I just
+quickly adapted the site theme into the druid color
+definitions and took a screen cap.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-storage z-type z-rust">const</span> <span class="z-constant z-other z-rust">FOREGROUND</span><span class="z-punctuation z-separator z-rust">:</span> Color <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">Color<span class="z-punctuation z-accessor z-rust">::</span></span>rgb8<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">251</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">187</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">173</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+<span class="z-storage z-type z-rust">const</span> <span class="z-constant z-other z-rust">ACCENT_PINK</span><span class="z-punctuation z-separator z-rust">:</span> Color <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">Color<span class="z-punctuation z-accessor z-rust">::</span></span>rgb8<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">238</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">134</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">149</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+<span class="z-storage z-type z-rust">const</span> <span class="z-constant z-other z-rust">ACCENT_BLUE</span><span class="z-punctuation z-separator z-rust">:</span> Color <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">Color<span class="z-punctuation z-accessor z-rust">::</span></span>rgb8<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">74</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">122</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">150</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+<span class="z-storage z-type z-rust">const</span> <span class="z-constant z-other z-rust">ACCENT_DARK_BLUE</span><span class="z-punctuation z-separator z-rust">:</span> Color <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">Color<span class="z-punctuation z-accessor z-rust">::</span></span>rgb8<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">51</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">63</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">88</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+<span class="z-storage z-type z-rust">const</span> <span class="z-constant z-other z-rust">BACKGROUND</span><span class="z-punctuation z-separator z-rust">:</span> Color <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">Color<span class="z-punctuation z-accessor z-rust">::</span></span>rgb8<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-constant z-numeric z-integer z-decimal z-rust">41</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">40</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-numeric z-integer z-decimal z-rust">49</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+<span class="z-keyword z-operator z-range z-rust">...</span>
+<span class="z-meta z-path z-rust">AppLauncher<span class="z-punctuation z-accessor z-rust">::</span></span>with_window<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>window</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+    <span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">configure_env</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-function z-closure z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">|</span></span></span><span class="z-meta z-function z-closure z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-variable z-parameter z-rust">env</span><span class="z-punctuation z-separator z-rust">,</span> _<span class="z-punctuation z-section z-parameters z-end z-rust">|</span></span> </span><span class="z-meta z-function z-closure z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        env<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">set</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-path z-rust">theme<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">FOREGROUND_LIGHT</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-other z-rust">FOREGROUND</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        env<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">set</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-path z-rust">theme<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">FOREGROUND_DARK</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-other z-rust">ACCENT_PINK</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        env<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">set</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-path z-rust">theme<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">BACKGROUND_LIGHT</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-other z-rust">ACCENT_DARK_BLUE</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        env<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">set</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-path z-rust">theme<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">BACKGROUND_DARK</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-other z-rust">BACKGROUND</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        env<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">set</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-path z-rust">theme<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">PRIMARY_LIGHT</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-other z-rust">FOREGROUND</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        env<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">set</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-path z-rust">theme<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">PRIMARY_DARK</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-other z-rust">BACKGROUND</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        env<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">set</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-path z-rust">theme<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">BORDER_DARK</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-other z-rust">ACCENT_DARK_BLUE</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        env<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">set</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-path z-rust">theme<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">BORDER_LIGHT</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-other z-rust">ACCENT_BLUE</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        env<span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">set</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-path z-rust">theme<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">LABEL_COLOR</span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-constant z-other z-rust">FOREGROUND</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+</span></code></pre>
+<h2 id="the-plan">The Plan</h2>
+<p><img src="https://kaylees.dev/trio/maple/day2-blog-planning/pando.png" alt="Todo" /></p>
+<p>For now I've laid out a path towards simple dynamic visitors
+in the site mud. I plan on creating a small lightweight rust
+server that runs a rest endpoint and websocket. Once thats
+set up I want to model rooms in an embedded database (likely
+sqlite) and then use that data to populate the dynamic site
+content.</p>
+<p>My current thinking is that the dynamic event log should
+live in an isolated column to the left of the main content.
+This would give the site an asymmetric feel which I think
+might work well. But that's for tomorrow.</p>
+<p>Till then,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day1-everydays&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;maple&#x2F;day3-rust-gpu&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

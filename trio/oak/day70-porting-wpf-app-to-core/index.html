@@ -1,0 +1,422 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day70 - Porting WPF App to Core
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Porting a dotnet framework WPF app to dotnet core
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-21
+    
+    
+      <br>
+      <a href="../../hemlock/projects/traffic-control/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day70-porting-wpf-app-to-core/./todo.svg" alt="Todo" /></p>
+<p>Today I completed the porting work to move my old version of Traffic Control
+from dotnet framework to the new dotnet core preview. This lets me greatly
+simplify the project system and benefit from the performance improvements in
+dotnet core. Further, since dotnet core is where most of the innovation has been
+happening in .net land, its kinda the place to be at this point.</p>
+<p>Porting a dotnet framework application (let alone a WPF app) is relatively
+straightforward, and more a manner of subtraction than rewriting. I will try to
+summarize in this post the general process.</p>
+<p>To port over netframework app, you first need to have a cursory understanding of
+the anatomy of a <code>csproj</code> file. The new style <code>csproj</code> files have a streamlined
+the process significantly and made editing these files directly much more
+viable. In the process they have populated many of the properties that existed
+in old project files with sane defaults so that most of the time they can be
+omitted completely.  What follows is a section by section conversion.</p>
+<h2 id="project-tag">Project Tag</h2>
+<p>Old:</p>
+<pre>
+  <code class="language-en">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;
+&lt;Project ToolsVersion=&quot;15.0&quot; xmlns=&quot;http:&#x2F;&#x2F;schemas.microsoft.com&#x2F;developer&#x2F;msbuild&#x2F;2003&quot;&gt;</code>
+</pre>
+<p>New:</p>
+<pre>
+  <code class="language-en">&lt;Project Sdk=&quot;Microsoft.NET.Sdk.WindowsDesktop&quot;&gt;</code>
+</pre>
+<p>Old style projects required an XML version tag, a <code>ToolsVersion</code>, and a URL to
+the schema description. The new style projects ignore the XML version, and
+populate the <code>ToolsVersion</code> and schema automatically depending on the <code>Sdk</code>
+property. The <code>Sdk</code> also tells msbuild where to import the default props and
+targets for csharp projects later on down the line.</p>
+<h2 id="props-and-configuration">Props and COnfiguration</h2>
+<p>Old:</p>
+<pre>
+  <code class="language-en">&lt;Import Project=&quot;$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props&quot; Condition=&quot;Exists(&#x27;$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props&#x27;)&quot; &#x2F;&gt;
+&lt;PropertyGroup&gt;
+  &lt;Configuration Condition=&quot; &#x27;$(Configuration)&#x27; == &#x27;&#x27; &quot;&gt;Debug&lt;&#x2F;Configuration&gt;
+  &lt;TargetPlatformVersion&gt;8.1&lt;&#x2F;TargetPlatformVersion&gt;
+  &lt;Platform Condition=&quot; &#x27;$(Platform)&#x27; == &#x27;&#x27; &quot;&gt;x64&lt;&#x2F;Platform&gt;
+  &lt;ProjectGuid&gt;{81100206-5E00-4110-A875-6F75C4983D90}&lt;&#x2F;ProjectGuid&gt;
+  &lt;OutputType&gt;WinExe&lt;&#x2F;OutputType&gt;
+  &lt;RootNamespace&gt;TrafficControl&lt;&#x2F;RootNamespace&gt;
+  &lt;AssemblyName&gt;TrafficControl&lt;&#x2F;AssemblyName&gt;
+  &lt;TargetFrameworkVersion&gt;v4.7.2&lt;&#x2F;TargetFrameworkVersion&gt;
+  &lt;FileAlignment&gt;512&lt;&#x2F;FileAlignment&gt;
+  &lt;ProjectTypeGuids&gt;{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&lt;&#x2F;ProjectTypeGuids&gt;
+  &lt;WarningLevel&gt;4&lt;&#x2F;WarningLevel&gt;
+  &lt;AutoGenerateBindingRedirects&gt;true&lt;&#x2F;AutoGenerateBindingRedirects&gt;
+  &lt;NuGetPackageImportStamp&gt;
+  &lt;&#x2F;NuGetPackageImportStamp&gt;
+&lt;&#x2F;PropertyGroup&gt;
+&lt;PropertyGroup Condition=&quot;&#x27;$(Configuration)|$(Platform)&#x27; == &#x27;Debug|x64&#x27;&quot;&gt;
+  &lt;DebugSymbols&gt;true&lt;&#x2F;DebugSymbols&gt;
+  &lt;OutputPath&gt;bin\x64\Debug\&lt;&#x2F;OutputPath&gt;
+  &lt;DefineConstants&gt;DEBUG;TRACE&lt;&#x2F;DefineConstants&gt;
+  &lt;DebugType&gt;full&lt;&#x2F;DebugType&gt;
+  &lt;PlatformTarget&gt;x64&lt;&#x2F;PlatformTarget&gt;
+  &lt;ErrorReport&gt;prompt&lt;&#x2F;ErrorReport&gt;
+  &lt;CodeAnalysisRuleSet&gt;MinimumRecommendedRules.ruleset&lt;&#x2F;CodeAnalysisRuleSet&gt;
+  &lt;Prefer32Bit&gt;true&lt;&#x2F;Prefer32Bit&gt;
+  &lt;LangVersion&gt;latest&lt;&#x2F;LangVersion&gt;
+&lt;&#x2F;PropertyGroup&gt;
+&lt;PropertyGroup Condition=&quot;&#x27;$(Configuration)|$(Platform)&#x27; == &#x27;Release|x64&#x27;&quot;&gt;
+  &lt;OutputPath&gt;bin\x64\Release\&lt;&#x2F;OutputPath&gt;
+  &lt;DefineConstants&gt;TRACE&lt;&#x2F;DefineConstants&gt;
+  &lt;Optimize&gt;true&lt;&#x2F;Optimize&gt;
+  &lt;DebugType&gt;pdbonly&lt;&#x2F;DebugType&gt;
+  &lt;PlatformTarget&gt;x64&lt;&#x2F;PlatformTarget&gt;
+  &lt;ErrorReport&gt;prompt&lt;&#x2F;ErrorReport&gt;
+  &lt;CodeAnalysisRuleSet&gt;MinimumRecommendedRules.ruleset&lt;&#x2F;CodeAnalysisRuleSet&gt;
+  &lt;Prefer32Bit&gt;true&lt;&#x2F;Prefer32Bit&gt;
+&lt;&#x2F;PropertyGroup&gt;</code>
+</pre>
+<p>New:</p>
+<pre>
+  <code class="language-en">&lt;PropertyGroup&gt;
+  &lt;OutputType&gt;WinExe&lt;&#x2F;OutputType&gt;
+  &lt;TargetFramework&gt;netcoreapp3.0&lt;&#x2F;TargetFramework&gt;
+  &lt;RuntimeIdentifier&gt;win10-x64&lt;&#x2F;RuntimeIdentifier&gt;
+  &lt;UseWpf&gt;true&lt;&#x2F;UseWpf&gt;
+&lt;&#x2F;PropertyGroup&gt;</code>
+</pre>
+<p>Old style projects required a ton of misc configuration which almost never
+changed from project to project. So when the MsBuild team got the chance to
+rework things, these were the first to go. In new style projects configuration
+and platform specific properties are no longer needed. Similarly, much of the
+complexity in specifying what framework and platforms to build for have been
+cleaned up.</p>
+<p>Now the OutputType specifies what kind of asset to build (dll or exe), the
+target framework specifies what libraries to build for, and the runtime
+identifier specifies what platforms to build for. In my case I also added a
+UseWpf property to tell the default targets to compile xaml properly.</p>
+<p>Lastly, old style projects also required a referenced to the
+<code>Microsoft.Common.props</code> file in every project. Now the correct properties are
+imported based on the project Sdk removing the need for the extra boilerplate.</p>
+<h2 id="references">References</h2>
+<p>Old:</p>
+<pre>
+  <code class="language-en">&lt;ItemGroup&gt;
+  &lt;Reference Include=&quot;Caliburn.Micro, Version=3.2.0.0, Culture=neutral, PublicKeyToken=8e5891231f2ed21f, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\Caliburn.Micro.Core.3.2.0\lib\net45\Caliburn.Micro.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;Caliburn.Micro.Platform, Version=3.2.0.0, Culture=neutral, PublicKeyToken=8e5891231f2ed21f, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\Caliburn.Micro.3.2.0\lib\net45\Caliburn.Micro.Platform.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;Caliburn.Micro.Platform.Core, Version=3.2.0.0, Culture=neutral, PublicKeyToken=8e5891231f2ed21f, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\Caliburn.Micro.3.2.0\lib\net45\Caliburn.Micro.Platform.Core.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;DeltaCompressionDotNet, Version=1.1.0.0, Culture=neutral, PublicKeyToken=1d14d6e5194e7f4a, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\DeltaCompressionDotNet.1.1.0\lib\net20\DeltaCompressionDotNet.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;DeltaCompressionDotNet.MsDelta, Version=1.1.0.0, Culture=neutral, PublicKeyToken=46b2138a390abf55, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\DeltaCompressionDotNet.1.1.0\lib\net20\DeltaCompressionDotNet.MsDelta.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;DeltaCompressionDotNet.PatchApi, Version=1.1.0.0, Culture=neutral, PublicKeyToken=3e8888ee913ed789, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\DeltaCompressionDotNet.1.1.0\lib\net20\DeltaCompressionDotNet.PatchApi.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;Mono.Cecil, Version=0.9.6.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\Mono.Cecil.0.9.6.1\lib\net45\Mono.Cecil.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;Mono.Cecil.Mdb, Version=0.9.6.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\Mono.Cecil.0.9.6.1\lib\net45\Mono.Cecil.Mdb.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;Mono.Cecil.Pdb, Version=0.9.6.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\Mono.Cecil.0.9.6.1\lib\net45\Mono.Cecil.Pdb.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;Mono.Cecil.Rocks, Version=0.9.6.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\Mono.Cecil.0.9.6.1\lib\net45\Mono.Cecil.Rocks.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;NHotkey, Version=1.2.1.0, Culture=neutral, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\NHotkey.1.2.1\lib\net20\NHotkey.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;NHotkey.Wpf, Version=1.2.1.0, Culture=neutral, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\NHotkey.Wpf.1.2.1\lib\net35\NHotkey.Wpf.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;NuGet.Squirrel, Version=3.0.0.0, Culture=neutral, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\squirrel.windows.1.9.0\lib\Net45\NuGet.Squirrel.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;PropertyChanged, Version=2.5.11.0, Culture=neutral, PublicKeyToken=ee3ee20bcf148ddd, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\PropertyChanged.Fody.2.5.11\lib\net452\PropertyChanged.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;SharpCompress, Version=0.17.1.0, Culture=neutral, PublicKeyToken=afb0a02973931d96, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\SharpCompress.0.17.1\lib\net45\SharpCompress.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;Splat, Version=1.6.2.0, Culture=neutral, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\Splat.1.6.2\lib\Net45\Splat.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;Squirrel, Version=1.9.0.0, Culture=neutral, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\squirrel.windows.1.9.0\lib\Net45\Squirrel.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;System&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Data&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Drawing&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Windows.Forms&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\Caliburn.Micro.3.2.0\lib\net45\System.Windows.Interactivity.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;System.Xml&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;Microsoft.CSharp&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Core&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Xml.Linq&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Data.DataSetExtensions&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Net.Http&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Xaml&quot;&gt;
+    &lt;RequiredTargetFramework&gt;4.0&lt;&#x2F;RequiredTargetFramework&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;WindowsBase&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;PresentationCore&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;PresentationFramework&quot; &#x2F;&gt;
+&lt;&#x2F;ItemGroup&gt;</code>
+</pre>
+<p>New:</p>
+<pre>
+  <code class="language-en">&lt;ItemGroup&gt;
+  &lt;PackageReference Include=&quot;Caliburn.Micro&quot; Version=&quot;3.2.0.0&quot; &#x2F;&gt;
+  &lt;PackageReference Include=&quot;NHotkey.Wpf&quot; Version=&quot;1.2.1.0&quot; &#x2F;&gt;
+  &lt;PackageReference Include=&quot;PropertyChanged.Fody&quot; Version=&quot;2.5.11.0&quot; &#x2F;&gt;
+&lt;&#x2F;ItemGroup&gt;
+&lt;ItemGroup&gt;
+  &lt;Reference Include=&quot;System&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Data&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL&quot;&gt;
+    &lt;HintPath&gt;..\packages\Caliburn.Micro.3.2.0\lib\net45\System.Windows.Interactivity.dll&lt;&#x2F;HintPath&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;System.Xml&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;Microsoft.CSharp&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Core&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Xml.Linq&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Data.DataSetExtensions&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Net.Http&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;System.Xaml&quot;&gt;
+    &lt;RequiredTargetFramework&gt;4.0&lt;&#x2F;RequiredTargetFramework&gt;
+  &lt;&#x2F;Reference&gt;
+  &lt;Reference Include=&quot;WindowsBase&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;PresentationCore&quot; &#x2F;&gt;
+  &lt;Reference Include=&quot;PresentationFramework&quot; &#x2F;&gt;
+&lt;&#x2F;ItemGroup&gt;</code>
+</pre>
+<p>The next biggest change is the way Nuget packages are referenced. In old style
+projects, the Nuget package is referenced with a standard assembly <code>Reference</code>.
+This required hinting the location of the reference, and adding a bunch of
+verification information to make sure the correct assembly is selected.</p>
+<p>Further installing of packages required a <code>package.config</code> file which specified
+how and where to download which packages. The process was fragile and would
+frequently get confused if the packages every got out of sync.</p>
+<p>New style projects use a new tag called <code>PackageReference</code> which specifies the
+assembly reference and which package to pull down all at once. It simplifies the
+process and makes it human editable instead of having to look up obscure
+properties of the installed package.</p>
+<h2 id="csharp-file-list">CSharp File List</h2>
+<p>Old:</p>
+<pre>
+  <code class="language-en">&lt;ItemGroup&gt;
+  &lt;Compile Include=&quot;BrowserManager.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;CompletionUtils.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;Events.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;InputManager.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;PipManager.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;UpdateFlagUtils.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;WindowsUtils.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;TrafficControl.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;ViewModels\BrowserViewModel.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;ViewModels\HelpViewModel.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;ViewModels\PipViewModel.cs&quot; &#x2F;&gt;
+  &lt;Page Include=&quot;Views\HelpView.xaml&quot;&gt;
+    &lt;Generator&gt;MSBuild:Compile&lt;&#x2F;Generator&gt;
+    &lt;SubType&gt;Designer&lt;&#x2F;SubType&gt;
+  &lt;&#x2F;Page&gt;
+  &lt;Page Include=&quot;Views\CompletionResultView.xaml&quot;&gt;
+    &lt;SubType&gt;Designer&lt;&#x2F;SubType&gt;
+    &lt;Generator&gt;MSBuild:Compile&lt;&#x2F;Generator&gt;
+  &lt;&#x2F;Page&gt;
+  &lt;Page Include=&quot;Views\InputBoxView.xaml&quot;&gt;
+    &lt;SubType&gt;Designer&lt;&#x2F;SubType&gt;
+    &lt;Generator&gt;MSBuild:Compile&lt;&#x2F;Generator&gt;
+  &lt;&#x2F;Page&gt;
+  &lt;Content Include=&quot;FodyWeavers.xml&quot;&gt;
+    &lt;SubType&gt;Designer&lt;&#x2F;SubType&gt;
+  &lt;&#x2F;Content&gt;
+  &lt;Compile Include=&quot;Bootstrapper.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;Input\KeySequence.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;Input\KeyTrigger.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;Input\MultiKeyGesture.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;Input\MultiKeyGestureConverter.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;ViewModels\CompletionResultViewModel.cs&quot; &#x2F;&gt;
+  &lt;Compile Include=&quot;ViewModels\InputBoxViewModel.cs&quot; &#x2F;&gt;
+  &lt;Page Include=&quot;Views\BrowserView.xaml&quot;&gt;
+    &lt;Generator&gt;MSBuild:Compile&lt;&#x2F;Generator&gt;
+    &lt;SubType&gt;Designer&lt;&#x2F;SubType&gt;
+  &lt;&#x2F;Page&gt;
+  &lt;Page Include=&quot;Views\PipView.xaml&quot;&gt;
+    &lt;SubType&gt;Designer&lt;&#x2F;SubType&gt;
+    &lt;Generator&gt;MSBuild:Compile&lt;&#x2F;Generator&gt;
+  &lt;&#x2F;Page&gt;
+&lt;&#x2F;ItemGroup&gt;
+&lt;ItemGroup&gt;
+  &lt;Compile Include=&quot;Properties\AssemblyInfo.cs&quot;&gt;
+    &lt;SubType&gt;Code&lt;&#x2F;SubType&gt;
+  &lt;&#x2F;Compile&gt;
+  &lt;Compile Include=&quot;Properties\Resources.Designer.cs&quot;&gt;
+    &lt;AutoGen&gt;True&lt;&#x2F;AutoGen&gt;
+    &lt;DesignTime&gt;True&lt;&#x2F;DesignTime&gt;
+    &lt;DependentUpon&gt;Resources.resx&lt;&#x2F;DependentUpon&gt;
+  &lt;&#x2F;Compile&gt;
+  &lt;Compile Include=&quot;Properties\Settings.Designer.cs&quot;&gt;
+    &lt;AutoGen&gt;True&lt;&#x2F;AutoGen&gt;
+    &lt;DependentUpon&gt;Settings.settings&lt;&#x2F;DependentUpon&gt;
+    &lt;DesignTimeSharedInput&gt;True&lt;&#x2F;DesignTimeSharedInput&gt;
+  &lt;&#x2F;Compile&gt;
+  &lt;EmbeddedResource Include=&quot;Properties\Resources.resx&quot;&gt;
+    &lt;Generator&gt;ResXFileCodeGenerator&lt;&#x2F;Generator&gt;
+    &lt;LastGenOutput&gt;Resources.Designer.cs&lt;&#x2F;LastGenOutput&gt;
+  &lt;&#x2F;EmbeddedResource&gt;
+  &lt;None Include=&quot;packages.config&quot; &#x2F;&gt;
+  &lt;None Include=&quot;Properties\Settings.settings&quot;&gt;
+    &lt;Generator&gt;SettingsSingleFileGenerator&lt;&#x2F;Generator&gt;
+    &lt;LastGenOutput&gt;Settings.Designer.cs&lt;&#x2F;LastGenOutput&gt;
+  &lt;&#x2F;None&gt;
+&lt;&#x2F;ItemGroup&gt;</code>
+</pre>
+<p>New:</p>
+<p><em>Nothing</em></p>
+<p>Old style projects required listing every file added to the old style project
+along with what the compiler should do for each one. In contrast, new style
+projects will automatically populate the list of files to compile by adding the
+appropriate action for every file in the directory containing the csproj file
+automatically. The result is that all of the boilerplate goes away and you only
+need to list files that should have non default handling. This is a HUGE win.</p>
+<h2 id="targets">Targets</h2>
+<p>Old: </p>
+<pre>
+  <code class="language-en">&lt;Import Project=&quot;$(MSBuildToolsPath)\Microsoft.CSharp.targets&quot; &#x2F;&gt;
+  &lt;Import Project=&quot;..\packages\Fody.3.2.4\build\Fody.targets&quot; Condition=&quot;Exists(&#x27;..\packages\Fody.3.2.4\build\Fody.targets&#x27;)&quot; &#x2F;&gt;
+  &lt;Target Name=&quot;EnsureNuGetPackageBuildImports&quot; BeforeTargets=&quot;PrepareForBuild&quot;&gt;
+    &lt;PropertyGroup&gt;
+      &lt;ErrorText&gt;This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http:&#x2F;&#x2F;go.microsoft.com&#x2F;fwlink&#x2F;?LinkID=322105. The missing file is {0}.&lt;&#x2F;ErrorText&gt;
+    &lt;&#x2F;PropertyGroup&gt;
+    &lt;Error Condition=&quot;!Exists(&#x27;..\packages\Fody.3.2.4\build\Fody.targets&#x27;)&quot; Text=&quot;$([System.String]::Format(&#x27;$(ErrorText)&#x27;, &#x27;..\packages\Fody.3.2.4\build\Fody.targets&#x27;))&quot; &#x2F;&gt;
+    &lt;Error Condition=&quot;!Exists(&#x27;..\packages\cef.redist.x64.3.3396.1786\build\cef.redist.x64.props&#x27;)&quot; Text=&quot;$([System.String]::Format(&#x27;$(ErrorText)&#x27;, &#x27;..\packages\cef.redist.x64.3.3396.1786\build\cef.redist.x64.props&#x27;))&quot; &#x2F;&gt;
+    &lt;Error Condition=&quot;!Exists(&#x27;..\packages\cef.redist.x86.3.3396.1786\build\cef.redist.x86.props&#x27;)&quot; Text=&quot;$([System.String]::Format(&#x27;$(ErrorText)&#x27;, &#x27;..\packages\cef.redist.x86.3.3396.1786\build\cef.redist.x86.props&#x27;))&quot; &#x2F;&gt;
+    &lt;Error Condition=&quot;!Exists(&#x27;..\packages\CefSharp.Common.67.0.0\build\CefSharp.Common.props&#x27;)&quot; Text=&quot;$([System.String]::Format(&#x27;$(ErrorText)&#x27;, &#x27;..\packages\CefSharp.Common.67.0.0\build\CefSharp.Common.props&#x27;))&quot; &#x2F;&gt;
+    &lt;Error Condition=&quot;!Exists(&#x27;..\packages\CefSharp.Common.67.0.0\build\CefSharp.Common.targets&#x27;)&quot; Text=&quot;$([System.String]::Format(&#x27;$(ErrorText)&#x27;, &#x27;..\packages\CefSharp.Common.67.0.0\build\CefSharp.Common.targets&#x27;))&quot; &#x2F;&gt;
+    &lt;Error Condition=&quot;!Exists(&#x27;..\packages\CefSharp.Wpf.67.0.0\build\CefSharp.Wpf.props&#x27;)&quot; Text=&quot;$([System.String]::Format(&#x27;$(ErrorText)&#x27;, &#x27;..\packages\CefSharp.Wpf.67.0.0\build\CefSharp.Wpf.props&#x27;))&quot; &#x2F;&gt;
+    &lt;Error Condition=&quot;!Exists(&#x27;..\packages\CefSharp.Wpf.67.0.0\build\CefSharp.Wpf.targets&#x27;)&quot; Text=&quot;$([System.String]::Format(&#x27;$(ErrorText)&#x27;, &#x27;..\packages\CefSharp.Wpf.67.0.0\build\CefSharp.Wpf.targets&#x27;))&quot; &#x2F;&gt;
+  &lt;&#x2F;Target&gt;
+  &lt;Import Project=&quot;..\packages\CefSharp.Common.67.0.0\build\CefSharp.Common.targets&quot; Condition=&quot;Exists(&#x27;..\packages\CefSharp.Common.67.0.0\build\CefSharp.Common.targets&#x27;)&quot; &#x2F;&gt;
+  &lt;Import Project=&quot;..\packages\CefSharp.Wpf.67.0.0\build\CefSharp.Wpf.targets&quot; Condition=&quot;Exists(&#x27;..\packages\CefSharp.Wpf.67.0.0\build\CefSharp.Wpf.targets&#x27;)&quot; &#x2F;&gt;
+&lt;&#x2F;Project&gt;</code>
+</pre>
+<p>New:</p>
+<p><em>Nothing</em></p>
+<p>Similarly to the file list, new style projects do not require any imports as
+they are imported automatically. Old style projects required importing a
+standard CSharp target and any targets that a nuget package might provide. New
+style projects do this automatically and provide a mechanism for nuget packages
+to specify imports as well which will get automatically included. Another big
+win for readability.</p>
+<h2 id="summary">Summary</h2>
+<p>Thats it! The entire process cut down a 204 line csproj file to just 40 succinct
+and understandable lines. Along with the easier readability, new style files are
+also editable while the project is open and allow targeting old framework and
+new simultaneously.</p>
+<p>As for the actual Traffic Control project, I had to tear out a number of pieces
+to get things working on netcore. The browser control I had been using: CefSharp
+does not support netcore, so I had to remove my picture in picture utility.
+Similarly the installer I had does not support netcore integration beyond the
+integration of any non dotnet app, so I also went ahead and teared it out. This
+removes a number of useful features, but I get back the ability to publish a
+standalone application directory, so installation is simpler. Further I am
+planning on pulling out the commands from the traffic control application
+anyways in favor of having tools register themselves in a central listing.</p>
+<p>Thats it for today. I ported Traffic Control to netcore, and paved the way for
+the plugin api next time.</p>
+<p>Till tomorrow<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day69-popup-tool-bar&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day71-azul-experimentation&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

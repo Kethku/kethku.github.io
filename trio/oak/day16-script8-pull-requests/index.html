@@ -1,0 +1,294 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day16 - SCRIPT-8 Pull Requests
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Miscellanious Pull Requests to SCRIPT-8
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-22
+    
+    
+      <br>
+      <a href="../../hemlock/projects/8bomb/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p>Today I spent my time working on 3 pull requests for various issues in the
+<a href="https://github.com/script-8/script-8.github.io">SCRIPT-8</a> GitHub repo. None of
+them were really related to a project in particular, but I used the simple tasks
+as a forcing function to more closely understand the code base. Hopefully this
+will get me in good position to making more complicated changes later on.</p>
+<p>Yesterday I visited the Fantasy Console Discord Server to see if there was any
+activity. Turns out people chat on the server somewhat frequently, so I decided
+to pop in and say hello. I mentioned that I was working on
+<a href="../../projects/8bomb/">8Bomb</a> and that I would be willing to help contribute in
+any way I could. Gabriel pointed me to some issues which I then made pull
+requests for today.</p>
+<h2 id="vertical-sprite-flip">Vertical Sprite Flip</h2>
+<p>The first of the three was very simple. SCRIPT-8 supports drawing flipped
+sprites by passing a boolean to the sprite function to indicate whether to flip
+horizontally over the vertical axis. There was an
+<a href="https://github.com/script-8/script-8.github.io/issues/170">issue</a> created
+requesting an extra boolean for flipping vertically as well.</p>
+<p>This change was pretty similar to my previous <code>getPixel</code> and <code>setPixel</code> changes, so
+it went by pretty quickly.</p>
+<pre>
+  <code class="language-en">sprites[spriteIndex].slice(0, 8).forEach((cells, rowIndex) =&gt; {
+  cells.split(&#x27;&#x27;).forEach((color, colIndex) =&gt; {
+    if (color !== &#x27; &#x27;) {
+      const clamped = clamp(+color - darken, 0, 7)
+      ctx.fillStyle = colors.rgb(clamped)
+      ctx.fillRect(
+        Math.floor(x) + (flipHorizontal ? 7 - colIndex : colIndex),
+        Math.floor(y) + (flipVertical ? 7 - rowIndex : rowIndex),
+        1,
+        1
+      )
+    }
+  })
+})</code>
+</pre>
+<p>The important part was adding an identical inline condition that checks
+<code>flipVertical</code> and subtracts the <code>rowIndex</code> from 7 if a vertical flip was requested.
+Easy peasy. Gabriel merged the
+<a href="https://github.com/script-8/script-8.github.io/pull/212">PR</a> pretty quickly.</p>
+<h2 id="token-count">Token Count</h2>
+<p>The second PR was a bit more complicated. Fantasy consoles frequently impose
+character limits upon programs written for them to simulate the space
+constraints that existed on the old systems they are based on. Gabriel has
+mentioned that he is interested in adding a similar thing to SCRIPT-8, and had
+laid the groundwork via a simple minified source character count UI. This works,
+but tends to encourage poor coding style since character counts can be lowered
+by changing variables names etc.</p>
+<p><a href="https://www.lexaloffle.com/pico-8.php">Pico-8</a> generally concidered the best of
+all the fantasy consoles uses a token limit instead, so all variables
+reguardless of size count equally. Gabriel created an issue pointing toward
+<a href="https://github.com/acornjs/acorn">acorn.js</a> which is a parser for JavaScript
+written in JavaScript and suggesting that the character count recording should
+be implemented using it instead of the existing method.</p>
+<p>After some searching I eventually found that the source code UI was located in a
+React container called Output. Previously there was a fair amount of repeated
+code and specialization to minify the source before counting.</p>
+<pre>
+  <code class="language-en">getSize() {
+  const { game, songs, chains, phrases, sprites, map } = this.props
+
+  const gameText = assembleOrderedGame(game)
+
+  const gameTextLz = lz.compress(gameText)
+  const art = JSON.stringify({ sprites, map })
+  const artLz = lz.compress(art)
+  const music = JSON.stringify({ phrases, chains, songs })
+  const musicLz = lz.compress(music)
+
+  const sizes = [
+    [&#x27;code&#x27;, gameText, gameTextLz],
+    [&#x27;art&#x27;, art, artLz],
+    [&#x27;music&#x27;, music, musicLz]
+  ]
+
+  return (
+    &lt;ul&gt;
+      {sizes.map((d, i) =&gt; (
+        &lt;li key={i}&gt;
+          {d[0]}: {numberWithCommas(d[1].length)}&#x2F;
+          {numberWithCommas(d[2].length)}
+        &lt;&#x2F;li&gt;
+      ))}
+      &lt;li&gt;
+        total: {numberWithCommas(sum(sizes.map(d =&gt; d[1].length)))}&#x2F;
+        {numberWithCommas(sum(sizes.map(d =&gt; d[2].length)))}
+      &lt;&#x2F;li&gt;
+    &lt;&#x2F;ul&gt;
+  )
+}</code>
+</pre>
+<p>Instead of compressing the text and counting the size that way I used acorn's
+tokenizer at the suggestion of Gabriel to split the text into tokens, and then
+used the token count for the display.</p>
+<pre>
+  <code class="language-en">import { tokenizer } from &quot;acorn&quot;;
+const getTokenCount = src =&gt; {
+  try {
+    return numberWithCommas([...tokenizer(src)].length)
+  } catch (error) {
+    return &quot;ERROR&quot;
+  }
+}</code>
+</pre>
+<p>Since the tokenizer depends on the source being at least somewhat well formed, I
+wrapped the acorn call in a <code>try catch</code> to keep things happy.</p>
+<p>Then I simplified the existing code a bit by storing the data in an object with
+useful property names, moving the total element into the same object, and using
+some lodash trickery to loop over the object and call <code>getTokenCount</code> with the
+correct arguments.</p>
+<pre>
+  <code class="language-en">getSize() {
+  const { game, songs, chains, phrases, sprites, map } = this.props
+
+  const code = assembleOrderedGame(game)
+  const art = JSON.stringify({ sprites, map })
+  const music = JSON.stringify({ phrases, chains, songs })
+  const total = code + art + music
+
+  const assets = {
+    code,
+    art,
+    music,
+    total
+  };
+
+  return (
+    &lt;ul&gt;
+      {_.toPairs(assets).map(pair =&gt; ((name, code) =&gt; (
+        &lt;li key={name}&gt;
+          {name}: {getTokenCount(code)}
+        &lt;&#x2F;li&gt;
+      ))(...pair))}
+    &lt;&#x2F;ul&gt;
+  )
+}</code>
+</pre>
+<p>I think these changes reduced the repeated code, and made things somewhat more
+understandable. It strayed a bit further than I normally like to from just doing
+the minimal change possible, but Gabriel didn't seem to mind because he merged
+the <a href="https://github.com/script-8/script-8.github.io/pull/213">PR</a> shortly after
+I posted it.</p>
+<h2 id="scroll-bug">Scroll Bug</h2>
+<p>The last PR I created was the most complicated. As mentioned above, SCRIPT-8
+uses React to render the UI. It also uses a library called
+<a href="https://codemirror.net/">CodeMirror</a> for the text editor. There was already
+support for preserving the scroll position across tab changes, but there was an
+issue to add support for preserving the cursor position as well.</p>
+<p>This seems like an easy change, but SCRIPT-8 also uses a library called
+<a href="https://redux.js.org/">Redux</a> for state management, which formalizes how the
+app stores and modifies state. This makes the application easier to reason
+about, but makes it much harder to change the state manipulation in the app.</p>
+<p>With Redux, all state changes must be done via specialized actions which are
+like events that describe the change to be made. This means if a new type of
+action is introduced, it must be added in many different places.</p>
+<p>My initial attempt at the change added an entirely new action for cursor
+position storage. After chatting in the discord for a bit, we decided to instead
+modify the existing <code>scrollInfo</code> action to also contain the cursor position. In
+the process I also renamed the <code>scrollInfo</code> action to be <code>scrollData</code> to
+differentiate it from the <code>scrollInfo</code> in CodeMirror.</p>
+<p>The actual changes were pretty small, just record the cursor position any time
+the editor unmounts, and restore the cursor position when the code editor is
+remounted. The code in the code editor component had a fair amount of
+repitition, so I will show one example of the store and load routines.</p>
+<pre>
+  <code class="language-en">&#x2F;&#x2F; If found, restore scroll data.
+const { scrollData } = activeGame
+if (scrollData) {
+  this.codeMirror.scrollTo(scrollData.left || 0, scrollData.top || 0)
+  this.codeMirror.setCursor(scrollData.cursorPosition)
+}</code>
+</pre>
+<p>If scrollData is a property in the activeGame object which contains the state,
+then the codeMirror object is told to scroll to the store position and set the
+cursor to the stored position.</p>
+<pre>
+  <code class="language-en">componentWillUnmount() {
+  window.removeEventListener(&#x27;keyup&#x27;, this.hideSlider)
+  const activeGame = getActive(this.props.game)
+  const scrollInfo = this.codeMirror.getScrollInfo()
+  const cursorPosition = this.codeMirror.getCursor()
+  const scrollData = { top: scrollInfo.top, left: scrollInfo.left, cursorPosition }
+  this.props.setScrollData({ scrollData, tab: activeGame.key })
+  this.props.updateHistory({
+    index: activeGame.key,
+    history: this.codeMirror.getDoc().getHistory()
+  })
+}</code>
+</pre>
+<p>Similarly if the component is unmounted, the scroll position and cursor position
+are stored and set using the setter passed to the component.</p>
+<p>That was about it, getting to the point of understanding what the issue was and
+how to make the intended changes took a while, but in the end I am pretty sure I
+did it correctly. As of writing, this
+<a href="https://github.com/script-8/script-8.github.io/pull/214">PR</a> has not yet
+merged, but Gabriel mentioned to me that he was planning on taking a look at it
+shortly.</p>
+<p>I find the process of contributing to an open source project very satisfying as
+the nitty gritty pieces such as build system, documentation etc are for the most
+part already ironed out, so what I get to work on is a cohesive app already
+working. It also gives me the chance to practice reading and understanding code
+that I didn't write. My hope is that as I do this more frequently my ability to
+read and understand code for my work will improve. Time will tell.</p>
+<p>Tomorrow I am going skiing, so I will likely have less time to work on my daily.
+I will try to come up with something though.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day15-8bomb-physics&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day17-8bomb-camera&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

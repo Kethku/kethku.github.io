@@ -1,0 +1,235 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day72 - Imgui and GGEZ Experimentation
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Testing out ggez and imgui libraries in rust
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-24
+    
+    
+    </p>
+    
+  </summary>
+  <p>Yesterday I didn't get anything posted because I was doing some experimentation
+with GGEZ, imgui, and my data collection process. I bit off more than I could
+chew and it got too late by the time I got to a good stopping place to write
+everything up.</p>
+<h2 id="org-capture">Org Capture</h2>
+<p>Recently I've been putting some thought into how I can streamline my writing
+process a bit more and potentially integrate my coding and writing process a bit
+more. I eventually landed on using <a href="https://orgmode.org/">org-mode</a> and the
+org-capture feature to record code snippets and various data without breaking my
+programming flow.</p>
+<p>As I have mentioned in a
+<a href="https://kaylees.dev/trio/oak/day64-spacemacs-chrome-debugging/">previous</a> post, I
+<em>currently</em> use emacs as my primary editor. One huge benefit to this is that I
+can take advantage of the wonderful org-mode plain text organization system.
+Giving an overview of all of the crazy things org-mode can do would take an
+entire blog. <a href="https://sachachua.com/blog/">There are those who</a> have written
+such blogs, so I won't try to repeat that here. Suffice it to say that org-mode
+is pretty great.</p>
+<p>org-capture is the canonical way for pulling things into the org-mode system.
+The core idea is to build easy key bindings which will use contextual
+information to add an org-mode entry. The process is highly configurable, so you
+can prompt the user for some extra information, store the location you are
+coming from, currently clipboard, etc. You specify all of this configuration
+information in a fairly succinct variable like so:</p>
+<pre>
+<code class="language-lisp">org-capture-templates `(
+    ("d" "Daily Info" entry (file "c:/dev/Notes/daily.org")
+     "* %?\n%i")
+    ("c" "Daily Code" entry (file "c:/dev/Notes/daily.org")
+     "* %?\n{% code(lang=\"lisp\") %}\n%i{% end %}")))
+</code>
+</pre>
+<p>Here I have defined two commands: d for daily info which will store whatever
+region is around, and c for daily code which will store the region and wrap it
+in a code block. The format is a bit weird, but it has the key binding followed
+by the name, the file to store in, and the format of text to insert. The format
+has a number <code>%</code> tokens which get replaced by various data related to the
+particular captured content. More details about the exact formats can be found
+<a href="https://orgmode.org/manual/Template-expansion.html#Template-expansion">here</a>.</p>
+<p>This small change lets me code along and any time I find some piece of code or
+information that would be worth pointing out in the blog post, I can tag it and
+save it for later.</p>
+<h2 id="ggez">GGEZ</h2>
+<p>With the blog stuff out of the way I moved on to building the GGEZ and ImGui
+demo. The idea for this pairing as a UI framework came from
+<a href="https://iolivia.me/posts/imgui-ggez/">this</a> which goes into detail how to
+integrate the two projects. Unfortunately the blog post was written a while ago
+and is missing some crucial details about how to use the new version of GGEZ.</p>
+<p>The strategy is still sound though so I soldiered on. The first step was to get
+a building version of GGEZ with a simple graphics demo. The particular demo
+recommended in the blog post was to have a simple circle slide across the
+screen, so I just went with that.</p>
+<pre data-lang="rs" class="language-rs z-code"><code class="language-rs" data-lang="rs"><span class="z-source z-rust"><span class="z-keyword z-other z-rust">use</span> <span class="z-meta z-path z-rust">ggez<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-keyword z-operator z-arithmetic z-rust">*</span><span class="z-punctuation z-terminator z-rust">;</span>
+
+<span class="z-meta z-struct z-rust"><span class="z-storage z-type z-struct z-rust">struct</span> </span><span class="z-meta z-struct z-rust"><span class="z-entity z-name z-struct z-rust">State</span> </span><span class="z-meta z-struct z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-variable z-other z-member z-rust">pos_x</span><span class="z-punctuation z-separator z-type z-rust">:</span> <span class="z-storage z-type z-rust">f32</span>,
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+
+<span class="z-meta z-impl z-rust"><span class="z-storage z-type z-impl z-rust">impl</span> </span><span class="z-meta z-impl z-rust"><span class="z-meta z-path z-rust">ggez<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">event<span class="z-punctuation z-accessor z-rust">::</span></span>EventHandler <span class="z-keyword z-other z-rust">for</span></span><span class="z-meta z-impl z-rust"> <span class="z-entity z-name z-impl z-rust">State</span> </span><span class="z-meta z-impl z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">update</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-keyword z-operator z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> <span class="z-variable z-parameter z-rust">self</span>, <span class="z-variable z-parameter z-rust">_ctx</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> Context</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> <span class="z-meta z-generic z-rust">GameResult<span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-punctuation z-section z-group z-end z-rust">)</span><span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span></span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>pos_x <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>pos_x <span class="z-keyword z-operator z-arithmetic z-rust">%</span> <span class="z-constant z-numeric z-float z-rust">800.</span><span class="z-constant z-numeric z-float z-rust">0</span> <span class="z-keyword z-operator z-arithmetic z-rust">+</span> <span class="z-constant z-numeric z-float z-rust">1.</span><span class="z-constant z-numeric z-float z-rust">0</span><span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-support z-type z-rust">Ok</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+
+    <span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">draw</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span><span class="z-keyword z-operator z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> <span class="z-variable z-parameter z-rust">self</span>, <span class="z-variable z-parameter z-rust">ctx</span><span class="z-punctuation z-separator z-rust">:</span> <span class="z-keyword z-operator z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> Context</span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> <span class="z-meta z-function z-return-type z-rust"><span class="z-punctuation z-separator z-rust">-&gt;</span> <span class="z-meta z-generic z-rust">GameResult<span class="z-punctuation z-definition z-generic z-begin z-rust">&lt;</span><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-punctuation z-section z-group z-end z-rust">)</span><span class="z-punctuation z-definition z-generic z-end z-rust">&gt;</span></span></span> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+        <span class="z-meta z-path z-rust">graphics<span class="z-punctuation z-accessor z-rust">::</span></span>clear<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>ctx<span class="z-punctuation z-separator z-rust">,</span> <span class="z-meta z-path z-rust">graphics<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">BLACK</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-storage z-type z-rust">let</span> circle <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">graphics<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">Mesh<span class="z-punctuation z-accessor z-rust">::</span></span>new_circle<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>
+            ctx<span class="z-punctuation z-separator z-rust">,</span>
+            <span class="z-meta z-path z-rust">graphics<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">DrawMode<span class="z-punctuation z-accessor z-rust">::</span></span>fill<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-separator z-rust">,</span>
+            <span class="z-meta z-path z-rust">mint<span class="z-punctuation z-accessor z-rust">::</span></span>Point2<span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>x<span class="z-punctuation z-separator z-rust">:</span> <span class="z-variable z-language z-rust">self</span><span class="z-punctuation z-accessor z-dot z-rust">.</span>pos_x<span class="z-punctuation z-separator z-rust">,</span> y<span class="z-punctuation z-separator z-rust">:</span> <span class="z-constant z-numeric z-float z-rust">330.</span><span class="z-constant z-numeric z-float z-rust">0</span></span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span><span class="z-punctuation z-separator z-rust">,</span>
+            <span class="z-constant z-numeric z-float z-rust">100.</span><span class="z-constant z-numeric z-float z-rust">0</span><span class="z-punctuation z-separator z-rust">,</span>
+            <span class="z-constant z-numeric z-float z-rust">1.</span><span class="z-constant z-numeric z-float z-rust">0</span><span class="z-punctuation z-separator z-rust">,</span>
+            <span class="z-meta z-path z-rust">graphics<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-constant z-other z-rust">WHITE</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-keyword z-operator z-rust">?</span><span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-meta z-path z-rust">graphics<span class="z-punctuation z-accessor z-rust">::</span></span>draw<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>ctx<span class="z-punctuation z-separator z-rust">,</span> <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span>circle<span class="z-punctuation z-separator z-rust">,</span> <span class="z-meta z-path z-rust">graphics<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">DrawParam<span class="z-punctuation z-accessor z-rust">::</span></span>default<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-keyword z-operator z-rust">?</span><span class="z-punctuation z-terminator z-rust">;</span>
+        <span class="z-meta z-path z-rust">graphics<span class="z-punctuation z-accessor z-rust">::</span></span>present<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>ctx</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+    </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+
+<span class="z-meta z-function z-rust"><span class="z-meta z-function z-rust"><span class="z-storage z-modifier z-rust">pub</span> <span class="z-storage z-type z-function z-rust">fn</span> </span><span class="z-entity z-name z-function z-rust">main</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-begin z-rust">(</span></span><span class="z-meta z-function z-rust"><span class="z-meta z-function z-parameters z-rust"><span class="z-punctuation z-section z-parameters z-end z-rust">)</span></span></span></span><span class="z-meta z-function z-rust"> </span><span class="z-meta z-function z-rust"><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span>
+    <span class="z-storage z-type z-rust">let</span> state <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-keyword z-operator z-bitwise z-rust">&amp;</span><span class="z-storage z-modifier z-rust">mut</span> State <span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-begin z-rust">{</span> pos_x<span class="z-punctuation z-separator z-rust">:</span> <span class="z-constant z-numeric z-float z-rust">0.</span><span class="z-constant z-numeric z-float z-rust">0</span> </span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+    <span class="z-storage z-type z-rust">let</span> c <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">conf<span class="z-punctuation z-accessor z-rust">::</span></span><span class="z-meta z-path z-rust">Conf<span class="z-punctuation z-accessor z-rust">::</span></span>new<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+    <span class="z-storage z-type z-rust">let</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-storage z-modifier z-rust">ref</span> <span class="z-storage z-modifier z-rust">mut</span> ctx<span class="z-punctuation z-separator z-rust">,</span> <span class="z-storage z-modifier z-rust">ref</span> <span class="z-storage z-modifier z-rust">mut</span> event_loop</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span> <span class="z-keyword z-operator z-assignment z-rust">=</span> <span class="z-meta z-path z-rust">ContextBuilder<span class="z-punctuation z-accessor z-rust">::</span></span>new<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span><span class="z-string z-quoted z-double z-rust"><span class="z-punctuation z-definition z-string z-begin z-rust">&quot;</span>ggez_imgui_test<span class="z-punctuation z-definition z-string z-end z-rust">&quot;</span></span><span class="z-punctuation z-separator z-rust">,</span> <span class="z-string z-quoted z-double z-rust"><span class="z-punctuation z-definition z-string z-begin z-rust">&quot;</span>Kaylee Simmons<span class="z-punctuation z-definition z-string z-end z-rust">&quot;</span></span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+        <span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">conf</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>c</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+        <span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">build</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span>
+        <span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">unwrap</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+
+    <span class="z-meta z-path z-rust">event<span class="z-punctuation z-accessor z-rust">::</span></span>run<span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span>ctx<span class="z-punctuation z-separator z-rust">,</span> event_loop<span class="z-punctuation z-separator z-rust">,</span> state</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-accessor z-dot z-rust">.</span><span class="z-support z-function z-rust">unwrap</span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-begin z-rust">(</span></span><span class="z-meta z-group z-rust"><span class="z-punctuation z-section z-group z-end z-rust">)</span></span><span class="z-punctuation z-terminator z-rust">;</span>
+</span><span class="z-meta z-block z-rust"><span class="z-punctuation z-section z-block z-end z-rust">}</span></span></span>
+</span></code></pre>
+<p>The only real difficulty was getting SDL to install properly. Some minor
+fiddling and updating to the newest version of GGEZ and that was working too.</p>
+<p><img src="https://kaylees.dev/trio/oak/day72-imgui-and-ggez-experimentation/GGEZDemo.gif" alt="GGEZ Demo" /></p>
+<p>Integrating the ImGui library required following (copying) the guide in the blog
+post, and clicking build until things starting running. The main issues I ran
+into was finding the correct version. After updating to GGEZ 0.5 which switched
+off of SDL for window creation, things built just fine.</p>
+<h2 id="imgui">ImGui</h2>
+<p>As a bit of background, ImGui is a UI toolkit in an immediate mode style which
+simply means that it doesn't keep an entire tree around between frames. Every
+frame renders the whole UI from scratch. Recently there has been a similar
+pattern in Javascript with virtual dom libraries which try to emulate immediate
+mode interfaces by diffing trees between frames.</p>
+<p>ImGui has an added benefit that the interface is pretty simple. If you have a
+way to render textures to the screen, mouse and keyboard input and a window,
+then its not too hard to integrate ImGui. The imgui-rs libraries handles most of
+this for you, so I just needed to hook up the correct shader and input bindings.</p>
+<p>As mentioned above, most of the code for doing this was lifted straight from
+<a href="https://iolivia.me/posts/imgui-ggez/">this blog</a>. So I won't repeat all of it
+here. The changes I made had to do with updated interfaces. GGEZ used
+<code>get_property</code> naming scheme in the earlier versions, but updated to having
+direct property names instead. So the vast majority of the changes were just
+deleting <code>get_</code> from the beginning of property names.</p>
+<p>The code in question can be found
+<a href="https://github.com/Kethku/GGEZ_ImGui_Test/blob/401d1360f0b53d3dd8b880b00d4cf3e2766800b4/src/imgui_wrapper.rs">here</a>.</p>
+<p>Unfortunately at this point (at 1 am in the morning no less) I ran into an issue
+I have yet to figure out. Weirdly when I tried running everything seemed to be
+working fine, but the text inside the gui was cut off. </p>
+<p><img src="https://kaylees.dev/trio/oak/day72-imgui-and-ggez-experimentation/ImguiError.gif" alt="ImGui Error" /></p>
+<p>As shown in the above gif, when I move the window, more and more of the text is
+cut off. I've tried a number of things related to dpi scaling and the like but
+without a deeper understanding of all that is going on, I have decided to give
+up for now but will probably post an issue on the ImGui repo to see if they have
+any ideas.</p>
+<h2 id="thoughts">Thoughts</h2>
+<p>As far as UI goes, I actually think ImGui is pretty promising for demo purposes.
+The immediate mode pattern works really well in a game dev environment and the
+amount of code for the interface is pretty tiny.</p>
+<p>I do have some concerns with how flexible they toolkit is. If I am very
+particular about the look of the controls, I don't know how much leeway ImGui
+gives for styling. I didn't get far enough along to really tell either way.</p>
+<p>Similarly I didn't get far enough along to tell one way or the other if the
+performance was good enough. I didn't notice any issues with the super tiny demo
+I built, but I suspect the immediate mode style will not perform as well as a
+retained mode toolkit. Hard to tell though.</p>
+<p>Overall I think its promising. Its a good tool to keep in my pocket for when I
+want a simple UI in a game or other Rust project.</p>
+<h2 id="house-keeping">House Keeping</h2>
+<p>Some notes on the state of the Blog: I mentioned in an earlier post that I will
+allow myself some wiggle room on blog posts. More recently I have realized that
+that didn't really happen. I still feel pretty guilty when I miss a day even if
+I did get work done that day (like yesterday). To that end I'm going to be more
+explicit. My goal is to have a post at least every other day. This should let me
+to take on more exploratory projects some days with the understanding that
+failing to learn or finish anything is an acceptable result. </p>
+<p>So from here on out I will try to make a post each day but I won't feel too bad
+if I miss a day for whatever reason so long as I get one every other day at
+minimum.</p>
+<p>Till tomorrow (or the day after),<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day71-azul-experimentation&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day73-visual-studio-ios-debug-debugging&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="392pt" height="264pt" viewBox="0.00 0.00 392.19 264.00">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 260)">
+<title>%0</title>
+<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-260 388.1908,-260 388.1908,4 -4,4"/>
+<!-- PorttoNetCore -->
+<g id="node1" class="node">
+<title>PorttoNetCore</title>
+<polygon fill="none" stroke="#c0c0c0" points="224.2367,-219.5 224.2367,-255.5 335.8847,-255.5 335.8847,-219.5 224.2367,-219.5"/>
+<text text-anchor="start" x="232.2367" y="-239.9" font-family="Times,serif" font-size="14.00" fill="#c0c0c0">Port to Net Core </text>
+<text text-anchor="start" x="251.0919" y="-225.9" font-family="Times,serif" font-size="14.00" fill="#c0c0c0"> </text>
+<text text-anchor="start" x="254.5919" y="-225.9" font-family="Times,serif" font-style="italic" font-size="14.00" fill="#c0c0c0">Complete</text>
+</g>
+<!-- GlobalPluginConfig -->
+<g id="node2" class="node">
+<title>GlobalPluginConfig</title>
+<polygon fill="none" stroke="#000000" points="153.7837,-146.5 153.7837,-182.5 290.3377,-182.5 290.3377,-146.5 153.7837,-146.5"/>
+<text text-anchor="start" x="161.7837" y="-160.3" font-family="Times,serif" font-size="14.00" fill="#000000">Global Plugin Config</text>
+</g>
+<!-- PorttoNetCore&#45;&gt;GlobalPluginConfig -->
+<g id="edge1" class="edge">
+<title>PorttoNetCore-&gt;GlobalPluginConfig</title>
+<path fill="none" stroke="#000000" d="M265.7236,-219.4551C258.8221,-210.7686 250.417,-200.1898 242.8311,-190.642"/>
+<polygon fill="#000000" stroke="#000000" points="245.395,-188.2427 236.4339,-182.5904 239.9143,-192.5972 245.395,-188.2427"/>
+</g>
+<!-- Installer -->
+<g id="node4" class="node">
+<title>Installer</title>
+<polygon fill="none" stroke="#000000" points="308.1273,-146.5 308.1273,-182.5 369.9941,-182.5 369.9941,-146.5 308.1273,-146.5"/>
+<text text-anchor="middle" x="339.0607" y="-160.3" font-family="Times,serif" font-size="14.00" fill="#000000">Installer</text>
+</g>
+<!-- PorttoNetCore&#45;&gt;Installer -->
+<g id="edge2" class="edge">
+<title>PorttoNetCore-&gt;Installer</title>
+<path fill="none" stroke="#000000" d="M294.645,-219.4551C301.6655,-210.7686 310.2155,-200.1898 317.9322,-190.642"/>
+<polygon fill="#000000" stroke="#000000" points="320.8759,-192.5678 324.4397,-182.5904 315.4317,-188.1677 320.8759,-192.5678"/>
+</g>
+<!-- CompletionAPI -->
+<g id="node3" class="node">
+<title>CompletionAPI</title>
+<polygon fill="none" stroke="#000000" points="167.979,-73.5 167.979,-109.5 276.1424,-109.5 276.1424,-73.5 167.979,-73.5"/>
+<text text-anchor="start" x="175.979" y="-87.3" font-family="Times,serif" font-size="14.00" fill="#000000">Completion API</text>
+</g>
+<!-- GlobalPluginConfig&#45;&gt;CompletionAPI -->
+<g id="edge3" class="edge">
+<title>GlobalPluginConfig-&gt;CompletionAPI</title>
+<path fill="none" stroke="#000000" d="M222.0607,-146.4551C222.0607,-138.3828 222.0607,-128.6764 222.0607,-119.6817"/>
+<polygon fill="#000000" stroke="#000000" points="225.5608,-119.5903 222.0607,-109.5904 218.5608,-119.5904 225.5608,-119.5903"/>
+</g>
+<!-- PictureinPictureBrowser -->
+<g id="node6" class="node">
+<title>PictureinPictureBrowser</title>
+<polygon fill="none" stroke="#000000" points="0,-.5 0,-36.5 164.1214,-36.5 164.1214,-.5 0,-.5"/>
+<text text-anchor="start" x="8" y="-14.3" font-family="Times,serif" font-size="14.00" fill="#000000">Picture in Picture Browser</text>
+</g>
+<!-- CompletionAPI&#45;&gt;PictureinPictureBrowser -->
+<g id="edge4" class="edge">
+<title>CompletionAPI-&gt;PictureinPictureBrowser</title>
+<path fill="none" stroke="#000000" d="M187.4539,-73.4551C168.7758,-63.7157 145.5353,-51.5975 125.6347,-41.2207"/>
+<polygon fill="#000000" stroke="#000000" points="127.2398,-38.1105 116.7545,-36.5904 124.0033,-44.3174 127.2398,-38.1105"/>
+</g>
+<!-- ScreenCap -->
+<g id="node7" class="node">
+<title>ScreenCap</title>
+<polygon fill="none" stroke="#000000" points="181.9916,-.5 181.9916,-36.5 262.1298,-36.5 262.1298,-.5 181.9916,-.5"/>
+<text text-anchor="start" x="189.9916" y="-14.3" font-family="Times,serif" font-size="14.00" fill="#000000">Screen Cap</text>
+</g>
+<!-- CompletionAPI&#45;&gt;ScreenCap -->
+<g id="edge5" class="edge">
+<title>CompletionAPI-&gt;ScreenCap</title>
+<path fill="none" stroke="#000000" d="M222.0607,-73.4551C222.0607,-65.3828 222.0607,-55.6764 222.0607,-46.6817"/>
+<polygon fill="#000000" stroke="#000000" points="225.5608,-46.5903 222.0607,-36.5904 218.5608,-46.5904 225.5608,-46.5903"/>
+</g>
+<!-- WindowSniper -->
+<g id="node8" class="node">
+<title>WindowSniper</title>
+<polygon fill="none" stroke="#000000" points="279.9306,-.5 279.9306,-36.5 384.1908,-36.5 384.1908,-.5 279.9306,-.5"/>
+<text text-anchor="start" x="287.9306" y="-14.3" font-family="Times,serif" font-size="14.00" fill="#000000">Window Sniper</text>
+</g>
+<!-- CompletionAPI&#45;&gt;WindowSniper -->
+<g id="edge6" class="edge">
+<title>CompletionAPI-&gt;WindowSniper</title>
+<path fill="none" stroke="#000000" d="M249.2517,-73.4551C263.3985,-64.0667 280.8764,-52.4678 296.1237,-42.3491"/>
+<polygon fill="#000000" stroke="#000000" points="298.4044,-45.0362 304.8013,-36.5904 294.5338,-39.2037 298.4044,-45.0362"/>
+</g>
+<!-- AutoUpdate -->
+<g id="node5" class="node">
+<title>AutoUpdate</title>
+<polygon fill="none" stroke="#000000" points="295.0989,-73.5 295.0989,-109.5 383.0225,-109.5 383.0225,-73.5 295.0989,-73.5"/>
+<text text-anchor="start" x="303.0989" y="-87.3" font-family="Times,serif" font-size="14.00" fill="#000000">Auto Update</text>
+</g>
+<!-- Installer&#45;&gt;AutoUpdate -->
+<g id="edge7" class="edge">
+<title>Installer-&gt;AutoUpdate</title>
+<path fill="none" stroke="#000000" d="M339.0607,-146.4551C339.0607,-138.3828 339.0607,-128.6764 339.0607,-119.6817"/>
+<polygon fill="#000000" stroke="#000000" points="342.5608,-119.5903 339.0607,-109.5904 335.5608,-119.5904 342.5608,-119.5903"/>
+</g>
+</g>
+</svg>

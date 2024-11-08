@@ -1,0 +1,298 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day66 - Porting Tetris Attack to Typescript
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Made significant progress toward porting my Tetris Attack clone to typescript
+    </h2>
+    
+    
+    <p>
+    
+      2019-04-16
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day66-porting-tetris-attack-to-typescript/./todo.svg" alt="Todo" /></p>
+<p>Today I spent some time porting many of the JavaScript files in the Tetris
+Attack clone to Typescript in order to get a better editing experience and to
+get some better type safety in my JavaScript code. I didn't finish the process
+as I ran out of time, but I got far enough in to decided that it was the right
+option because I already found a number of bugs just by annotating the types
+everywhere.</p>
+<h2 id="process">Process</h2>
+<p>Much of the process of porting to Typescript is just renaming the file extension
+from <code>.js</code> to <code>.ts</code>. Since Typescript is a relatively unobtrusive layer on top
+of standard JavaScript, much of the source remains unchanged. The only places I
+made changes were adding annotations to function arguments, reworking enum
+values, and moving class fields around.</p>
+<p>Luckily the typescript environment I have setup in Spacemacs will tell me where
+I went wrong.</p>
+<pre>
+  <code class="language-en">class Match {
+  constructor(matchBlocks) {
+    this.blocks = matchBlocks; &#x2F;&#x2F; Error: blocks does not exist on Match
+    this.timer = 0; &#x2F;&#x2F; Error: timer does not exist on Match
+
+    for (let block of this.blocks) { &#x2F;&#x2F; Error: blocks does not exist on Match
+      block.state = state.MATCHED;
+      dropBlock(block);
+    }
+  }
+
+  update() {
+    if (this.timer &lt; clearDelay) { &#x2F;&#x2F; Error: timer does not exist on Match
+      this.timer++; &#x2F;&#x2F; Error: timer does not exist on Match
+    } else {</code>
+</pre>
+<p>Here each of the lines I have commented had a simple red underline which when
+hovered over with my cursor told me that the various properties did not exist on
+the <code>Match</code> type. To fix this I simply added a field declaration at the top of
+the class.</p>
+<pre>
+  <code class="language-en">class Match {
+  public blocks: Block[];
+  public timer: number;
+
+  constructor(matchBlocks: Block[]) {
+    this.blocks = matchBlocks;
+    this.timer = 0;
+
+    for (let block of this.blocks) {
+      block.state = state.MATCHED;
+      dropBlock(block);
+    }
+  }
+
+  update() {
+    if (this.timer &lt; clearDelay) {
+      this.timer++;
+    } else {</code>
+</pre>
+<h2 id="enums">Enums</h2>
+<p>I also took this porting as an opportunity to use the better enum data types in
+Typescript over my hacky enum objects. The process was similarly simple, just
+rewriting the old object types:</p>
+<pre>
+  <code class="language-en">export const type = {
+  WOOD: &quot;Wood&quot;,
+  ICE: &quot;Ice&quot;,
+  STONE: &quot;Stone&quot;,
+  LEAF: &quot;Leaf&quot;,
+  LAVA: &quot;Lava&quot;,
+  GOLD: &quot;Gold&quot;,
+  BANG: &quot;Bang&quot;,
+  GARBAGE: &quot;Garbage&quot;
+};</code>
+</pre>
+<p>Into the cleaner enum version:
+<pre>
+  <code class="language-en">export enum BlockType {
+  Wood,
+  Ice,
+  Stone,
+  Leaf,
+  Lava,
+  Gold,
+  Bang,
+  Garbage
+}</code>
+</pre>
+</p>
+<h2 id="static-fields">Static Fields</h2>
+<p>The Color and Vector types all have static properties on the class function
+which are set dynamically in the original source:</p>
+<pre>
+  <code class="language-en">export class Color {
+  constructor(r, g, b, a = 1) {
+    this.r = r;
+    this.g = g;
+    this.b = b;
+    this.a = a;
+  }
+}
+
+Color.white = new Color(1, 1, 1, 1);
+Color.gray = new Color(0.5, 0.5, 0.5, 1);
+Color.black = new Color(0, 0, 0, 1);
+Color.clear = new Color(0, 0, 0, 0);</code>
+</pre>
+<p>Swapping to Typescript required moving those static properties to field
+declarations within the class itself:</p>
+<pre>
+  <code class="language-en">export class Color {
+  static white = new Color(1, 1, 1, 1);
+  static gray = new Color(0.5, 0.5, 0.5, 1);
+  static black = new Color(0, 0, 0, 1);
+  static clear = new Color(0, 0, 0, 0);
+
+  public r: number;
+  public g: number;
+  public b: number;
+  public a: number;
+
+  constructor(r: number, g: number, b: number, a = 1) {
+    this.r = r;
+    this.g = g;
+    this.b = b;
+    this.a = a;
+  }
+}</code>
+</pre>
+<h2 id="type-bug-fixes">Type Bug Fixes</h2>
+<p>In the process of porting over I discovered a couple of bugs which were caught
+by the type checker. The first showed up as a weird error message:</p>
+<p><img src="https://kaylees.dev/trio/oak/day66-porting-tetris-attack-to-typescript/TypescriptErrorCatch.PNG" alt="Typescript Error Catch" /></p>
+<p>Jumping to the definition of <code>tint</code> (using the typescript jump to definition
+support) brought me to this variable declaration:</p>
+<pre>
+  <code class="language-en">let tint = this.calculateColor(position.y);</code>
+</pre>
+<p>Which when jumping to the calculate color function reveals this definition:</p>
+<pre>
+  <code class="language-en">calculateColor(centerY) {
+  if (this.state === BlockState.Matched) {
+    return new Color(1.5, 1.5, 1.5, 1);
+  } else if (this.state === BlockState.Clearing) {
+    let percentageDone = this.clearTimer &#x2F; clearingTime;
+    return new Color(1, 1, 1, 1 - percentageDone);
+  } else if (this.state === BlockState.Cleared) {
+    return Color.clear;
+  } else if (this.state === BlockState.Spawning) {
+    let gridBottom = gridCenter.y - gridDimensions.height &#x2F; 2;
+    let blockBottom = centerY - blockWidth &#x2F; 2;
+    let distanceFromBottom = blockBottom - gridBottom;
+
+    if (distanceFromBottom &gt;= 0) {
+      if (this.state === BlockState.Spawning) {
+        this.state = BlockState.Waiting;
+      }
+      return 1;
+    }
+    if (distanceFromBottom &lt; -blockWidth) return 0;
+
+    return new Color(1, 1, 1, (distanceFromBottom + blockWidth) &#x2F; (blockWidth * 2));
+  } else {
+    return Color.white;
+  }
+}</code>
+</pre>
+<p>This combined with the error message pointed out that for some branches of the
+<code>calculateColor</code> function I was returning a <code>Color</code> object, and for others I
+returned a number. It would have been a long while till I caught that bug
+without Typescript, so I consider this a huge win.</p>
+<h2 id="browser-typescript">Browser Typescript</h2>
+<p>Typescript not only helps me by guaranteeing that my code is consistent. It also
+has a large library of built in browser types which match the standards
+definitions. When porting the touch functionality to Typescript, I discovered
+that the <code>touchId</code> property I was tracking on the pointer events was incorrect
+compared to the standards. Since the <code>PointerEvent</code> object is in the list of
+already defined types, I found out my error after annotating the
+<code>handlePointerEvent</code> function.</p>
+<pre>
+  <code class="language-en">function handlePointerEvent(e: PointerEvent) {
+  if (!touchDown || touchId == e.pointerId) {
+    touchId = e.pointerId;
+    touchPosition = new Vector(e.clientX, screenSize.height - e.clientY);
+    touchDown = e.pressure &gt; 0;
+  }
+}</code>
+</pre>
+<h2 id="import-weirdness">Import Weirdness</h2>
+<p>The only downside so far in porting is that Typescript is less tolerant to the
+trickery which Webpack plays to import things other than source files.</p>
+<p>At the top of the <code>webgl.ts</code> file I previous had these imports which pulled in
+the shader code from the shader files at build time.</p>
+<pre>
+  <code class="language-en">import vert from &#x27;.&#x2F;shaders&#x2F;vert.glsl&#x27;;
+import frag from &#x27;.&#x2F;shaders&#x2F;frag.glsl&#x27;;</code>
+</pre>
+<p>Unfortunately Typescript complains here because it doesn't have a definition for
+the vert.glsl and frag.glsl shader files. To get around this I used the built in
+nodejs require function instead which has no such type constraints.</p>
+<pre>
+  <code class="language-en">const vert: string = require(&#x27;.&#x2F;shaders&#x2F;vert.glsl&#x27;);
+const frag: string = require(&#x27;.&#x2F;shaders&#x2F;frag.glsl&#x27;);</code>
+</pre>
+<h2 id="summary">Summary</h2>
+<p>Overall I find the process of porting to Typescript pretty satisfying because it
+gives me a stronger confidence that my code does what I think it does. More
+often than not I find myself wishing Typescript would support more complex and
+expressive types instead of feeling like the type system is holding me back.
+That this tool set also gives me better completion information is just a cherry
+on top.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day65-multi-line-garbage-clearing&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day67-window-sniper&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

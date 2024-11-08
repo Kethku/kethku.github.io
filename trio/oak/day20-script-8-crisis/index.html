@@ -1,0 +1,314 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day20 - SCRIPT-8 Crisis
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Reimplementing SCRIPT-8 in a github pages site.
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-26
+    
+    
+      <br>
+      <a href="../../hemlock/projects/8bomb/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day20-script-8-crisis/./todo.svg" alt="Todo" /></p>
+<p>Today's project got sidetracked by a crisis inside SCRIPT-8. While I was working
+on improving 8Bomb to add better terrain rendering, simulated bombs, and better
+input (I will write about these changes, but it will have to wait until another
+day), a programmer who goes by the username icarito wrote a SCRIPT-8 script
+titled Virus which escaped the iframe which the game code runs on and locates
+the variable containing the GitHub access token. It then prints the token to the
+screen. The code for the script can be found
+<a href="https://gist.github.com/icarito/9de45c2cb7fa54cc9c688d177b2e4944">here</a></p>
+<p>This discovery scared Gabriel (as it should), so he took down the site and
+revoked the access tokens for all of the users of SCRIPT-8. Meanwhile I had been
+working along on 8Bomb when suddenly I couldn't save the script. Some chatting
+on discord later, I came to the conclusion that this wasn't going to be a quick
+fix, so I decided take a different tact.</p>
+<p>Much of SCRIPT-8 is in the UI and saving/sharing experience. The rendering and
+game portion of the code is actually extremely simple, and often done in a
+fairly brute force way. So instead of waiting for Gabriel to fix the bug, I
+decided to re-implement the subset of the SCRIPT-8 API that 8Bomb actually uses
+in my own website. This way I can keep working on the game even when the website
+is down. This has the added benefit of letting me embed the game into my blog!</p>
+<div id="gameContainer">
+<style>
+iframe {
+    position: relative;
+    left: 50%;
+    transform: translate(-50%,0%);
+    min-width: 7in;
+    min-height: 7in;
+}
+<p>@media (max-width: 8.5in) {
+iframe {
+min-width: 80vw;
+min-height: 80vw;
+}
+}
+</style></p>
+<iframe src="https://kethku.github.io/8Bomb/"></iframe>
+</div>
+<p>The source code for the minimal SCRIPT-8 implementation can be found
+<a href="https://github.com/Kethku/8Bomb">here</a>.</p>
+<h2 id="getting-started">Getting Started</h2>
+<p>These days, my dev tool of choice is <a href="https://parceljs.org/">Parcel</a>. For small
+projects like this one, its perfect and really smoothed over a lot of the
+difficulties of using modern JavaScript. I started by following
+<a href="https://pages.github.com/">these</a> instructions to get a GitHub pages site up
+and running. I made a slight modification by moving the index.html into it's own
+src directory, just to allow parcel to output the compiled assets to the base of
+the GitHub pages site. I then navigated to the cloned repository, and ran
+<code>parcel src/index.html</code> to get the dev server up and running. Then in my editor I
+started typing.</p>
+<pre>
+  <code class="language-en">&lt;html&gt;
+
+  &lt;head&gt;
+    &lt;style&gt;
+     body {
+       background: rgb(8,20,30)
+     }
+
+     #game {
+       position: fixed;
+       top: 50%;
+       left: 50%;
+       transform: translate(-50%, -50%);
+       width: 100vw;
+       height: 100vw;
+       image-rendering: pixelated;
+     }
+    &lt;&#x2F;style&gt;
+  &lt;&#x2F;head&gt;
+
+  &lt;body&gt;
+    &lt;canvas id=&quot;game&quot; width=128 height=128&gt;&lt;&#x2F;canvas&gt;
+
+    &lt;script src=&quot;.&#x2F;index.js&quot;&gt;&lt;&#x2F;script&gt;
+  &lt;&#x2F;body&gt;
+
+&lt;&#x2F;html&gt;</code>
+</pre>
+<p>This was basic boilerplate to create a canvas element, position it in the center
+of the screen, and enable pixel perfect drawing. Then the <code>index.js</code> is run.</p>
+<h2 id="basic-structure">Basic Structure</h2>
+<p>I decided to split the code into the main engine, and the actual game logic
+which should be very similar to the code that actually gets run in SCRIPT-8. To
+get this as close as possible, I decided to simulate the (insecure) eval logic
+in the actual SCRIPT-8 engine. Luckily Parcel allows for including assets as
+strings via the <code>readFileSync</code> function. Any file which imports <code>readFileSync</code>
+from the <code>fs</code> module will get a specialized version injected which provides the
+contents of the read file instead of actually reading anything. This way the content gets bundled but the code reads just like it would in Node.js.</p>
+<pre>
+  <code class="language-en">import {readFileSync} from &#x27;fs&#x27;;
+
+let gameCode = readFileSync(__dirname + &quot;&#x2F;game.js&quot;, &#x27;utf-8&#x27;);
+
+let canvas = document.getElementById(&#x27;game&#x27;);
+let ctx = canvas.getContext(&#x27;2d&#x27;);
+
+window.initialState = &quot;&quot;;
+window.draw = () =&gt; {};
+window.update = () =&gt; {};
+window.sprites = {};
+
+eval(gameCode);</code>
+</pre>
+<h2 id="canvas-api">Canvas API</h2>
+<p>Of course executing the eval-ed draw or update functions threw errors because
+the actual API functions didn't yet exist. Luckily 8Bomb only used a small
+portion of the API so things went pretty smoothly. I went error by error pulling
+in code from the
+<a href="https://github.com/script-8/script-8.github.io/tree/6232864f4be4ecb4ef4de84b226121070504de42/src/iframe/src/canvasAPI"><code>CanvasApi</code></a>
+in SCRIPT-8 until I finally got something to draw on the screen. As an example, this is the clear function I pulled from SCRIPT-8:</p>
+<pre>
+  <code class="language-en">function clear(c) {
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (!isNil(c)) {
+    ctx.fillStyle = colors.rgb(c);
+    ctx.fillRect(0, 0, 128, 128);
+  } else {
+    ctx.clearRect(0, 0, 128, 128);
+  }
+  ctx.restore();
+}</code>
+</pre>
+<p>What follows are the interesting stumbling blocks I ran into.</p>
+<p>First: Parcel requires variables that are globally scoped to be accessed via the
+window object. Much of SCRIPT-8 is written assuming that properties on the
+window object are actually global, but Parcel requires access to be explicit.</p>
+<p>Second: SCRIPT-8 draws most of its objects via single pixel wide and single
+pixel tall rectangles. This includes the sprites, the text in print calls, and
+many of the other primitives. This strikes me as an area for performance
+improvement!</p>
+<pre>
+  <code class="language-en">function sprite(x, y, spriteIndex, darken = 0, flipH = false, flipV = false) {
+  if (window.sprites[spriteIndex]) {
+    window.sprites[spriteIndex].slice(0, 8).forEach((cells, rowIndex) =&gt; {
+      cells.split(&#x27;&#x27;).forEach((color, colIndex) =&gt; {
+        if (color !== &#x27; &#x27;) {
+          const clamped = clamp(+color - darken, 0, 7);
+          ctx.fillStyle = colors.rgb(clamped);
+          ctx.fillRect(
+            Math.floor(x) + (flipH ? 7 - colIndex : colIndex),
+            Math.floor(y) + (flipV ? 7 - rowIndex : rowIndex),
+            1,
+            1
+          );
+        }
+      });
+    });
+  }
+}</code>
+</pre>
+<p>Third: Chrome implements a global function <code>print</code>. If this function is run, it
+will try to print a screen shot of the current page. This was very confusing
+until I realized that the print API function wasn't implemented yet.</p>
+<p>Forth: Sprites in SCRIPT-8 are encoded as lists of strings of characters. To get
+them working I pulled the sprite list in the Gist for my game out and appended
+it to the end of my game file.</p>
+<pre>
+  <code class="language-en">sprites = {
+  &quot;0&quot;: [
+    &quot;  3333  &quot;,
+    &quot; 333333 &quot;,
+    &quot;33333333&quot;,
+    &quot;33333333&quot;,
+    &quot;33333333&quot;,
+    &quot;33333333&quot;,
+    &quot; 333333 &quot;,
+    &quot;  3333  &quot;
+  ],
+  &quot;1&quot;: [
+    &quot;5       &quot;,
+    &quot;65      &quot;,
+    &quot;465     &quot;,
+    &quot;3465    &quot;,
+    &quot;3465    &quot;,
+    &quot;465     &quot;,
+    &quot;65      &quot;,
+    &quot;5       &quot;
+  ],
+  &quot;2&quot;: [
+    &quot;  6666  &quot;,
+    &quot; 664466 &quot;,
+    &quot;66644666&quot;,
+    &quot;66644666&quot;,
+    &quot;66644666&quot;,
+    &quot;66666666&quot;,
+    &quot; 664466 &quot;,
+    &quot;  6666  &quot;
+  ],
+  &quot;3&quot;: [
+    &quot;  4444  &quot;,
+    &quot; 442244 &quot;,
+    &quot;44422444&quot;,
+    &quot;44422444&quot;,
+    &quot;44422444&quot;,
+    &quot;44444444&quot;,
+    &quot; 442244 &quot;,
+    &quot;  4444  &quot;
+  ]
+};</code>
+</pre>
+<h2 id="loop">Loop</h2>
+<p>After working through these minor issues, much of the API went pretty smoothly.
+Getting the actual game to run was as simple as creating a loop function, and
+calling the game functions within it, threading the state through. </p>
+<pre>
+  <code class="language-en">function loop() {
+  let state = window.initialState;
+
+  window.update(state, {});
+  window.draw(state);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);</code>
+</pre>
+<p>And there we have it! A running game from SCRIPT-8 outside of SCRIPT-8. I plan
+on doing much of my SCRIPT-8 development in this way simply because the tooling
+is better, I don't have to worry about the infinite loop problem where scripts
+are unrecoverable when an infinite loop is created. That and the fact that I can
+embed the game wherever I want make this solution very appealing.</p>
+<p>At this point it is very late, so I will wrap it up here. I'm hopeful that
+Gabriel will be able to figure out a solution to the security issues found
+tonight soon, but until then I will continue on with 8Bomb without him.</p>
+<p>Till Tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day19-automating-blogging&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day21-8bomb-version-0-1&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,122 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day32 - Tetris Attack Clone
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      I started a Tetris Attack Clone!
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-10
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p>Today I got started on a new project! My favorite game of all time has got to be
+Tetris Attack for the Super Nintendo. Strangely enough Tetris Attack has nothing
+to do with actual Tetris. Instead it is the American name for a popular Super
+Famicom game in Japan called Panel de Pon.</p>
+<p><img src="https://kaylees.dev/trio/oak/day32-tetris-attack-clone/./PanelDePon.jpg" alt="PanelDePon" /></p>
+<p>The basic premise is that blocks move up from the bottom of the screen steadily
+over time. You are given the ability to swap blocks horizontally to make
+matches. You lose when the blocks hit the top of the screen.</p>
+<p>Where this game gets really interesting is when you play the VS mode. Two
+players play on either half of the screen, and when one player makes a large
+enough match, a block is piled on top of the opponents screen.</p>
+<p>My Dad and I have played untold hours of this game and have always bemoaned the
+fact that we don't have a modern version. Until recently I haven't felt up to
+the task, but I feel ready now. So today I spent the day getting a bunch of
+boilerplate out of the way. I don't have it cleaned up in a presentable fashion
+yet, so I won't describe it today, but I will leave you with this gif:</p>
+<p><img src="https://kaylees.dev/trio/oak/day32-tetris-attack-clone/./TetrisAttackSpike.gif" alt="TetrisAttackSpike" /></p>
+<p>This image shows that I have a relatively performant sprite renderer which
+supports drawing images with pixel perfect &quot;nearest neighbor&quot; sampling and
+allowing overlapping.</p>
+<p>The core of the engine was pulled from a failed project I worked on a year ago,
+and implements sprite graphics from scratch in WebGL.</p>
+<p>I have pulled out the graphics engine, and implemented an &quot;immediate&quot; mode api
+so that I can call a centralized image function whenever I have an image to
+draw. I found this pattern extremely productive in SCRIPT-8 and have decided to
+emulate it, but with some shader magic to make it actually fast enough to use.</p>
+<p>For graphics, I pulled the original graphics from Tetris Attack directly as
+development art. I plan on bugging my buddy for graphics once the game gets
+farther along, but for now this is more than sufficient.</p>
+<p>I have big plans for the interface and for multiplayer over the network. I have
+high hopes for this project! Today I just got the core bits out of the way, but
+I plan on building an actual Pando tree and giving further background soon.</p>
+<p>Till tomorrow!<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day31-8bomb-state-management&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day33-tetris-attack-planning&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

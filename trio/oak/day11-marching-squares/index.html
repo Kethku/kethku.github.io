@@ -1,0 +1,187 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day11 - Marching Squares
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Implementing Marching Squares in SCRIPT-8
+    </h2>
+    
+    
+    <p>
+    
+      2019-02-17
+    
+    
+      <br>
+      <a href="../../hemlock/projects/8bomb/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day11-marching-squares/./todo.svg" alt="Todo" /></p>
+<p>Today I implemented an implementation of Marching Squares in SCRIPT-8 for my
+<a href="../day7-bomb-survival-demake/">Bomb Survival Demake</a>. As a bit of background,
+<a href="https://en.wikipedia.org/wiki/Marching_squares">marching squares</a> is a graphics
+technique for using sprites to draw a smoother depiction of a two dimensional
+grid. In other words, I can use Marching Squares to implement destructible
+terrain in a clean and efficient way.</p>
+<p>The basic idea is to split the terrain into a grid of boolean values where each
+value is associated with a corner of a tile of terrain, and the boolean
+indicates whether that corner is covered or uncovered. The implementor then
+draws a tile for each of the 16 possible combinations of covered and uncovered
+corners and uses those tiles to draw every square in the terrain. As an example,
+the tile I drew for covered top left and bottom right, uncovered top right and
+bottom left looks like:</p>
+<p><img src="https://kaylees.dev/trio/oak/day11-marching-squares/./TrueFalseTrueFalse.PNG" alt="TrueFalseTrueFalse" /></p>
+<p>So drawing an entire block of terrain values in the grid becomes looking up the
+corners, and drawing the correct tile out of the pre-drawn list. Since tiles are
+8 * 8 times larger than pixels, we only have to store about 1/64th of the
+terrain data. We also get artistic control over what the tiles look like for
+free since we can draw the tiles in whatever way we like. Making changes to the
+terrain becomes similarly easier, since any change to the terrain grid booleans
+will show up in the rendered result.</p>
+<h2 id="indexing">Indexing</h2>
+<p>I label each of the possible combinations via a 4 bit sequence moving clockwise
+from the top left. So for the above texture, it would be labeled True False True
+False. This labeling scheme allows me to quickly calculate the index of a given
+combination and draw it to the screen. I drew the textures in order such that
+each sprite is positioned in the sprite index which matches the number formed by
+the corner values.</p>
+<p><img src="https://kaylees.dev/trio/oak/day11-marching-squares/./Tiles.PNG" alt="Tiles" /></p>
+<p>As mentioned above, since the tiles are 8 by 8, I must scale the terrain data
+coordinates accordingly.</p>
+<pre>
+  <code class="language-en">const tileWidth = 8;
+const tileHeight = 8;
+
+function drawTile(tx, ty, topLeft, topRight, bottomRight, bottomLeft) {
+  let s = 0;
+  if (topLeft) s += 1;
+  if (topRight) s += 2;
+  if (bottomRight) s += 4;
+  if (bottomLeft) s += 8;
+  sprite(tx * tileWidth, ty * tileHeight, s);
+}</code>
+</pre>
+<h2 id="terrain-data">Terrain Data</h2>
+<p>SCRIPT-8 tracks the current state of the game in order to enable it's rewind
+feature. To that end all state must be initialized into the <code>initialState</code>
+object when the game starts, and all modifications must happen on the associated
+state object that gets passed to <code>update</code> and <code>draw</code>. So I created an
+<code>initTerrain</code> function which creates the data grid for the terrain to get
+drawn from.</p>
+<pre>
+  <code class="language-en">function initTerrain() {
+  let result = [];
+  for (let i = 0; i &lt; 17; i++) {
+    let row = [];
+    for (let j = 0; j &lt; 17; j++) {
+      row.push(random(0, 1) == 1);
+    }
+    result.push(row);
+  }
+  return result;
+}
+
+initialState = {
+  terrain: initTerrain()
+};</code>
+</pre>
+<p>The grid goes from 0 to 17 for a total of 18 by 18 booleans. This makes sense
+because SCRIPT-8's screen is 128 by 128 which leaves room for 16 by 16 tiles.
+Each tile requires 2 data points to describe it, so we need 2 more indices on
+either side of the tiles to have all of them be fully specified.</p>
+<h2 id="drawing-it-all">Drawing it All</h2>
+<p>All that is left is to give a function for drawing the terrain. I created this
+by simply looping over all of the data in the grid and drawing it with the
+<code>drawTile</code> function. I then call my <code>drawTerrain</code> function in the SCRIPT-8
+<code>draw</code> function to get it drawn to the screen.</p>
+<pre>
+  <code class="language-en">function drawTerrain(terrain) {
+  for (let y = 0; y &lt; terrain.length - 1; y++) {
+    for (let x = 0; x &lt; terrain[y].length - 1; x++) {
+      drawTile(x, y, terrain[y][x], terrain[y][x + 1], terrain[y + 1][x + 1], terrain[y + 1][x]);
+    }
+  }
+}
+
+draw = state =&gt; {
+  clear();
+  drawTerrain(state.terrain);
+}</code>
+</pre>
+<p>This yields the satisfying randomly generated image below.</p>
+<p><img src="https://kaylees.dev/trio/oak/day11-marching-squares/./Random.PNG" alt="Random" /></p>
+<p>An editable live version can be found
+<a href="https://script-8.github.io/?id=46394495fbd4c3b6cae31a9a0f749521">here</a>. Next up
+for this project is to build some collision detection using Verlet Integration!</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day10-pando-cli&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day12-project-pages&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

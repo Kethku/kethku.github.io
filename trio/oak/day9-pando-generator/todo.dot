@@ -1,0 +1,15 @@
+digraph {
+  node [shape=record, splines="curve"];
+  a[label=<<font color='gray'>Brainstorm <br/> <i>Complete</i></font>>, color="gray"];
+  b[label=<<font color='gray'>Specify Format <br/> <i>Complete</i></font>>, color="gray"];
+  c[label=<DOT Generator <br/> <i>In Progress</i>>];
+  d[label=<<font color='gray'>Parser <br/> <i>Complete</i></font>>, color="gray"];
+  e[label=<Command Line Interface>];
+  f[label=<<font color='gray'>Abbreviation Resolver <br/> <i>Complete</i></font>>, color="gray"];
+
+  a -> { b f };
+  b -> d;
+  d -> e;
+  c -> e;
+  f -> c;
+}

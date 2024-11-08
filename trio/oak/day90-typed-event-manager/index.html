@@ -1,0 +1,200 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day90 - Typed Event Manager
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Strongly Typed Event Manager in Typescript
+    </h2>
+    
+    
+    <p>
+    
+      2019-10-23
+    
+    
+    </p>
+    
+  </summary>
+  <p>Recently I have been spending time with Typescript and found myself wishing there was an event manager which I could use
+for my projects. Frustratingly all of the event managers I found (very possible I missed a better one) were too
+complicated, or didn't have very ergonomic types. So I wrote my own and have been iterating on it for a while. At this
+point I'm very happy with it as its super succinct and yet gets the job done.</p>
+<h1 id="the-code">The Code</h1>
+<pre>
+  <code class="language-en">type Tuple = any[];
+
+export class EventManager&lt;TArgs extends Tuple = [], TResult = void&gt; {
+  currentId = 0;
+  subscriptions: Map&lt;number, (...args: TArgs) =&gt; TResult&gt; = new Map();
+
+  Subscribe(callback: (...args: TArgs) =&gt; TResult) {
+    let id = this.currentId;
+    this.subscriptions.set(id, callback);
+    this.currentId++;
+    return id;
+  }
+
+  Unsubscribe(id: number) {
+    return this.subscriptions.delete(id);
+  }
+
+  Publish(...args: TArgs) {
+    let results: TResult[] = [];
+    for (let id of this.subscriptions.keys()) {
+      results.push(this.subscriptions.get(id).apply(null, args));
+    }
+    return results;
+  }
+}</code>
+</pre>
+<p>Just 25 lines long, and yet its doing some interesting things with generics to allow this single class to handle
+arbitrary arguments and aggregated return values. I'll take it section by section. First though an example of the
+usage.</p>
+<pre>
+  <code class="language-en">let fizzbuzz = new EventManager&lt;[number], string&gt;();
+
+fizzbuzz.Subscribe(i =&gt; i % 3 == 0 ? &quot;Fizz&quot; : &quot;&quot;);
+fizzbuzz.Subscribe(i =&gt; i % 5 == 0 ? &quot;Buzz&quot; : &quot;&quot;);
+
+for (let i = 0; i &lt; 100; i++) {
+  console.log(fizzbuzz.Publish(i).join());
+}</code>
+</pre>
+<p>Conveniently the type of the function passed to fizzbuzz.Subscribe is inferred as Subscribe takes a function with a
+single number as the argument, and which returns a string. Similarly the result of publish is an array of strings
+returned from all of the subscribers. The code is strongly typed, and clean.</p>
+<h2 id="generics">Generics</h2>
+<pre>
+  <code class="language-en">type Tuple = any[];
+
+export class EventManager&lt;TArgs extends Tuple = [], TResult = void&gt; {</code>
+</pre>
+<p>The contribution for this event manager is contained in these two lines. TArgs is a generic which must be any array.
+This means it could either be a variable length array of some type, or a strongly typed Tuple with types for each index.
+I use TArgs to type each argument of subscribers to this event manager. In the example above, the generic is the tuple
+<code>[number]</code> which is a Tuple with a single number in it.</p>
+<p>The class definition also has default values for both so that a simple <code>EventManager</code> with no arguments and no return
+value is as simple as possible.</p>
+<h2 id="state">State</h2>
+<pre>
+  <code class="language-en">currentId = 0;
+subscriptions: Map&lt;number, (...args: TArgs) =&gt; TResult&gt; = new Map();</code>
+</pre>
+<p>Here the state is defined for the EventManager class which is comprised of an identifier to track subscriptions, and a
+subscriptions map which stores the callbacks themselves. The important bit here is that the subscription type uses args
+expansion to specify the type of the arguments. In typescript if the type of the args getting spread is a strongly typed
+Tuple, then the arguments are strongly typed as well. So the type:</p>
+<pre>
+  <code class="language-en">type Callback = (...[number, string]) =&gt; void;</code>
+</pre>
+<p>is equivalent to</p>
+<pre>
+  <code class="language-en">type Callback = (firstArg: number, secondArg: string) =&gt; void;</code>
+</pre>
+<p>Thats about all of the complicated type stuff in the event manager which enables the single class to handle any arity of
+event.</p>
+<h2 id="subscribe-unsubscribe">Subscribe/Unsubscribe</h2>
+<pre>
+  <code class="language-en">Subscribe(callback: (...args: TArgs) =&gt; TResult) {
+  let id = this.currentId;
+  this.subscriptions.set(id, callback);
+  this.currentId++;
+  return id;
+}
+
+Unsubscribe(id: number) {
+  return this.subscriptions.delete(id);
+}</code>
+</pre>
+<p>These functions add and remove subscriptions to a given event manager. They are pretty straight forward and use the id
+state to assign an unique field to each subscription. This unique id is then returned to the user and may be used to
+remove the subscription in the future.</p>
+<h2 id="publish">Publish</h2>
+<pre>
+  <code class="language-en">Publish(...args: TArgs) {
+  let results: TResult[] = [];
+  for (let id of this.subscriptions.keys()) {
+    results.push(this.subscriptions.get(id).apply(null, args));
+  }
+  return results;
+}</code>
+</pre>
+<p>Finally the publish function takes arguments with types taken from the TArgs generic tuple, and calls every subscription
+passing the args list. The apply method on the subscription functions is used to allow passing an array of arguments as
+though they were passed one by one. This keeps the typing sound and allows the publish function to just look like a
+normal function with normal arguments.</p>
+<p>The result of each subscription call is then stored in an array and returned to the user.</p>
+<h2 id="conclusion">Conclusion</h2>
+<p>This simple class has made a huge difference in my code and I use it constantly. The type system in Typescript is now flexible 
+enough in typescript to enable a class like this while still keeping the code safe and consistent. The more I use it,
+the more I appreciate the awesome work they are doing over on the Typescript team.</p>
+<p>Till tomorrow,<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day89-more-script-8-perf&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day91-lose-screen-progress&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

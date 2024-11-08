@@ -1,0 +1,149 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day96 - Neovide Smooth Scrolling
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Details about a smooth scrolling implementation for neovim GUIs
+    </h2>
+    
+    
+    <p>
+    
+      2021-01-09
+    
+    
+      <br>
+      <a href="../../hemlock/projects/neovide/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day96-neovide-smooth-scrolling/./SmoothScrolling.gif" alt="Smooth Scrolling" /></p>
+<p>With the advent of multigrid support in Neovide, I've unlocked the ability to implement a number of fancy new eye candy
+features including blurred floating window backgrounds, animated window transitions, and smooth scrolling. Some folks on
+twitter have asked for some details about how I implemented the scrolling, and after struggling to describe it
+in tweets, I decided to just write a blog post instead.</p>
+<h2 id="basic-multigrid-gui">Basic Multigrid GUI</h2>
+<p>Neovim communicates with the attached GUI using a msgpack-rpc protocol and with the multigrid extension enabled, draw commands
+are sent to each vim window separately. A basic implementation of a GUI for this setup would store a draw surface for
+each window and update that draw surface with render commands as they come in. This way the entire grid of text doesn't
+have to be re-rendered every time it needs to be updated.</p>
+<p>As an added benefit, because the renderer knows where each window is being drawn, and which windows are floating windows
+on top, we can implement a better version of the built in window transparency which blurs the background of a floating 
+window. I think this adds the same visual flare without the added difficulty when reading.</p>
+<p><img src="https://kaylees.dev/trio/oak/day96-neovide-smooth-scrolling/./BlurredFloatingWindows.png" alt="Blurred Background" /></p>
+<p>Neovide tries to animate any changes it can using a quick exponential animation curve. This was introduced with the
+cursor animation where each corner of the cursor is animated to the new location, but is now used for scrolling and
+window position changes as well. So any time I talk about animating the scroll position, it is done by tracking the
+current position, the desired destination, and a timer to track how far along the animation curve it is. This same
+effect can be approximated by moving a certain percentage of the way to the destination each frame, however Neovide uses a
+linear interpolation function instead to make sure that the animations are not framerate dependent.</p>
+<h2 id="scroll-event">Scroll Event</h2>
+<p>The first thing I thought of for rendering scroll animations was to use the &quot;grid_scroll&quot; draw command and try to
+animate that. Unfortunately grid scroll is meant specifically to be used as a performance improvement when translating
+large portions of text on a grid around. This means that in circumstances where the screen is actually being scrolled,
+we may not get a &quot;grid_scroll&quot; event, and occasionally this same operation may be used when the user isn't actually
+scrolling a buffer. In either case this would create animations when not expected. The documentation for the event states
+&quot;This is semantically unrelated to editor scrolling, rather this is an optimized way to 'copy these screen cells'.&quot;</p>
+<h2 id="viewport-event">Viewport Event</h2>
+<p>The multigrid ui extension does have an event which tells the front end when the scroll &quot;viewport&quot; has moved: 
+<a href="https://github.com/neovim/neovim/blob/master/runtime/doc/ui.txt#L595-L599">the win_viewport event</a>. This gives the
+current scroll position for a given window and is updated anytime that scroll position changes. This is the key to Neovide's 
+smooth scrolling implementation. </p>
+<h3 id="step-1">Step 1</h3>
+<p><img src="https://kaylees.dev/trio/oak/day96-neovide-smooth-scrolling/./Step1.jpg" alt="Step 1" /></p>
+<p>Normal redraw events are handled just the same as initially, except rather than drawing the scroll contents directly to
+the screen, the scroll contents are drawn to a surface in gpu memory so that it might be copied later on.</p>
+<h3 id="step-2">Step 2</h3>
+<p><img src="https://kaylees.dev/trio/oak/day96-neovide-smooth-scrolling/./Step2.jpg" alt="Step 2" /></p>
+<p>Then when a viewport event has been received which changes the current scroll position, a snapshot of the render surface is 
+taken (labeled View 1 snapshot) and new render events are drawn on top of the old in the draw surface (labeled View 2). This 
+takes advantage of the fact that scroll position events occur before the new scroll viewport contents have been recieved.
+Note that the visible portion of the buffer (shown by dashed red lines) hasn't changed, so the window doesn't show anything 
+new yet as the View 2 is out of view.</p>
+<h3 id="step-3">Step 3</h3>
+<p><img src="https://kaylees.dev/trio/oak/day96-neovide-smooth-scrolling/./Step3.jpg" alt="Step 3" /></p>
+<p>The position of the scroll is now animated to the new location. During the animation, both the new view 2 and the old
+snapshot of view 1 are rendered to the screen. However the snapshot is rendered underneath as the two may overlap. The
+scroll position continues to animate into place until it reaches the current viewport position reported by the viewport
+event.</p>
+<h3 id="step-4">Step 4</h3>
+<p><img src="https://kaylees.dev/trio/oak/day96-neovide-smooth-scrolling/./Step4.jpg" alt="Step 4" /></p>
+<p>Once the scroll animation has finished, the snapshot is deleted and rendering goes on like before until the next
+viewport event.</p>
+<h2 id="details">Details</h2>
+<p>The above pattern can be repeated many times taking multiple snapshots and rendering them all over each other. This way
+the gui can handle rapid scrolling and viewport changes. I found that keeping a queue of 5 snapshots was enough to
+handle most rendering without taking up too much memory especially since in the normal case, there aren't any snapshots
+being rendered while the window is not actively scrolling.</p>
+<p>That's it! No changes in upstream Neovim were required and the experience is buttery smooth. I'm very pleased with the
+result as this seems to be a constant request for Neovim GUIs. Hopefully this post will help other front ends implement
+a similar feature.</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day95-script-8-learnable-programming&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a id="latest-nav">Latest Post!</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,220 @@
+<html>
+  <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-139157194-1"></script>
+    <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+
+     gtag('config', 'UA-139157194-1');
+    </script>
+
+    <meta name="viewport" content="width=device-width, user-scalable=false">
+    <!-- Disable dark reader. Its already dark! --->
+    <meta name="darkreader-lock">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="https://kaylees.dev/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/basic-css-typography-reset@1.0.0/typography.min.css">
+    
+    <title>Kaylee's Dev 
+
+Oak
+</title>
+  </head>
+  <body>
+    <header>
+      <h3>
+
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;">The Trees</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;">The Fork</a>
+
+
+<a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;">Oak</a>
+
+Day52 - Garbage Clearing
+</h3>
+    </header>
+    <div id="content">
+    
+<article>
+  <summary>
+    
+    <h2>
+      Add clearing garbage blocks when a match is made next to them
+    </h2>
+    
+    
+    <p>
+    
+      2019-03-30
+    
+    
+      <br>
+      <a href="../../hemlock/projects/ta/">Project Page</a>
+    
+    </p>
+    
+  </summary>
+  <p><img src="https://kaylees.dev/trio/oak/day52-garbage-clearing/./todo.svg" alt="Todo" /></p>
+<p>Today I implemented the garbage clearing mechanic. In Tetris Attack, whenever a match is made next to a garbage block, the garbage block will clear revealing each block underneath in order form bottom to top. After every block is revealed, they will be dropped onto the grid.</p>
+<p><img src="https://kaylees.dev/trio/oak/day52-garbage-clearing/TetrisAttackGarbageClear.gif" alt="Tetris Attack Garbage Clear" /></p>
+<p>My initial version of this clear animation will be much simpler as it wont have
+any drop animations on the blocks, and I haven't built a particle system yet,
+but it will be playable.</p>
+<h2 id="break-detection">Break Detection</h2>
+<p>The first step is to decide when to break a garbage block. All that was needed
+was to subscribe to the <code>MatchStarted</code> event, test if any of the match blocks
+are adjacent to an overlapped slot, and start a timer ticker to track the
+animation.</p>
+<pre>
+  <code class="language-en">MatchStarted.Subscribe(matchedBlocks =&gt; {
+  for (let garbage of garbageBlocks) {
+    if (garbage.state == state.CLEARING) continue;
+    for (let matchedBlock of matchedBlocks) {
+      if (garbage.adjacentTo(matchedBlock.gridSlot)) {
+        garbage.break();
+        GarbageBroken.Publish({
+          matchedBlocks,
+          spawnedBlocks: garbage.spawnedBlocks
+        });
+        break;
+      }
+    }
+  }
+});</code>
+</pre>
+<p>I created a new event to track when a garbage block is broken and made a break
+method which creates the covered blocks and sets the timer.</p>
+<pre>
+  <code class="language-en">break() {
+  this.state = state.CLEARING;
+  this.timer = 0;
+  this.spawnedBlocks = [];
+
+  for (let slot of this.overlappingSlots()) {
+    this.spawnedBlocks.push({
+      visible: false,
+      block: new Block(slot)
+    });
+  }
+}</code>
+</pre>
+<p>Each covered block is added to a list called <code>spawnedBlocks</code> which contains
+objects with the visibility of each spawned block and the block itself.</p>
+<h2 id="rendering-changes">Rendering Changes</h2>
+<p>Since a garbage block has two modes, normal and breaking, I changed the render
+function on garbage blocks to call either <code>renderGarbage</code> or <code>renderBreaking</code>
+depending on if the block is clearing or not.</p>
+<pre>
+  <code class="language-en">render() {
+  let blocksTopLeft = new Vector(
+    gridCenter.x - gridDimensions.width &#x2F; 2,
+    gridCenter.y - gridDimensions.height &#x2F; 2 + blockPixelAdvancement);
+  let topLeft = blocksTopLeft.add(this.gridPosition.multiply(blockWidth).multiplyParts(new Vector(1, -1))).withZ(2);
+
+  if (this.state === state.CLEARING) {
+    this.renderBreaking(topLeft);
+  } else {
+    this.renderGarbage(topLeft);
+  }
+}</code>
+</pre>
+<p><code>renderGarbage</code> is the same as it was before. See yesterday's post for more
+details. <code>renderBreaking</code> however will draw the spawned blocks instead of the
+main garbage panel. If a spawned block isn't visible, then the clear texture is
+rendered instead.</p>
+<pre>
+  <code class="language-en">renderBreaking(topLeft) {
+  for (let spawnedBlock of this.spawnedBlocks) {
+    if (!spawnedBlock.visible) {
+      spawnedBlock.block.render(garbageImages.Clear);
+    } else {
+      spawnedBlock.block.render();
+    }
+  }
+}</code>
+</pre>
+<h2 id="animation">Animation</h2>
+<p>Finally I added a <code>handleBreaking</code> function which is called from <code>update</code> and
+manages the clear animation. If the block state is <code>Clearing</code>, and the timer is
+further than the initial clear delay (a constant value wait time before the
+blocks start appearing), and if the timer modulo the block clear delay is 0,
+then a block is chosen to turn visible.</p>
+<p>If no more blocks are covered, then the final break timer is started by
+recording the current timer value in a variable.</p>
+<pre>
+  <code class="language-en">handleBreaking() {
+  if (this.state === state.CLEARING) {
+    if (this.timer &gt; clearDelay) {
+      if ((this.timer - clearDelay) % blockClearDelay == 0) {
+        let anyHidden = false;
+        for (let spawnedBlock of this.spawnedBlocks) {
+          if (!spawnedBlock.visible) {
+            spawnedBlock.visible = true;
+            anyHidden = true;
+            break;
+          }
+        }
+
+        if (!anyHidden &amp;&amp; !this.breakTimeStarted) {
+          this.breakTimeStarted = this.timer;
+        }
+      }
+    }</code>
+</pre>
+<p>Lastly if the break time was recorded and the current time minus the break time
+is greater than the <code>breakDelay</code> (another constant which describes how long to
+wait after all blocks have been revealed), then the garbage block is deleted,
+and the spawned blocks are added to the grid.</p>
+<pre>
+  <code class="language-en">if (this.breakTimeStarted &amp;&amp;
+        this.timer - this.breakTimeStarted &gt; breakDelay) {
+      garbageBlocks.delete(this);
+      for (let spawnedBlock of this.spawnedBlocks) {
+        setBlock(spawnedBlock.block);
+        spawnedBlock.block.state = state.WAITING;
+      }
+    }
+
+    this.timer++;
+  }
+}</code>
+</pre>
+<p>Thats it for an initial clear animation. As of today it looks like this:</p>
+<p><img src="https://kaylees.dev/trio/oak/day52-garbage-clearing/MyGarbageClear.gif" alt="My Garbage Clear" /></p>
+<p>There is still a bunch of work to do to clean things up (the code is somewhat
+messy) but this will do for now! Next up is ensuring the combos are preserved
+through garbage breaks, and that garbage breaks trigger other garbage breaks.</p>
+<p>Till tomorrow!<br />
+Kaylee</p>
+
+  
+</article>
+
+    </div>
+    <!-- <div id="sidebar"> -->
+    <!--   <h2>Dynamic Content</h2> -->
+    <!--   <p>Some dynamic details to put in the aside</p> -->
+    <!-- </div> -->
+    <footer>
+      
+<div id="page-nav-links">
+  <h3>
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day51-project-link-cleanup&#x2F;" id="previous-nav">Previous</a>
+    
+
+    
+    <a href="https:&#x2F;&#x2F;kaylees.dev&#x2F;trio&#x2F;oak&#x2F;day53-pando-in-the-browser&#x2F;" id="next-nav">Next</a>
+    
+  </h3>
+</div>
+
+    </footer>
+  </body>
+</html>
